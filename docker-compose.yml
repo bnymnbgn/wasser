@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    container_name: water-quality-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgres://waterapp:waterapp@db:5432/waterdb
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    container_name: water-quality-db
+    environment:
+      POSTGRES_USER: waterapp
+      POSTGRES_PASSWORD: waterapp
+      POSTGRES_DB: waterdb
+    ports:
+      - "5434:5432"
+    volumes:
+      - waterdb-data:/var/lib/postgresql/data
+
+volumes:
+  waterdb-data: {}

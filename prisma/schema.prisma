@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model WaterSource {
+  id          String          @id @default(cuid())
+  brand       String
+  productName String
+  origin      String?
+  barcode     String?         @unique
+  analyses    WaterAnalysis[]
+  scans       ScanResult[]
+  createdAt   DateTime        @default(now())
+}
+
+model WaterAnalysis {
+  id                     String       @id @default(cuid())
+  waterSourceId          String
+  waterSource            WaterSource  @relation(fields: [waterSourceId], references: [id])
+  analysisDate           DateTime?
+  sourceType             String       // "manufacturer" | "authority" | "user" | "api"
+  reliabilityScore       Float        // 0–1
+  ph                     Float?
+  calcium                Float?
+  magnesium              Float?
+  sodium                 Float?
+  potassium              Float?
+  bicarbonate            Float?
+  nitrate                Float?
+  totalDissolvedSolids   Float?
+  createdAt              DateTime     @default(now())
+}
+
+model ScanResult {
+  id              String        @id @default(cuid())
+  timestamp       DateTime      @default(now())
+  barcode         String?
+  profile         String        // "standard" | "baby" | "sport" | "blood_pressure"
+  score           Float?
+  metricScores    Json?         // { ph: 80, sodium: 20, ... }
+  ocrTextRaw      String?
+  ocrParsedValues Json?
+  userOverrides   Json?
+
+  waterSourceId   String?
+  waterSource     WaterSource?  @relation(fields: [waterSourceId], references: [id])
+
+  waterAnalysisId String?
+  waterAnalysis   WaterAnalysis? @relation(fields: [waterAnalysisId], references: [id])
+}
