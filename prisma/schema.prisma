@@ -25,6 +25,7 @@ model WaterAnalysis {
   id                     String       @id @default(cuid())
   waterSourceId          String
   waterSource            WaterSource  @relation(fields: [waterSourceId], references: [id])
+  scanResults            ScanResult[]
   analysisDate           DateTime?
   sourceType             String       // "manufacturer" | "authority" | "user" | "api"
   reliabilityScore       Float        // 0–1

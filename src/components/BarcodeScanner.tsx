@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader } from "@zxing/browser";
+import {
+  BrowserMultiFormatReader,
+  type IScannerControls,
+} from "@zxing/browser";
 
 interface BarcodeScannerProps {
   onDetected: (value: string) => void;
@@ -19,6 +22,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
     if (!videoRef.current) return;
 
     const codeReader = new BrowserMultiFormatReader();
+    let controlsRef: IScannerControls | null = null;
     let canceled = false;
 
     async function start() {
@@ -27,7 +31,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
         const devices = await BrowserMultiFormatReader.listVideoInputDevices();
         const deviceId = devices[0]?.deviceId;
 
-        await codeReader.decodeFromVideoDevice(
+        controlsRef = await codeReader.decodeFromVideoDevice(
           deviceId,
           videoRef.current!,
           (result, err, controls) => {
@@ -54,7 +58,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
 
     return () => {
       canceled = true;
-      codeReader.reset();
+      controlsRef?.stop();
     };
   }, [active, onDetected]);
 

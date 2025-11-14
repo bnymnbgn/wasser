@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import clsx from "clsx";
 import Link from "next/link";
@@ -12,6 +12,20 @@ import { BarcodeScanner } from "@/src/components/BarcodeScanner";
 type Mode = "ocr" | "barcode";
 
 export default function ScanPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center">
+          <div className="text-sm text-slate-300">Scanner wird geladen…</div>
+        </main>
+      }
+    >
+      <ScanPageContent />
+    </Suspense>
+  );
+}
+
+function ScanPageContent() {
   const params = useSearchParams();
   const router = useRouter();
   const defaultProfile = (params.get("profile") ?? "standard") as ProfileType;
