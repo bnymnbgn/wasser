@@ -1,0 +1,20 @@
+.git
+.gitignore
+.next
+node_modules
+*.log
+Dockerfile*
+docker-compose.yml
+README.md
+public/generated/*
+*.local
+.env*
+coverage
+tmp
+*.tsbuildinfo
+*.swp
+*.db
+*.sqlite
+CCUJCKPCQeqDOHZY9ClyFA.webp
+"Generated Image September 07, 2025 - 1_10PM.jpeg"
+OneDrive*
