@@ -268,6 +268,16 @@ npm start
 # Prisma: Migrations & DB
 npx prisma migrate dev
 npx prisma studio    # einfache Web-Oberfläche zur DB-Inspektion
+
+# OpenFoodFacts-Seed (erstellt Wasserquellen + Analysen)
+DATABASE_URL=postgres://... npm run seed:openfoodfacts
+
+> **Hinweis:** Der Seed holt sich standardmäßig 3 Seiten (je 100 Produkte) aus der
+> OpenFoodFacts-API (`categories_tags_en=waters`). Über Umgebungsvariablen lässt
+> sich das anpassen:
+> - `OFF_MAX_PAGES` – Anzahl der Seiten (Default: `3`)
+> - `OFF_PAGE_SIZE` – Produkte pro API-Call (Default: `100`)
+> - `OFF_BASE_URL` – alternativ ein anderer OFF-Spiegel
 ```
 
 ---

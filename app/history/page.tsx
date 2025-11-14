@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/src/lib/prisma";
 import { mapPrismaScanResult } from "@/src/domain/mappers";
 import type { ScanResult as DomainScanResult } from "@/src/domain/types";

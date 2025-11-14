@@ -35,3 +35,30 @@ next-env.d.ts
 
 # prisma
 prisma/migrations/*_migration.sql
+# Dependencies
+node_modules/
+
+# Next.js build artifacts
+.next/
+out/
+dist/
+
+# Logs & diagnostics
+*.log
+*.tsbuildinfo
+*.swp
+coverage/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# OS / tooling noise
+.DS_Store
+Thumbs.db
+
+# Generated media / misc assets
+CCUJCKPCQeqDOHZY9ClyFA.webp
+"Generated Image September 07, 2025 - 1_10PM.jpeg"
+

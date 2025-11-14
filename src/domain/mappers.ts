@@ -1,16 +1,50 @@
 import type {
-  ScanResult as PrismaScanResult,
-  WaterAnalysis as PrismaWaterAnalysis,
-  WaterSource as PrismaWaterSource,
-} from "@prisma/client";
-
-import type {
   ScanResult,
   WaterAnalysis,
   WaterSource,
   ProfileType,
   WaterAnalysisValues,
 } from "./types";
+
+type PrismaWaterSource = {
+  id: string;
+  brand: string;
+  productName: string;
+  origin: string | null;
+  barcode: string | null;
+  createdAt: Date;
+};
+
+type PrismaWaterAnalysis = {
+  id: string;
+  waterSourceId: string;
+  analysisDate: Date | null;
+  sourceType: string;
+  reliabilityScore: number;
+  ph: number | null;
+  calcium: number | null;
+  magnesium: number | null;
+  sodium: number | null;
+  potassium: number | null;
+  bicarbonate: number | null;
+  nitrate: number | null;
+  totalDissolvedSolids: number | null;
+  createdAt: Date;
+};
+
+type PrismaScanResult = {
+  id: string;
+  timestamp: Date;
+  barcode: string | null;
+  profile: string;
+  score: number | null;
+  metricScores: unknown;
+  ocrTextRaw: string | null;
+  ocrParsedValues: unknown;
+  userOverrides: unknown;
+  waterSourceId: string | null;
+  waterAnalysisId: string | null;
+};
 
 /** Prisma WaterSource -> Domain WaterSource */
 export function mapPrismaWaterSource(source: PrismaWaterSource): WaterSource {
