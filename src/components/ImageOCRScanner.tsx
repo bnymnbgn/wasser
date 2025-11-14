@@ -19,7 +19,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
 
-  async function processImage(imageSource: string | File) {
+  async function processImage(imageSource: string | File | Blob) {
     setIsProcessing(true);
     setProgress(0);
     setError(null);
@@ -71,6 +71,11 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        try {
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.warn("Unable to start video preview automatically.", playErr);
+        }
         streamRef.current = stream;
         setIsCameraActive(true);
       }

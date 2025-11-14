@@ -38,7 +38,6 @@ function ScanPageContent() {
   const [barcode, setBarcode] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showManualInput, setShowManualInput] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -144,31 +143,22 @@ function ScanPageContent() {
                 }}
               />
 
-              {/* Manuelle Eingabe als Fallback */}
               <div className="pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowManualInput(!showManualInput)}
-                  className="text-xs text-slate-400 hover:text-slate-300 mb-2"
-                >
-                  {showManualInput ? "▼" : "▶"} Oder manuell Text eingeben
-                </button>
-
-                {showManualInput && (
-                  <label className="block">
-                    <span className="text-sm font-medium">Etikett-Text (manuell)</span>
-                    <textarea
-                      className="mt-1 block w-full rounded-md border border-slate-700 bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:ring-emerald-500"
-                      rows={6}
-                      value={ocrText}
-                      onChange={(e) => setOcrText(e.target.value)}
-                      placeholder="pH: 7.2, Kalzium: 100 mg/l, Magnesium: 30 mg/l, Natrium: 10 mg/l..."
-                    />
-                    <p className="mt-1 text-[11px] text-slate-400">
-                      Falls die Texterkennung nicht funktioniert, kannst du hier den Text vom Etikett manuell eingeben.
-                    </p>
-                  </label>
-                )}
+                <label className="block">
+                  <span className="text-sm font-medium">
+                    Erkannter Etikett-Text (bearbeitbar)
+                  </span>
+                  <textarea
+                    className="mt-1 block w-full rounded-md border border-slate-700 bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    rows={6}
+                    value={ocrText}
+                    onChange={(e) => setOcrText(e.target.value)}
+                    placeholder="pH: 7.2, Kalzium: 100 mg/l, Magnesium: 30 mg/l, Natrium: 10 mg/l..."
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Sobald ein Foto ausgewertet wurde, erscheint der erkannte Text hier. Du kannst ihn vor dem Absenden noch korrigieren oder komplett manuell eingeben.
+                  </p>
+                </label>
               </div>
             </>
           ) : (
