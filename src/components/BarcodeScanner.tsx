@@ -12,6 +12,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
   const [active, setActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastCode, setLastCode] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     if (!active) return;
@@ -24,8 +25,16 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
     async function start() {
       try {
         setError(null);
+        setScanning(true);
         const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-        const deviceId = devices[0]?.deviceId;
+
+        // Bevorzuge Rückkamera (environment) wenn verfügbar
+        const backCamera = devices.find(d =>
+          d.label.toLowerCase().includes('back') ||
+          d.label.toLowerCase().includes('rear') ||
+          d.label.toLowerCase().includes('environment')
+        );
+        const deviceId = backCamera?.deviceId ?? devices[0]?.deviceId;
 
         await codeReader.decodeFromVideoDevice(
           deviceId,
@@ -36,6 +45,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
             if (result) {
               const text = result.getText();
               setLastCode(text);
+              setScanning(false);
               onDetected(text);
               // nach erfolgreichem Scan stoppen
               controls.stop();
@@ -46,6 +56,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
       } catch (e: any) {
         console.error(e);
         setError(e?.message ?? "Kamera konnte nicht gestartet werden.");
+        setScanning(false);
         setActive(false);
       }
     }
@@ -90,7 +101,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
       )}
 
       {active && (
-        <div className="overflow-hidden rounded-md border border-slate-700">
+        <div className="relative overflow-hidden rounded-md border border-slate-700">
           <video
             ref={videoRef}
             className="block h-52 w-full object-cover"
@@ -98,6 +109,13 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
             autoPlay
             playsInline
           />
+          {scanning && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+              <div className="rounded-md bg-emerald-500/90 px-3 py-1 text-xs font-medium text-black">
+                📱 Suche nach Barcode...
+              </div>
+            </div>
+          )}
         </div>
       )}
 
