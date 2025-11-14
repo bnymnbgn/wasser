@@ -190,17 +190,19 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
       />
 
       {/* Camera Preview */}
-      {isCameraActive && (
-        <div className="overflow-hidden rounded-md border border-slate-700 mb-3">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="block w-full h-64 object-cover bg-black"
-          />
-        </div>
-      )}
+      <div
+        className={`overflow-hidden rounded-md border border-slate-700 mb-3 ${
+          isCameraActive ? "" : "hidden"
+        }`}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="block w-full h-64 object-cover bg-black"
+        />
+      </div>
 
       {/* Canvas (hidden, nur für Capture) */}
       <canvas ref={canvasRef} className="hidden" />
