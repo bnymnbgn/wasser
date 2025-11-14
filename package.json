@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "@zxing/browser": "^0.19.2",
+    "@zxing/browser": "^0.1.5",
     "clsx": "^2.1.1",
     "next": "^14.2.16",
     "prisma": "^5.22.0",
