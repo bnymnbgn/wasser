@@ -3,54 +3,139 @@ import { prisma } from "@/src/lib/prisma";
 import { calculateScores } from "@/src/domain/scoring";
 import type { ProfileType, WaterAnalysisValues, ScanResult } from "@/src/domain/types";
 import { mapPrismaScanResult } from "@/src/domain/mappers";
+import {
+  fetchProductByBarcode,
+  mapOpenFoodFactsToWaterValues,
+  hasAnyWaterValue,
+  extractProductInfo,
+  calculateReliabilityScore,
+} from "@/src/lib/openfoodfacts";
 
-// MVP: Mocks statt echter externen API
-async function mockLookupByBarcode(
-  barcode: string
-): Promise<{ source: { brand: string; productName: string }; analysis: Partial<WaterAnalysisValues> } | null> {
-  // Hier könntest du später Open Food Facts / Hersteller abfragen
-  // Jetzt: simple Demo-Daten
-  if (barcode === "1234567890123") {
-    return {
-      source: {
-        brand: "Beispielquelle",
-        productName: "Sprudel Classic",
+/**
+ * Sucht ein Wasserprodukt zuerst in der lokalen DB,
+ * dann als Fallback in der OpenFoodFacts API.
+ */
+async function lookupWaterProduct(barcode: string): Promise<{
+  source: {
+    id: string;
+    brand: string;
+    productName: string;
+    origin: string | null;
+  };
+  analysis: WaterAnalysisValues;
+  fromCache: boolean;
+} | null> {
+  // 1. Suche in lokaler Datenbank
+  const dbSource = await prisma.waterSource.findUnique({
+    where: { barcode },
+    include: {
+      analyses: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
       },
-      analysis: {
-        ph: 7.3,
-        calcium: 80,
-        magnesium: 25,
-        sodium: 10,
-        bicarbonate: 220,
-        nitrate: 5,
-        totalDissolvedSolids: 450,
-      },
+    },
+  });
+
+  if (dbSource && dbSource.analyses.length > 0) {
+    const analysis = dbSource.analyses[0];
+
+    // Prüfe ob Analyse verwendbare Werte hat
+    const values: Partial<WaterAnalysisValues> = {
+      ph: analysis.ph ?? undefined,
+      calcium: analysis.calcium ?? undefined,
+      magnesium: analysis.magnesium ?? undefined,
+      sodium: analysis.sodium ?? undefined,
+      potassium: analysis.potassium ?? undefined,
+      bicarbonate: analysis.bicarbonate ?? undefined,
+      nitrate: analysis.nitrate ?? undefined,
+      totalDissolvedSolids: analysis.totalDissolvedSolids ?? undefined,
     };
+
+    if (hasAnyWaterValue(values)) {
+      return {
+        source: {
+          id: dbSource.id,
+          brand: dbSource.brand,
+          productName: dbSource.productName,
+          origin: dbSource.origin,
+        },
+        analysis: values as WaterAnalysisValues,
+        fromCache: true,
+      };
+    }
   }
 
-  if (barcode === "4008501011009") {
-    // Gerolsteiner Medium (realer Barcode)
-    return {
-      source: {
-        brand: "Gerolsteiner",
-        productName: "Naturell",
-      },
-      analysis: {
-        ph: 7.1,
-        calcium: 348,
-        magnesium: 108,
-        sodium: 118,
-        bicarbonate: 1816,
-        nitrate: 17,
-        totalDissolvedSolids: 2527,
-      },
-    };
+  // 2. Fallback: OpenFoodFacts API
+  console.log(`Barcode ${barcode} not in cache, fetching from OpenFoodFacts...`);
+
+  const offProduct = await fetchProductByBarcode(barcode);
+
+  if (!offProduct) {
+    return null; // Produkt nicht gefunden
   }
 
-  // Default-Fall: unbekannt
-  return null;
+  // Extrahiere Wasserwerte
+  const waterValues = mapOpenFoodFactsToWaterValues(offProduct.nutriments);
+
+  if (!hasAnyWaterValue(waterValues)) {
+    console.warn(`Product ${barcode} has no water analysis data`);
+    return null;
+  }
+
+  // Extrahiere Produktinfo
+  const productInfo = extractProductInfo(offProduct);
+  const reliabilityScore = calculateReliabilityScore(offProduct);
+
+  // 3. Speichere in DB für nächstes Mal (Cache)
+  const newSource = await prisma.waterSource.upsert({
+    where: { barcode },
+    update: {
+      brand: productInfo.brand,
+      productName: productInfo.productName,
+      origin: productInfo.origin,
+    },
+    create: {
+      barcode,
+      brand: productInfo.brand,
+      productName: productInfo.productName,
+      origin: productInfo.origin,
+    },
+  });
+
+  // Speichere Analyse
+  await prisma.waterAnalysis.create({
+    data: {
+      waterSourceId: newSource.id,
+      sourceType: "api",
+      reliabilityScore,
+      analysisDate: new Date(),
+      ph: waterValues.ph ?? null,
+      calcium: waterValues.calcium ?? null,
+      magnesium: waterValues.magnesium ?? null,
+      sodium: waterValues.sodium ?? null,
+      potassium: waterValues.potassium ?? null,
+      bicarbonate: waterValues.bicarbonate ?? null,
+      nitrate: waterValues.nitrate ?? null,
+      totalDissolvedSolids: waterValues.totalDissolvedSolids ?? null,
+    },
+  });
+
+  return {
+    source: {
+      id: newSource.id,
+      brand: productInfo.brand,
+      productName: productInfo.productName,
+      origin: productInfo.origin,
+    },
+    analysis: waterValues as WaterAnalysisValues,
+    fromCache: false,
+  };
 }
 
+/**
+ * POST /api/scan/barcode
+ * Scannt einen Barcode und gibt Wasseranalyse + Score zurück
+ */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
 
@@ -61,75 +146,64 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const barcode = body.barcode as string;
+  const barcode = body.barcode.trim();
   const profile = (body.profile ?? "standard") as ProfileType;
 
-  if (!barcode.trim()) {
+  if (!barcode) {
     return NextResponse.json(
       { error: "Barcode darf nicht leer sein." },
       { status: 400 }
     );
   }
 
-  const lookup = await mockLookupByBarcode(barcode);
+  // Lookup in DB + OpenFoodFacts
+  const lookup = await lookupWaterProduct(barcode);
 
   if (!lookup) {
     return NextResponse.json(
-      { error: "Kein Wasser zu diesem Barcode gefunden (MVP-Mock)" },
+      {
+        error:
+          "Kein Wasser zu diesem Barcode gefunden. Das Produkt ist weder in unserer Datenbank noch bei OpenFoodFacts registriert.",
+      },
       { status: 404 }
     );
   }
 
-  // WaterSource in DB suchen/erstellen
-  const waterSource = await prisma.waterSource.upsert({
-    where: { barcode },
-    update: {},
-    create: {
-      barcode,
-      brand: lookup.source.brand,
-      productName: lookup.source.productName,
-    },
-  });
-
-  // WaterAnalysis in DB erstellen
-  const analysis = await prisma.waterAnalysis.create({
-    data: {
-      waterSourceId: waterSource.id,
-      sourceType: "api",
-      reliabilityScore: 0.7,
-      ph: lookup.analysis.ph ?? null,
-      calcium: lookup.analysis.calcium ?? null,
-      magnesium: lookup.analysis.magnesium ?? null,
-      sodium: lookup.analysis.sodium ?? null,
-      potassium: lookup.analysis.potassium ?? null,
-      bicarbonate: lookup.analysis.bicarbonate ?? null,
-      nitrate: lookup.analysis.nitrate ?? null,
-      totalDissolvedSolids: lookup.analysis.totalDissolvedSolids ?? null,
-    },
-  });
-
-  // Scoring berechnen
+  // Berechne Score
   const scoreResult = calculateScores(lookup.analysis, profile);
 
-  // ScanResult in DB speichern
+  // Finde neueste Analyse für waterAnalysisId
+  const latestAnalysis = await prisma.waterAnalysis.findFirst({
+    where: { waterSourceId: lookup.source.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Speichere ScanResult in DB
   const prismaScan = await prisma.scanResult.create({
     data: {
       barcode,
       profile,
       score: scoreResult.totalScore,
-      metricScores: scoreResult.metrics.reduce<Record<string, number>>(
-        (acc, m) => {
-          acc[m.metric] = m.score;
-          return acc;
-        },
-        {}
-      ),
-      waterSourceId: waterSource.id,
-      waterAnalysisId: analysis.id,
+      metricScores: scoreResult.metrics.reduce<Record<string, number>>((acc, m) => {
+        acc[m.metric] = m.score;
+        return acc;
+      }, {}),
+      waterSourceId: lookup.source.id,
+      waterAnalysisId: latestAnalysis?.id ?? null,
     },
   });
 
-  // Domain-Objekt zurückgeben
+  // Mappe zu Domain-Objekt
   const domainScan: ScanResult = mapPrismaScanResult(prismaScan);
-  return NextResponse.json(domainScan);
+
+  // Erweitere Response mit zusätzlichen Infos
+  return NextResponse.json({
+    ...domainScan,
+    productInfo: {
+      brand: lookup.source.brand,
+      productName: lookup.source.productName,
+      origin: lookup.source.origin,
+    },
+    fromCache: lookup.fromCache,
+  });
 }
