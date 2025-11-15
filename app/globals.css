@@ -37,6 +37,7 @@
   /* App chrome heights */
   --bottom-nav-height: 64px;
   --top-bar-height: 56px;
+  --page-max-width: 672px;
 }
 
 /* Dark theme colors */
@@ -73,6 +74,16 @@ html, body {
   touch-action: manipulation;
 }
 
+body {
+  font-family: var(--font-sans), 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--md-background);
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.25);
+  color: var(--md-on-background);
+}
+
 /* Mobile optimizations */
 * {
   -webkit-tap-highlight-color: transparent;
@@ -82,6 +93,12 @@ html, body {
 @media (min-width: 768px) {
   body {
     overscroll-behavior-y: contain;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --bottom-nav-height: 72px;
   }
 }
 
@@ -142,6 +159,20 @@ html, body {
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-md-primary/50 dark:bg-md-dark-primary/50;
   }
+
+  .bg-surface-gradient {
+    background-image: radial-gradient(circle at 25% 25%, rgba(16, 185, 129, 0.12), transparent 45%), radial-gradient(circle at 80% 0%, rgba(0, 100, 148, 0.15), transparent 40%);
+  }
+
+  .grid-overlay {
+    background-image: linear-gradient(transparent 94%, rgba(15, 23, 42, 0.08) 95%), linear-gradient(90deg, transparent 94%, rgba(15, 23, 42, 0.08) 95%);
+    background-size: 40px 40px;
+    opacity: 0.12;
+  }
+
+  .safe-area-bottom-pad {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+  }
 }
 
 /* Component layer for reusable patterns */
@@ -180,5 +211,17 @@ html, body {
   /* Ripple effect container */
   .ripple-container {
     @apply relative overflow-hidden;
+  }
+
+  .glass-card {
+    @apply rounded-3xl border border-white/40 dark:border-white/10 bg-white/80 dark:bg-slate-900/70 backdrop-blur-2xl shadow-elevation-2 transition-all duration-200;
+  }
+
+  .glass-card:hover {
+    @apply shadow-elevation-3 border-white/60 dark:border-white/20;
+  }
+
+  .section-heading {
+    @apply text-sm uppercase tracking-[0.2em] text-md-onSurface-variant dark:text-md-dark-onSurface-variant font-semibold;
   }
 }

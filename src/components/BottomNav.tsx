@@ -64,69 +64,57 @@ export default function BottomNav() {
   };
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom bg-md-surface-container dark:bg-md-dark-surface-container border-t border-md-surface-containerHigh/20 dark:border-md-dark-surface-containerHigh/30"
-      style={{ height: 'var(--bottom-nav-height)' }}
-    >
-      <div className="flex items-center justify-around h-full px-2">
-        {navItems.map((item) => {
-          const isActive = pathname === item.path;
+    <nav className="fixed inset-x-0 bottom-0 z-50 pb-3 px-4 pointer-events-none">
+      <div className="mx-auto w-full max-w-xl">
+        <div
+          className="pointer-events-auto rounded-[32px] border border-white/50 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl shadow-elevation-3"
+          style={{ paddingBottom: `calc(0.4rem + env(safe-area-inset-bottom))` }}
+        >
+          <div className="grid grid-cols-4 gap-1 px-2 pt-2">
+            {navItems.map((item) => {
+              const isActive = pathname === item.path;
 
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item.path)}
-              className="relative flex flex-col items-center justify-center flex-1 h-full min-w-touch touch-manipulation no-tap-highlight"
-              aria-label={item.label}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              {/* Active indicator background */}
-              {isActive && (
-                <motion.div
-                  layoutId="activeNav"
-                  className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-8 bg-md-secondary-container dark:bg-md-dark-secondary-container rounded-md-lg"
-                  initial={false}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 500,
-                    damping: 30,
-                  }}
-                />
-              )}
-
-              {/* Icon and label */}
-              <div className="relative z-10 flex flex-col items-center gap-1">
-                <motion.div
-                  className={`transition-colors ${
-                    isActive
-                      ? 'text-md-onSecondary-container dark:text-md-dark-onSecondary-container'
-                      : 'text-md-onSurface-variant dark:text-md-dark-onSurface-variant'
-                  }`}
-                  animate={{
-                    scale: isActive ? 1.1 : 1,
-                  }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 300,
-                    damping: 20,
-                  }}
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavigation(item.path)}
+                  className="relative flex flex-col items-center gap-1 rounded-2xl py-2 text-xs font-medium text-md-onSurface-variant dark:text-md-dark-onSurface-variant transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-md-primary/50"
+                  aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
                 >
-                  {item.icon}
-                </motion.div>
-
-                <span
-                  className={`text-xs font-medium transition-all ${
-                    isActive
-                      ? 'text-md-onSecondary-container dark:text-md-dark-onSecondary-container scale-100 opacity-100'
-                      : 'text-md-onSurface-variant dark:text-md-dark-onSurface-variant scale-90 opacity-70'
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </div>
-            </button>
-          );
-        })}
+                  {isActive && (
+                    <motion.span
+                      layoutId="navHighlight"
+                      className="absolute inset-0 rounded-2xl bg-md-secondary-container/60 dark:bg-md-dark-secondary-container/50"
+                      initial={false}
+                      transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                    />
+                  )}
+                  <motion.span
+                    className={`relative z-10 flex items-center justify-center ${
+                      isActive
+                        ? 'text-md-onSecondary-container dark:text-md-dark-onSecondary-container'
+                        : ''
+                    }`}
+                    animate={{ scale: isActive ? 1.05 : 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                  >
+                    {item.icon}
+                  </motion.span>
+                  <span
+                    className={`relative z-10 ${
+                      isActive
+                        ? 'text-md-onSecondary-container dark:text-md-dark-onSecondary-container'
+                        : 'opacity-80'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </nav>
   );

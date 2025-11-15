@@ -62,6 +62,11 @@ export interface ScanResult {
 
   waterSourceId?: string;
   waterAnalysisId?: string;
+  productInfo?: {
+    brand?: string | null;
+    productName?: string | null;
+    origin?: string | null;
+  };
 }
 
 /**

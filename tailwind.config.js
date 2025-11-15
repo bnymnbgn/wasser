@@ -175,6 +175,10 @@ module.exports = {
           },
         },
       },
+      fontFamily: {
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Space Grotesk', 'var(--font-sans)', 'sans-serif'],
+      },
       // Mobile-first spacing
       spacing: {
         'safe-top': 'env(safe-area-inset-top)',

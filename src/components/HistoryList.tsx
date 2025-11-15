@@ -117,8 +117,12 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
                         minute: '2-digit',
                       })}
                     </div>
-                    <div className="text-sm font-medium text-md-onSurface dark:text-md-dark-onSurface">
-                      {scan.barcode ? `Barcode: ${scan.barcode}` : 'OCR Scan'}
+                    <div className="text-sm font-semibold text-md-onSurface dark:text-md-dark-onSurface">
+                      {scan.productInfo?.brand ?? (scan.barcode ? 'Unbekannte Marke' : 'OCR Scan')}
+                      {scan.productInfo?.productName ? ` · ${scan.productInfo.productName}` : ''}
+                    </div>
+                    <div className="text-xs text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
+                      {scan.barcode ? `Barcode: ${scan.barcode}` : 'Etikett-Analyse'}
                     </div>
                   </div>
 

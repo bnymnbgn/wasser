@@ -62,6 +62,7 @@ function ScanPageContent() {
 
   const [ocrText, setOcrText] = useState("");
   const [barcode, setBarcode] = useState("");
+  const [brandName, setBrandName] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -111,7 +112,13 @@ function ScanPageContent() {
       const endpoint = mode === "ocr" ? "/api/scan/ocr" : "/api/scan/barcode";
       const body =
         mode === "ocr"
-          ? { text: ocrText, profile, values: numericValues }
+          ? {
+              text: ocrText,
+              profile,
+              values: numericValues,
+              brand: brandName || undefined,
+              barcode: barcode || undefined,
+            }
           : { barcode, profile };
 
       const res = await fetch(endpoint, {
@@ -151,6 +158,11 @@ function ScanPageContent() {
     setShowResults(false);
     if (nextMode === "barcode") {
       setValueInputs(createEmptyValueState());
+      setBrandName("");
+      setOcrText("");
+    }
+    if (nextMode === "ocr") {
+      setBarcode("");
     }
   }
 
@@ -176,11 +188,13 @@ function ScanPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">
-      <div className="mx-auto max-w-2xl px-4 py-4 safe-area-top">
+    <main className="relative min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">
+      <div className="absolute inset-0 bg-surface-gradient" />
+      <div className="absolute inset-0 grid-overlay" />
+      <div className="relative mx-auto max-w-2xl px-4 py-4 safe-area-top pb-[calc(var(--bottom-nav-height)+32px)]">
         {/* Header */}
         <motion.header
-          className="mb-6"
+          className="mb-6 glass-card p-5"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -194,7 +208,7 @@ function ScanPageContent() {
 
         {/* Mode Tabs */}
         <motion.div
-          className="mb-6"
+          className="mb-6 glass-card p-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -251,83 +265,121 @@ function ScanPageContent() {
                 {/* OCR Scanner */}
                 <ImageOCRScanner onTextExtracted={handleTextExtracted} />
 
+                {/* Brand and Barcode */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card p-4 grid gap-3 sm:grid-cols-2"
+                >
+                  <label className="block">
+                    <span className="text-sm font-medium text-md-onSurface dark:text-md-dark-onSurface">
+                      Marke / Quelle
+                    </span>
+                    <input
+                      className="mt-1 block w-full rounded-md-md border border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow px-3 py-2 text-sm focus:border-md-primary dark:focus:border-md-dark-primary focus:ring-2 focus:ring-md-primary/20 dark:focus:ring-md-dark-primary/20"
+                      value={brandName}
+                      onChange={(e) => {
+                        setBrandName(e.target.value);
+                        setResult(null);
+                      }}
+                      placeholder="z. B. Gerolsteiner"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium text-md-onSurface dark:text-md-dark-onSurface">
+                      Barcode (optional)
+                    </span>
+                    <input
+                      className="mt-1 block w-full rounded-md-md border border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow px-3 py-2 text-sm focus:border-md-primary dark:focus:border-md-dark-primary focus:ring-2 focus:ring-md-primary/20 dark:focus:ring-md-dark-primary/20"
+                      value={barcode}
+                      onChange={(e) => {
+                        setBarcode(e.target.value);
+                        setResult(null);
+                      }}
+                      placeholder="z. B. 4008501011009"
+                      inputMode="numeric"
+                    />
+                  </label>
+                </motion.div>
+
                 {/* Values Grid */}
-                {hasAnyValues && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="md-card p-4"
-                  >
-                    <div className="flex items-center justify-between mb-3">
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card p-4"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
                       <h3 className="text-sm font-semibold text-md-onSurface dark:text-md-dark-onSurface">
-                        Erkannte Werte
+                        Mineralwerte
                       </h3>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await hapticLight();
-                          setValueInputs(createEmptyValueState());
-                          setResult(null);
-                        }}
-                        className="text-xs text-md-primary dark:text-md-dark-primary font-medium touch-manipulation"
-                      >
-                        Leeren
-                      </button>
+                      <p className="text-xs text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
+                        Erkannt aus OCR oder manuell anpassen
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {METRIC_FIELDS.map((field) => {
-                        const value = valueInputs[field.key];
-                        if (!value) return null;
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await hapticLight();
+                        setValueInputs(createEmptyValueState());
+                        setResult(null);
+                      }}
+                      className="text-xs text-md-primary dark:text-md-dark-primary font-medium touch-manipulation"
+                    >
+                      Zurücksetzen
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {METRIC_FIELDS.map((field) => {
+                      const value = valueInputs[field.key];
+                      const warning = valueWarnings[field.key];
+                      const invalid = invalidFields[field.key];
 
-                        const warning = valueWarnings[field.key];
-                        const invalid = invalidFields[field.key];
-
-                        return (
-                          <div
-                            key={field.key}
-                            className={clsx(
-                              "p-2 rounded-md-md border",
-                              invalid
-                                ? "border-md-error dark:border-md-dark-error bg-md-error-container/10 dark:bg-md-dark-error-container/10"
-                                : warning
-                                ? "border-md-warning dark:border-md-dark-warning bg-md-warning-container/10 dark:bg-md-dark-warning-container/10"
-                                : "border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow"
-                            )}
-                          >
-                            <label className="block">
-                              <span className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant uppercase tracking-wide">
-                                {field.label}
-                              </span>
-                              <input
-                                className={clsx(
-                                  "mt-0.5 block w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0",
-                                  invalid
-                                    ? "text-md-error dark:text-md-dark-error"
-                                    : "text-md-onSurface dark:text-md-dark-onSurface"
-                                )}
-                                value={value}
-                                onChange={(e) => {
-                                  setValueInputs((prev) => ({
-                                    ...prev,
-                                    [field.key]: e.target.value,
-                                  }));
-                                  setResult(null);
-                                }}
-                                placeholder="0"
-                                inputMode="decimal"
-                              />
-                              {field.unit && (
-                                <span className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
-                                  {field.unit}
-                                </span>
+                      return (
+                        <div
+                          key={field.key}
+                          className={clsx(
+                            "p-2 rounded-md-md border",
+                            invalid
+                              ? "border-md-error dark:border-md-dark-error bg-md-error-container/10 dark:bg-md-dark-error-container/10"
+                              : warning
+                              ? "border-md-warning dark:border-md-dark-warning bg-md-warning-container/10 dark:bg-md-dark-warning-container/10"
+                              : "border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow"
+                          )}
+                        >
+                          <label className="block">
+                            <span className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant uppercase tracking-wide">
+                              {field.label}
+                            </span>
+                            <input
+                              className={clsx(
+                                "mt-0.5 block w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0 placeholder:text-md-onSurface-variant/70 dark:placeholder:text-md-dark-onSurface-variant/70",
+                                invalid
+                                  ? "text-md-error dark:text-md-dark-error"
+                                  : "text-md-onSurface dark:text-md-dark-onSurface"
                               )}
-                            </label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
+                              value={value}
+                              onChange={(e) => {
+                                setValueInputs((prev) => ({
+                                  ...prev,
+                                  [field.key]: e.target.value,
+                                }));
+                                setResult(null);
+                              }}
+                              placeholder={field.unit ? `0 ${field.unit}` : "0"}
+                              inputMode="decimal"
+                            />
+                            {field.unit && (
+                              <span className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
+                                {field.unit}
+                              </span>
+                            )}
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
               </motion.div>
             ) : (
               <motion.div
@@ -338,7 +390,7 @@ function ScanPageContent() {
                 className="space-y-4"
               >
                 {/* Manual Barcode Input */}
-                <div className="md-card p-4">
+                <div className="glass-card p-4" id="manual-barcode">
                   <label className="block">
                     <span className="text-sm font-medium text-md-onSurface dark:text-md-dark-onSurface mb-2 block">
                       Barcode eingeben
@@ -363,7 +415,7 @@ function ScanPageContent() {
                 />
 
                 {/* Example Barcodes */}
-                <div className="md-card p-4">
+                <div className="glass-card p-4">
                   <h3 className="text-xs font-medium text-md-onSurface-variant dark:text-md-dark-onSurface-variant mb-2">
                     Beispiel-Barcodes
                   </h3>

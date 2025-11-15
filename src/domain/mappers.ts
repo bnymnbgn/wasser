@@ -46,6 +46,7 @@ type PrismaScanResult = {
   userOverrides: unknown;
   waterSourceId: string | null;
   waterAnalysisId: string | null;
+  waterSource?: PrismaWaterSource | null;
 };
 
 /** Prisma WaterSource -> Domain WaterSource */
@@ -100,5 +101,12 @@ export function mapPrismaScanResult(scan: PrismaScanResult): ScanResult {
     userOverrides: (scan.userOverrides as any) ?? undefined,
     waterSourceId: scan.waterSourceId ?? undefined,
     waterAnalysisId: scan.waterAnalysisId ?? undefined,
+    productInfo: scan.waterSource
+      ? {
+          brand: scan.waterSource.brand,
+          productName: scan.waterSource.productName,
+          origin: scan.waterSource.origin,
+        }
+      : undefined,
   };
 }

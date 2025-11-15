@@ -34,29 +34,57 @@ const METRIC_LABELS: Record<keyof WaterAnalysisValues, string> = {
 };
 
 export function WaterScoreCard({ scanResult }: Props) {
-  const { score, metricScores, ocrParsedValues, profile, warnings } = scanResult;
-  const values = ocrParsedValues ?? {};
-  const insights = deriveWaterInsights(values);
+  const { score, metricScores, ocrParsedValues, profile, warnings, userOverrides, productInfo, barcode } = scanResult;
+  const mergedValues: Partial<WaterAnalysisValues> = {
+    ...(ocrParsedValues ?? {}),
+    ...(userOverrides ?? {}),
+  };
+  const insights = deriveWaterInsights(mergedValues);
   const activeProfileFit = insights.profileFit?.[profile];
 
   // Erklärungen für die Metriken berechnen
-  const scoring = ocrParsedValues
-    ? calculateScores(ocrParsedValues, profile)
+  const scoring = Object.keys(mergedValues).length
+    ? calculateScores(mergedValues, profile)
     : null;
 
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-900/80 p-5">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div>
-          <h2 className="text-lg font-semibold">Ergebnis</h2>
-          <p className="text-xs text-slate-300">
-            Profil: <span className="font-medium">{scanResult.profile}</span>
-          </p>
+      <div className="flex flex-col gap-3 mb-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Ergebnis</h2>
+            <p className="text-xs text-slate-300">
+              Profil: <span className="font-medium">{scanResult.profile}</span>
+            </p>
+          </div>
+
+          <div className={`rounded-full px-4 py-2 text-sm font-medium ${scoreToColor(score ?? 0)}`}>
+            Gesamt-Score: {score?.toFixed(0) ?? "–"} / 100 ({scoreLabel(score)})
+          </div>
         </div>
 
-        <div className={`rounded-full px-4 py-2 text-sm font-medium ${scoreToColor(score ?? 0)}`}>
-          Gesamt-Score: {score?.toFixed(0) ?? "–"} / 100 ({scoreLabel(score)})
-        </div>
+        {(productInfo || barcode) && (
+          <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm text-slate-200 space-y-1">
+            {productInfo && (
+              <>
+                <p className="font-semibold text-slate-100">
+                  {productInfo.brand ?? "Unbekannte Marke"}
+                  {productInfo.productName ? ` · ${productInfo.productName}` : ""}
+                </p>
+                {productInfo.origin && (
+                  <p className="text-xs text-slate-400">
+                    Herkunft: {productInfo.origin}
+                  </p>
+                )}
+              </>
+            )}
+            {barcode && (
+              <p className="text-xs text-slate-400">
+                Barcode: <span className="font-mono">{barcode}</span>
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {activeProfileFit && (
@@ -85,7 +113,7 @@ export function WaterScoreCard({ scanResult }: Props) {
           <dl className="space-y-2 text-xs text-slate-200">
             {Object.keys(METRIC_LABELS).map((key) => {
               const metric = key as keyof WaterAnalysisValues;
-              const value = values[metric];
+              const value = mergedValues[metric];
               if (value == null) return null;
               const unit = metric === "ph" ? "" : " mg/L";
               return (
@@ -98,7 +126,7 @@ export function WaterScoreCard({ scanResult }: Props) {
                 </div>
               );
             })}
-            {Object.values(values).every((v) => v == null) && (
+            {Object.values(mergedValues).every((v) => v == null) && (
               <p className="text-slate-400 text-xs">Keine Werte verfügbar.</p>
             )}
           </dl>

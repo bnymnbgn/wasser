@@ -9,15 +9,20 @@ export default async function HistoryPage() {
   const prismaScans = await prisma.scanResult.findMany({
     orderBy: { timestamp: "desc" },
     take: 50,
+    include: {
+      waterSource: true,
+    },
   });
 
   const scans: DomainScanResult[] = prismaScans.map(mapPrismaScanResult);
 
   return (
-    <main className="min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">
-      <div className="mx-auto max-w-2xl px-4 py-4 safe-area-top">
+    <main className="relative min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">
+      <div className="absolute inset-0 bg-surface-gradient" />
+      <div className="absolute inset-0 grid-overlay" />
+      <div className="relative mx-auto max-w-2xl px-4 py-4 safe-area-top pb-[calc(var(--bottom-nav-height)+32px)]">
         {/* Header */}
-        <header className="mb-6">
+        <header className="mb-6 glass-card p-5">
           <h1 className="text-2xl font-bold tracking-tight text-md-onSurface dark:text-md-dark-onSurface mb-1">
             Verlauf
           </h1>
