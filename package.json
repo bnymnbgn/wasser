@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:export": "next build && next export",
+    "build:capacitor": "cross-env CAPACITOR_BUILD=true next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
@@ -13,15 +13,14 @@
     "test:run": "vitest run",
     "seed:openfoodfacts": "node scripts/seed-openfoodfacts.js",
     "cap:add:android": "npx cap add android",
-    "cap:sync": "npm run build:export && npx cap sync",
-    "cap:sync:android": "npm run build:export && npx cap sync android",
+    "cap:sync": "npm run build:capacitor && npx cap sync",
+    "cap:sync:android": "npm run build:capacitor && npx cap sync android",
     "cap:open:android": "npx cap open android",
     "cap:run:android": "npm run cap:sync:android && npx cap run android",
     "cap:build:android": "npm run cap:sync:android && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
-    "@capacitor/cli": "^7.4.4",
     "@capacitor/core": "^7.4.4",
     "@capacitor/haptics": "^7.0.2",
     "@capacitor/splash-screen": "^7.0.3",
@@ -41,6 +40,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^20.17.6",
@@ -48,6 +48,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.20",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.16",
     "happy-dom": "^20.0.10",
