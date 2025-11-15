@@ -31,26 +31,40 @@ function normalizeUnit(value: number | null, rawUnit?: string): number | null {
 
 /**
  * Liest einen Nährwert aus verschiedenen möglichen Feldern
+ * Priorität: _serving (1L) > _100g (100ml, wird × 10)
+ *
+ * OpenFoodFacts speichert Mineralwerte oft in mg/100ml (_100g Feld).
+ * Für Wasser brauchen wir mg/L, daher × 10.
+ * _serving Werte sind meist bereits für 1L und müssen nicht konvertiert werden.
  */
 function readNutriment(nutriments: any, key: string): number | null {
   if (!nutriments) return null;
 
-  const candidates = [
-    nutriments[`${key}_value`],
-    nutriments[`${key}_serving`],
-    nutriments[key],
-    nutriments[`${key}_100g`],
-  ];
+  // Priorität 1: _serving (bei Wasser meist 1L = direkt mg/L)
+  const servingValue = toNumber(nutriments[`${key}_serving`]);
+  if (servingValue !== null) {
+    const servingUnit = nutriments[`${key}_serving_unit`];
+    return normalizeUnit(servingValue, servingUnit);
+  }
 
-  const value = candidates.map(toNumber).find((v) => v !== null);
-  if (value === undefined || value === null) return null;
+  // Priorität 2: _100g / _100ml (muss × 10 für mg/L)
+  const per100Value = toNumber(nutriments[`${key}_100g`] ?? nutriments[key]);
+  if (per100Value !== null) {
+    const unit = nutriments[`${key}_100g_unit`] ?? nutriments[`${key}_unit`];
+    const normalized = normalizeUnit(per100Value, unit);
+    // Wenn in mg/100ml, dann × 10 für mg/L
+    // (OpenFoodFacts nutzt _100g auch für Flüssigkeiten = 100ml)
+    return normalized !== null ? normalized * 10 : null;
+  }
 
-  const unit =
-    nutriments[`${key}_unit`] ??
-    nutriments[`${key}_serving_unit`] ??
-    nutriments[`${key}_100g_unit`];
+  // Priorität 3: _value (fallback)
+  const value = toNumber(nutriments[`${key}_value`]);
+  if (value !== null) {
+    const unit = nutriments[`${key}_unit`];
+    return normalizeUnit(value, unit);
+  }
 
-  return normalizeUnit(value, unit);
+  return null;
 }
 
 /**
@@ -67,6 +81,10 @@ export function mapOpenFoodFactsToWaterValues(
     magnesium: readNutriment(nutriments, "magnesium"),
     sodium: readNutriment(nutriments, "sodium"),
     potassium: readNutriment(nutriments, "potassium"),
+    chloride: readNutriment(nutriments, "chloride"),
+    sulfate:
+      readNutriment(nutriments, "sulfate") ??
+      readNutriment(nutriments, "sulphate"),
     bicarbonate:
       readNutriment(nutriments, "bicarbonates") ??
       readNutriment(nutriments, "hydrogencarbonate") ??

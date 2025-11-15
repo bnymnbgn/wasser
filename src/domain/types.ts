@@ -14,6 +14,8 @@ export interface WaterAnalysisValues {
   magnesium?: number;
   sodium?: number;
   potassium?: number;
+  chloride?: number;
+  sulfate?: number;
   bicarbonate?: number;
   nitrate?: number;
   totalDissolvedSolids?: number;

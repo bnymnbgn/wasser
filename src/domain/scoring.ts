@@ -324,6 +324,134 @@ function scoreTds(tds: number | undefined): MetricScore {
   };
 }
 
+function scorePotassium(k: number | undefined, profile: ProfileType): MetricScore {
+  if (k == null) {
+    return {
+      metric: "potassium",
+      score: 50,
+      weight: profile === "sport" ? 1.2 : 0.7,
+      explanation: "Kaliumgehalt unbekannt – neutral angenommen.",
+    };
+  }
+
+  // Kalium ist wichtig für Muskelfunktion und Nervensystem
+  // Höhere Werte sind meist positiv, besonders für Sportler
+  const score = bandScore(k, 1, 10); // 1–10 mg/L als guter Bereich
+
+  let explanation =
+    "Kalium ist wichtig für Muskelfunktion und Flüssigkeitshaushalt. Ein moderater bis höherer Gehalt ist meist positiv.";
+
+  if (score >= 80) {
+    explanation += " Dieses Wasser hat einen guten Kaliumgehalt.";
+  } else if (score >= 50) {
+    explanation += " Der Kaliumgehalt ist in Ordnung.";
+  } else {
+    explanation += " Der Kaliumgehalt ist eher niedrig.";
+  }
+
+  return {
+    metric: "potassium",
+    score,
+    weight: profile === "sport" ? 1.2 : 0.7,
+    explanation,
+  };
+}
+
+function scoreChloride(cl: number | undefined): MetricScore {
+  if (cl == null) {
+    return {
+      metric: "chloride",
+      score: 50,
+      weight: 0.6,
+      explanation: "Chloridgehalt unbekannt – neutral angenommen.",
+    };
+  }
+
+  // Chlorid ist natürlich in Wasser, moderate Werte sind gut
+  // Sehr hohe Werte können auf Verschmutzung hindeuten oder salzigen Geschmack verursachen
+  const score = stepBands(
+    cl,
+    [
+      { limit: 250, score: 100 }, // unter Trinkwasser-Grenzwert
+      { limit: 150, score: 90 },
+      { limit: 50, score: 80 },
+      { limit: 10, score: 70 },
+    ],
+    true // niedrig ist besser
+  );
+
+  let explanation =
+    "Chlorid ist natürlich in Mineralwasser enthalten. Moderate bis niedrige Werte sind vorteilhaft.";
+
+  if (score >= 80) {
+    explanation += " Der Chloridgehalt ist niedrig und unbedenklich.";
+  } else if (score >= 50) {
+    explanation += " Der Chloridgehalt ist im normalen Bereich.";
+  } else {
+    explanation += " Der Chloridgehalt ist erhöht – kann den Geschmack beeinflussen.";
+  }
+
+  return {
+    metric: "chloride",
+    score,
+    weight: 0.6,
+    explanation,
+  };
+}
+
+function scoreSulfate(so4: number | undefined, profile: ProfileType): MetricScore {
+  if (so4 == null) {
+    return {
+      metric: "sulfate",
+      score: 50,
+      weight: 0.7,
+      explanation: "Sulfatgehalt unbekannt – neutral angenommen.",
+    };
+  }
+
+  // Sulfat kann den Geschmack beeinflussen und bei hohen Dosen abführend wirken
+  // Moderate Werte (10-50 mg/L) sind oft positiv für die Verdauung
+  let score: number;
+  let explanation = "Sulfat kommt natürlich in Mineralwasser vor. ";
+
+  if (profile === "baby") {
+    // Für Babys: niedriger ist besser
+    score = stepBands(
+      so4,
+      [
+        { limit: 10, score: 100 },
+        { limit: 50, score: 60 },
+        { limit: 240, score: 30 }, // Grenzwert für Säuglingsnahrung
+      ],
+      true
+    );
+    explanation += "Für Babys sollte der Sulfatgehalt möglichst niedrig sein. ";
+  } else {
+    // Für andere: moderate Werte sind gut
+    score = bandScore(so4, 10, 50); // 10-50 mg/L als optimal
+    explanation += "Moderate Werte können die Verdauung unterstützen. ";
+  }
+
+  if (score >= 80) {
+    explanation += "Der Sulfatgehalt ist im optimalen Bereich.";
+  } else if (score >= 50) {
+    explanation += "Der Sulfatgehalt ist akzeptabel.";
+  } else {
+    if (so4 > 240) {
+      explanation += "Der Sulfatgehalt ist erhöht – kann abführend wirken.";
+    } else {
+      explanation += "Der Sulfatgehalt liegt außerhalb des optimalen Bereichs.";
+    }
+  }
+
+  return {
+    metric: "sulfate",
+    score,
+    weight: profile === "baby" ? 1.2 : 0.7,
+    explanation,
+  };
+}
+
 // ---------------------------
 // Hauptfunktion
 // ---------------------------
@@ -339,6 +467,9 @@ export function calculateScores(
   metrics.push(scoreNitrate(values.nitrate, profile));
   metrics.push(scoreCalcium(values.calcium, profile));
   metrics.push(scoreMagnesium(values.magnesium, profile));
+  metrics.push(scorePotassium(values.potassium, profile));
+  metrics.push(scoreChloride(values.chloride));
+  metrics.push(scoreSulfate(values.sulfate, profile));
   metrics.push(scoreBicarbonate(values.bicarbonate, profile));
   metrics.push(scoreTds(values.totalDissolvedSolids));
 

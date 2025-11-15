@@ -47,6 +47,8 @@ export const WaterAnalysisValuesSchema = z.object({
   magnesium: z.number().min(0).max(500).optional(),
   sodium: z.number().min(0).max(1000).optional(),
   potassium: z.number().min(0).max(500).optional(),
+  chloride: z.number().min(0).max(1000).optional(),
+  sulfate: z.number().min(0).max(1000).optional(),
   bicarbonate: z.number().min(0).max(3000).optional(),
   nitrate: z.number().min(0).max(200).optional(),
   totalDissolvedSolids: z.number().min(0).max(5000).optional(),

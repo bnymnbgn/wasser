@@ -12,10 +12,10 @@ describe('mapOpenFoodFactsToWaterValues', () => {
   it('should map basic nutriments correctly', () => {
     const nutriments = {
       ph: 7.5,
-      calcium: 80,
-      magnesium: 25,
-      sodium: 15,
-      nitrate: 5,
+      calcium_serving: 80, // Use _serving for per-liter values
+      magnesium_serving: 25,
+      sodium_serving: 15,
+      nitrate_serving: 5,
     };
 
     const result = mapOpenFoodFactsToWaterValues(nutriments);
@@ -29,63 +29,114 @@ describe('mapOpenFoodFactsToWaterValues', () => {
 
   it('should handle different field name variants', () => {
     const nutriments = {
-      bicarbonates: 250,
+      bicarbonates_100g: 25, // mg/100ml
     };
 
     const result = mapOpenFoodFactsToWaterValues(nutriments);
-    expect(result.bicarbonate).toBe(250);
+    expect(result.bicarbonate).toBe(250); // 25 × 10
   });
 
   it('should handle hydrogencarbonate as bicarbonate', () => {
     const nutriments = {
-      hydrogencarbonate: 300,
+      hydrogencarbonate_100g: 30, // mg/100ml
     };
 
     const result = mapOpenFoodFactsToWaterValues(nutriments);
-    expect(result.bicarbonate).toBe(300);
+    expect(result.bicarbonate).toBe(300); // 30 × 10
   });
 
   it('should handle residue_dry as totalDissolvedSolids', () => {
     const nutriments = {
-      residue_dry: 450,
+      residue_dry_100g: 45, // mg/100ml
     };
 
     const result = mapOpenFoodFactsToWaterValues(nutriments);
-    expect(result.totalDissolvedSolids).toBe(450);
+    expect(result.totalDissolvedSolids).toBe(450); // 45 × 10
   });
 
   it('should handle different unit suffixes', () => {
     const nutriments = {
-      calcium_value: 80,
-      magnesium_serving: 25,
-      sodium_100g: 15,
+      calcium_value: 80, // _value is lowest priority, assumed mg
+      magnesium_serving: 25, // _serving is already per liter
+      sodium_100g: 1.5, // _100g needs × 10 for mg/L
     };
 
     const result = mapOpenFoodFactsToWaterValues(nutriments);
 
+    expect(result.calcium).toBe(80); // _value without unit stays as-is (lowest priority)
+    expect(result.magnesium).toBe(25); // _serving stays as is
+    expect(result.sodium).toBe(15); // 1.5 × 10 = 15
+  });
+
+  it('should prioritize _serving over _100g values', () => {
+    const nutriments = {
+      calcium_serving: 67, // 1L serving (correct)
+      calcium_100g: 6.7, // 100ml value (would be × 10 = 67)
+    };
+
+    const result = mapOpenFoodFactsToWaterValues(nutriments);
+
+    // Should use _serving value directly (not _100g × 10)
+    expect(result.calcium).toBe(67);
+  });
+
+  it('should convert _100g values to mg/L (× 10)', () => {
+    const nutriments = {
+      calcium_100g: 6.7, // mg/100ml
+      magnesium_100g: 2.6, // mg/100ml
+      sodium_100g: 1.1, // mg/100ml
+    };
+
+    const result = mapOpenFoodFactsToWaterValues(nutriments);
+
+    // All should be multiplied by 10 for mg/L
+    expect(result.calcium).toBe(67); // 6.7 × 10
+    expect(result.magnesium).toBe(26); // 2.6 × 10
+    expect(result.sodium).toBe(11); // 1.1 × 10
+  });
+
+  it('should normalize µg to mg and then × 10 for _100g', () => {
+    const nutriments = {
+      calcium_100g: 80000,
+      calcium_100g_unit: 'µg',
+    };
+
+    const result = mapOpenFoodFactsToWaterValues(nutriments);
+    // 80000 µg = 80 mg, then × 10 for 100ml→1L = 800 mg/L
+    expect(result.calcium).toBe(800);
+  });
+
+  it('should handle chloride and sulfate', () => {
+    const nutriments = {
+      chloride_100g: 0.8, // mg/100ml
+      sulfate_100g: 2.9, // mg/100ml
+    };
+
+    const result = mapOpenFoodFactsToWaterValues(nutriments);
+
+    expect(result.chloride).toBe(8); // 0.8 × 10
+    expect(result.sulfate).toBe(29); // 2.9 × 10
+  });
+
+  it('should handle potassium', () => {
+    const nutriments = {
+      potassium_100g: 1.7, // mg/100ml
+    };
+
+    const result = mapOpenFoodFactsToWaterValues(nutriments);
+
+    expect(result.potassium).toBe(17); // 1.7 × 10
+  });
+
+  it('should normalize g to mg and apply _100g conversion', () => {
+    const nutriments = {
+      calcium_100g: 0.008, // 0.008 g/100ml
+      calcium_100g_unit: 'g',
+    };
+
+    const result = mapOpenFoodFactsToWaterValues(nutriments);
+    // 0.008 g = 8 mg, then × 10 for 100ml→1L = 80 mg/L
     expect(result.calcium).toBe(80);
-    expect(result.magnesium).toBe(25);
-    expect(result.sodium).toBe(15);
-  });
-
-  it('should normalize µg to mg', () => {
-    const nutriments = {
-      calcium: 80000,
-      calcium_unit: 'µg',
-    };
-
-    const result = mapOpenFoodFactsToWaterValues(nutriments);
-    expect(result.calcium).toBe(80); // 80000 µg = 80 mg
-  });
-
-  it('should normalize g to mg', () => {
-    const nutriments = {
-      calcium: 0.08,
-      calcium_unit: 'g',
-    };
-
-    const result = mapOpenFoodFactsToWaterValues(nutriments);
-    expect(result.calcium).toBe(80); // 0.08 g = 80 mg
   });
 
   it('should handle empty nutriments', () => {
