@@ -81,15 +81,22 @@ export function mapOpenFoodFactsToWaterValues(
     magnesium: readNutriment(nutriments, "magnesium"),
     sodium: readNutriment(nutriments, "sodium"),
     potassium: readNutriment(nutriments, "potassium"),
-    chloride: readNutriment(nutriments, "chloride"),
+    chloride:
+      readNutriment(nutriments, "chloride") ??
+      readNutriment(nutriments, "chlorure"), // Französisch
     sulfate:
+      readNutriment(nutriments, "sulfates") ?? // Plural!
       readNutriment(nutriments, "sulfate") ??
+      readNutriment(nutriments, "sulphates") ??
       readNutriment(nutriments, "sulphate"),
     bicarbonate:
       readNutriment(nutriments, "bicarbonates") ??
       readNutriment(nutriments, "hydrogencarbonate") ??
-      readNutriment(nutriments, "bicarbonate"),
-    nitrate: readNutriment(nutriments, "nitrate"),
+      readNutriment(nutriments, "bicarbonate") ??
+      readNutriment(nutriments, "hydrogen-carbonate"),
+    nitrate:
+      readNutriment(nutriments, "nitrate") ??
+      readNutriment(nutriments, "nitrates"), // Plural
     totalDissolvedSolids:
       readNutriment(nutriments, "residue_dry") ??
       readNutriment(nutriments, "dry_extract") ??
