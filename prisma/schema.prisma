@@ -19,6 +19,10 @@ model WaterSource {
   analyses    WaterAnalysis[]
   scans       ScanResult[]
   createdAt   DateTime        @default(now())
+
+  @@index([barcode])
+  @@index([brand, productName])
+  @@index([createdAt])
 }
 
 model WaterAnalysis {
@@ -38,6 +42,10 @@ model WaterAnalysis {
   nitrate                Float?
   totalDissolvedSolids   Float?
   createdAt              DateTime     @default(now())
+
+  @@index([waterSourceId, createdAt])
+  @@index([sourceType])
+  @@index([reliabilityScore])
 }
 
 model ScanResult {
@@ -56,4 +64,10 @@ model ScanResult {
 
   waterAnalysisId String?
   waterAnalysis   WaterAnalysis? @relation(fields: [waterAnalysisId], references: [id])
+
+  @@index([timestamp])
+  @@index([profile])
+  @@index([waterSourceId])
+  @@index([barcode])
+  @@index([score])
 }

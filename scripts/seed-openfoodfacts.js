@@ -6,7 +6,8 @@ const prisma = new PrismaClient();
 const BASE_URL =
   process.env.OFF_BASE_URL ?? "https://world.openfoodfacts.org/api/v2/search";
 const PAGE_SIZE = Number(process.env.OFF_PAGE_SIZE ?? 100);
-const MAX_PAGES = Number(process.env.OFF_MAX_PAGES ?? 3);
+const MAX_PAGES = Number(process.env.OFF_MAX_PAGES ?? 20); // Erhöht von 3 auf 20
+const COUNTRY_FILTER = process.env.OFF_COUNTRY ?? ""; // Optional: z.B. "germany"
 
 function toNumber(value) {
   if (value === undefined || value === null) return null;
@@ -82,6 +83,12 @@ function buildAnalysisInput(product) {
 async function fetchProducts(page) {
   const url = new URL(BASE_URL);
   url.searchParams.set("categories_tags_en", "waters");
+
+  // Optional: Länderspezifischer Filter
+  if (COUNTRY_FILTER) {
+    url.searchParams.set("countries_tags_en", COUNTRY_FILTER);
+  }
+
   url.searchParams.set("fields", [
     "code",
     "product_name",
@@ -134,33 +141,78 @@ async function main() {
     throw new Error("Global fetch is not available. Please use Node.js 18 or newer.");
   }
 
+  console.log("=== OpenFoodFacts Import Configuration ===");
+  console.log(`Base URL: ${BASE_URL}`);
+  console.log(`Page Size: ${PAGE_SIZE}`);
+  console.log(`Max Pages: ${MAX_PAGES}`);
+  console.log(`Country Filter: ${COUNTRY_FILTER || "None (worldwide)"}`);
+  console.log(`Max Products: ~${PAGE_SIZE * MAX_PAGES}`);
+  console.log("==========================================\n");
+
   let created = 0;
+  let updated = 0;
+  let skipped = 0;
   let processed = 0;
+  const skipReasons = {};
+
+  const startTime = Date.now();
+
   for (let page = 1; page <= MAX_PAGES; page += 1) {
-    console.log(`Fetching OpenFoodFacts page ${page}/${MAX_PAGES}...`);
+    console.log(`\n[Page ${page}/${MAX_PAGES}] Fetching products...`);
     const data = await fetchProducts(page);
     const products = data.products ?? [];
+
+    console.log(`[Page ${page}/${MAX_PAGES}] Received ${products.length} products`);
 
     for (const product of products) {
       processed += 1;
       try {
         const result = await processProduct(product);
-        if (result.created) created += 1;
+        if (result.created) {
+          created += 1;
+        } else if (result.skipped) {
+          skipped += 1;
+          skipReasons[result.skipped] = (skipReasons[result.skipped] || 0) + 1;
+        }
       } catch (error) {
+        skipped += 1;
         console.warn(
           `Failed to import barcode ${product?.code ?? "unknown"}: ${
             error.message ?? error
           }`
         );
       }
+
+      // Progress indicator every 50 products
+      if (processed % 50 === 0) {
+        console.log(
+          `Progress: ${processed} processed, ${created} imported, ${skipped} skipped`
+        );
+      }
     }
 
     if (!data.page_count || page >= data.page_count) {
+      console.log(`\n[Info] Reached last available page (${page}/${data.page_count || "?"})`);
       break;
     }
   }
 
-  console.log(`Imported ${created} water sources (${processed} products processed).`);
+  const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+  console.log("\n=== Import Complete ===");
+  console.log(`Duration: ${duration}s`);
+  console.log(`Processed: ${processed} products`);
+  console.log(`Imported: ${created} water sources`);
+  console.log(`Skipped: ${skipped} products`);
+
+  if (Object.keys(skipReasons).length > 0) {
+    console.log("\nSkip Reasons:");
+    for (const [reason, count] of Object.entries(skipReasons)) {
+      console.log(`  - ${reason}: ${count}`);
+    }
+  }
+
+  console.log("=======================\n");
 }
 
 main()

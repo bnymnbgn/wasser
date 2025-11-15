@@ -1,17 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { createWorker } from "tesseract.js";
+import { useRef, useState, useEffect } from "react";
+import { createWorker, type Worker } from "tesseract.js";
 
 interface ImageOCRScannerProps {
-  onTextExtracted: (text: string) => void;
+  onTextExtracted: (text: string, confidence?: number) => void;
 }
 
 export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [progress, setProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -19,25 +21,116 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
 
+  // Cache the Tesseract worker for reuse
+  const workerRef = useRef<Worker | null>(null);
+
+  // Initialize worker once on mount
+  useEffect(() => {
+    const initWorker = async () => {
+      try {
+        setIsInitializing(true);
+        const worker = await createWorker("deu+eng", 1, {
+          logger: (m) => {
+            if (m.status === "recognizing text") {
+              setProgress(Math.round(m.progress * 100));
+            }
+          },
+        });
+        workerRef.current = worker;
+        setIsInitializing(false);
+      } catch (err) {
+        console.error("Failed to initialize OCR worker:", err);
+        setError("OCR-Engine konnte nicht geladen werden. Bitte Seite neu laden.");
+        setIsInitializing(false);
+      }
+    };
+
+    initWorker();
+
+    // Cleanup on unmount
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, []);
+
+  /**
+   * Preprocesses an image for better OCR quality:
+   * - Converts to grayscale
+   * - Increases contrast
+   * - Optimizes resolution
+   */
+  async function preprocessImage(blob: Blob): Promise<Blob> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d")!;
+
+      img.onload = () => {
+        // Optimize size for OCR (target ~2000px width for good balance)
+        const targetWidth = 2000;
+        const scale = Math.min(1, targetWidth / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+
+        // Apply image enhancements
+        ctx.filter = "grayscale(100%) contrast(150%) brightness(110%)";
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(
+          (processedBlob) => {
+            resolve(processedBlob || blob);
+          },
+          "image/jpeg",
+          0.95
+        );
+      };
+
+      img.src = URL.createObjectURL(blob);
+    });
+  }
+
   async function processImage(imageSource: string | File | Blob) {
+    if (!workerRef.current) {
+      setError("OCR-Engine wird noch initialisiert. Bitte kurz warten...");
+      return;
+    }
+
     setIsProcessing(true);
     setProgress(0);
     setError(null);
+    setConfidence(null);
 
     try {
-      const worker = await createWorker("deu+eng", 1, {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            setProgress(Math.round(m.progress * 100));
-          }
-        },
-      });
+      // Preprocess image if it's a Blob/File
+      let processedSource = imageSource;
+      if (imageSource instanceof Blob || imageSource instanceof File) {
+        processedSource = await preprocessImage(imageSource);
+      }
 
-      const { data } = await worker.recognize(imageSource);
-      await worker.terminate();
+      const { data } = await workerRef.current.recognize(processedSource);
+
+      // Store confidence score
+      setConfidence(data.confidence);
 
       if (data.text.trim()) {
-        onTextExtracted(data.text);
+        // Check confidence and warn user if low
+        if (data.confidence < 60) {
+          setError(
+            `⚠️ Texterkennung unsicher (${Math.round(data.confidence)}% Genauigkeit). ` +
+            `Bitte versuche ein klareres Foto oder gebe die Werte manuell ein.`
+          );
+          // Still pass the text for manual correction
+          onTextExtracted(data.text, data.confidence);
+        } else if (data.confidence < 80) {
+          // Low confidence warning but usable
+          onTextExtracted(data.text, data.confidence);
+        } else {
+          // Good confidence
+          onTextExtracted(data.text, data.confidence);
+        }
       } else {
         setError("Kein Text erkannt. Bitte versuche ein klareres Foto.");
       }
@@ -81,7 +174,20 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
       }
     } catch (err: any) {
       console.error("Camera Error:", err);
-      setError(err?.message ?? "Kamera konnte nicht gestartet werden");
+      // Improved error messages
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        setError(
+          "📷 Kamerazugriff wurde verweigert. Bitte erlaube den Kamerazugriff in deinen Browser-Einstellungen."
+        );
+      } else if (err.name === "NotFoundError") {
+        setError("📷 Keine Kamera gefunden. Bitte verwende den Upload-Button.");
+      } else if (err.name === "NotReadableError") {
+        setError(
+          "📷 Kamera wird bereits verwendet. Bitte schließe andere Apps, die auf die Kamera zugreifen."
+        );
+      } else {
+        setError(`Kamera-Fehler: ${err.message}`);
+      }
     }
   }
 
@@ -138,12 +244,19 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
         </div>
       )}
 
+      {/* Loading State */}
+      {isInitializing && (
+        <div className="mb-3 rounded-md bg-blue-500/15 px-3 py-2 text-xs text-blue-200">
+          ⏳ OCR-Engine wird geladen...
+        </div>
+      )}
+
       {/* Buttons */}
       <div className="flex flex-wrap gap-2 mb-3">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={isProcessing || isCameraActive}
+          disabled={isProcessing || isCameraActive || isInitializing}
           className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-3 py-2 text-xs font-medium text-slate-50 hover:bg-slate-700 disabled:opacity-50"
         >
           📁 Foto hochladen
@@ -153,7 +266,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
           <button
             type="button"
             onClick={startCamera}
-            disabled={isProcessing}
+            disabled={isProcessing || isInitializing}
             className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-3 py-2 text-xs font-medium text-slate-50 hover:bg-slate-700 disabled:opacity-50"
           >
             📷 Kamera öffnen
@@ -163,7 +276,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
             <button
               type="button"
               onClick={capturePhoto}
-              disabled={isProcessing}
+              disabled={isProcessing || isInitializing}
               className="inline-flex items-center gap-2 rounded-md bg-emerald-500 px-3 py-2 text-xs font-medium text-black hover:bg-emerald-400 disabled:opacity-50"
             >
               📸 Foto aufnehmen
@@ -231,6 +344,22 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
               style={{ width: `${progress}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {/* Confidence Score Display */}
+      {confidence !== null && !isProcessing && (
+        <div
+          className={`rounded-md px-3 py-2 text-xs ${
+            confidence >= 80
+              ? "bg-emerald-500/15 text-emerald-200"
+              : confidence >= 60
+              ? "bg-amber-500/15 text-amber-200"
+              : "bg-rose-500/15 text-rose-200"
+          }`}
+        >
+          {confidence >= 80 ? "✓" : "⚠️"} OCR-Qualität: {Math.round(confidence)}%
+          {confidence < 80 && " – Bitte Werte überprüfen"}
         </div>
       )}
     </div>
