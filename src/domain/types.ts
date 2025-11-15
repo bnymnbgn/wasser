@@ -54,6 +54,7 @@ export interface ScanResult {
 
   score?: number;
   metricScores?: Record<string, number>;
+  warnings?: string[];
 
   ocrTextRaw?: string;
   ocrParsedValues?: Partial<WaterAnalysisValues>;

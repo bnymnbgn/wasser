@@ -1,14 +1,37 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import clsx from "clsx";
 import Link from "next/link";
 
-import type { ProfileType, ScanResult } from "@/src/domain/types";
+import type { ProfileType, ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import { WaterScoreCard } from "@/src/components/WaterScoreCard";
 import { BarcodeScanner } from "@/src/components/BarcodeScanner";
 import { ImageOCRScanner } from "@/src/components/ImageOCRScanner";
+import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
+
+const METRIC_FIELDS = [
+  { key: "ph", label: "pH-Wert" },
+  { key: "calcium", label: "Calcium", unit: "mg/L" },
+  { key: "magnesium", label: "Magnesium", unit: "mg/L" },
+  { key: "sodium", label: "Natrium", unit: "mg/L" },
+  { key: "potassium", label: "Kalium", unit: "mg/L" },
+  { key: "chloride", label: "Chlorid", unit: "mg/L" },
+  { key: "sulfate", label: "Sulfat", unit: "mg/L" },
+  { key: "nitrate", label: "Nitrat", unit: "mg/L" },
+  { key: "bicarbonate", label: "Hydrogencarbonat", unit: "mg/L" },
+  { key: "totalDissolvedSolids", label: "Gesamtmineralisation", unit: "mg/L" },
+] as const;
+
+type MetricKey = (typeof METRIC_FIELDS)[number]["key"];
+type ValueInputState = Record<MetricKey, string>;
+
+const createEmptyValueState = (): ValueInputState =>
+  METRIC_FIELDS.reduce((acc, field) => {
+    acc[field.key] = "";
+    return acc;
+  }, {} as ValueInputState);
 
 type Mode = "ocr" | "barcode";
 
@@ -37,17 +60,57 @@ function ScanPageContent() {
   const [ocrText, setOcrText] = useState("");
   const [barcode, setBarcode] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [resultWarnings, setResultWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [valueInputs, setValueInputs] = useState<ValueInputState>(() =>
+    createEmptyValueState()
+  );
+
+  const { numericValues, invalidFields } = useMemo(() => {
+    const values: Partial<WaterAnalysisValues> = {};
+    const invalid: Partial<Record<MetricKey, boolean>> = {};
+
+    for (const field of METRIC_FIELDS) {
+      const raw = valueInputs[field.key];
+      if (!raw.trim()) continue;
+      const normalized = raw.replace(",", ".");
+      const parsed = Number(normalized);
+      if (Number.isFinite(parsed)) {
+        values[field.key] = parsed;
+      } else {
+        invalid[field.key] = true;
+      }
+    }
+
+    return { numericValues: values, invalidFields: invalid };
+  }, [valueInputs]);
+
+  const valueWarnings = useMemo(() => {
+    const map: Partial<Record<MetricKey, string>> = {};
+    Object.entries(numericValues).forEach(([metric, value]) => {
+      const result = validateValue(metric as MetricKey, value as number);
+      if (!result.valid && result.warning) {
+        map[metric as MetricKey] = result.warning;
+      }
+    });
+    return map;
+  }, [numericValues]);
+
+  const hasAnyValues = Object.keys(numericValues).length > 0;
+  const hasInvalidInputs = Object.keys(invalidFields).length > 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setResult(null);
+    setResultWarnings([]);
 
     try {
       const endpoint = mode === "ocr" ? "/api/scan/ocr" : "/api/scan/barcode";
       const body =
-        mode === "ocr" ? { text: ocrText, profile } : { barcode, profile };
+        mode === "ocr"
+          ? { text: ocrText, profile, values: numericValues }
+          : { barcode, profile };
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -64,6 +127,9 @@ function ScanPageContent() {
       }
 
       setResult(data as ScanResult);
+      if (Array.isArray(data.warnings)) {
+        setResultWarnings(data.warnings);
+      }
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -73,7 +139,37 @@ function ScanPageContent() {
 
   const formDisabled =
     loading ||
-    (mode === "ocr" ? !ocrText.trim() : !barcode.trim());
+    (mode === "ocr" ? !hasAnyValues || hasInvalidInputs : !barcode.trim());
+
+  function handleModeChange(nextMode: Mode) {
+    setMode(nextMode);
+    setResult(null);
+    setResultWarnings([]);
+    if (nextMode === "barcode") {
+      setValueInputs(createEmptyValueState());
+    }
+  }
+
+  function applyTextParsing(text: string) {
+    if (!text.trim()) {
+      setValueInputs(createEmptyValueState());
+      return;
+    }
+    const parsed = parseTextToAnalysis(text);
+    const nextValues = createEmptyValueState();
+    METRIC_FIELDS.forEach((field) => {
+      const maybe = parsed[field.key];
+      nextValues[field.key] = maybe !== undefined ? String(maybe) : "";
+    });
+    setValueInputs(nextValues);
+  }
+
+  function handleTextExtracted(text: string) {
+    setOcrText(text);
+    setResult(null);
+    setResultWarnings([]);
+    applyTextParsing(text);
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
@@ -95,7 +191,7 @@ function ScanPageContent() {
         <div className="inline-flex rounded-lg border border-slate-700 bg-slate-900 p-1 mb-6">
           <button
             type="button"
-            onClick={() => setMode("ocr")}
+            onClick={() => handleModeChange("ocr")}
             className={clsx(
               "px-3 py-1 text-xs font-medium rounded-md",
               mode === "ocr"
@@ -107,7 +203,7 @@ function ScanPageContent() {
           </button>
           <button
             type="button"
-            onClick={() => setMode("barcode")}
+            onClick={() => handleModeChange("barcode")}
             className={clsx(
               "px-3 py-1 text-xs font-medium rounded-md",
               mode === "barcode"
@@ -137,28 +233,122 @@ function ScanPageContent() {
             <>
               {/* OCR Scanner */}
               <ImageOCRScanner
-                onTextExtracted={(text) => {
-                  setOcrText(text);
-                  setResult(null);
-                }}
+                onTextExtracted={handleTextExtracted}
               />
 
               <div className="pt-4 border-t border-slate-800">
-                <label className="block">
-                  <span className="text-sm font-medium">
-                    Erkannter Etikett-Text (bearbeitbar)
-                  </span>
-                  <textarea
-                    className="mt-1 block w-full rounded-md border border-slate-700 bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:ring-emerald-500"
-                    rows={6}
-                    value={ocrText}
-                    onChange={(e) => setOcrText(e.target.value)}
-                    placeholder="pH: 7.2, Kalzium: 100 mg/l, Magnesium: 30 mg/l, Natrium: 10 mg/l..."
-                  />
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    Sobald ein Foto ausgewertet wurde, erscheint der erkannte Text hier. Du kannst ihn vor dem Absenden noch korrigieren oder komplett manuell eingeben.
-                  </p>
-                </label>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Erkannte Werte (bearbeitbar)</p>
+                    <p className="text-xs text-slate-400">
+                      Alle Angaben in mg/L, pH ist dimensionslos. Ergänze oder korrigiere die Zahlen nach Bedarf.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValueInputs(createEmptyValueState());
+                        setResult(null);
+                        setResultWarnings([]);
+                      }}
+                      className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
+                    >
+                      Felder leeren
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        applyTextParsing(ocrText);
+                        setResult(null);
+                        setResultWarnings([]);
+                      }}
+                      disabled={!ocrText.trim()}
+                      className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-40"
+                    >
+                      Text neu parsen
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {METRIC_FIELDS.map((field) => {
+                    const warning = valueWarnings[field.key];
+                    const invalid = invalidFields[field.key];
+                    return (
+                      <label
+                        key={field.key}
+                        className="block rounded-lg border border-slate-800 bg-slate-900/50 p-3"
+                      >
+                        <span className="text-xs font-medium text-slate-200 flex items-center justify-between">
+                          {field.label}
+                          {field.unit ? (
+                            <span className="text-[10px] text-slate-400">{field.unit}</span>
+                          ) : null}
+                        </span>
+                        <input
+                          className={clsx(
+                            "mt-1 block w-full rounded-md border bg-slate-950 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500",
+                            invalid
+                              ? "border-rose-500 text-rose-100"
+                              : warning
+                              ? "border-amber-500"
+                              : "border-slate-800"
+                          )}
+                          value={valueInputs[field.key]}
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            setValueInputs((prev) => ({
+                              ...prev,
+                              [field.key]: nextValue,
+                            }));
+                            setResult(null);
+                            setResultWarnings([]);
+                          }}
+                          placeholder={field.unit ? "z. B. 80" : "z. B. 7.3"}
+                          inputMode="decimal"
+                        />
+                        {invalid && (
+                          <p className="mt-1 text-[11px] text-rose-400">
+                            Bitte eine gültige Zahl eingeben.
+                          </p>
+                        )}
+                        {!invalid && warning && (
+                          <p className="mt-1 text-[11px] text-amber-400">{warning}</p>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {ocrText && (
+                  <details className="mt-4 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+                    <summary className="cursor-pointer text-xs font-medium text-slate-200">
+                      Erkannter Text anzeigen
+                    </summary>
+                    <div className="mt-3 space-y-2">
+                      <textarea
+                        className="block w-full rounded-md border border-slate-800 bg-slate-950 p-3 text-xs focus:border-emerald-500 focus:ring-emerald-500"
+                        rows={5}
+                        value={ocrText}
+                        onChange={(e) => setOcrText(e.target.value)}
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            applyTextParsing(ocrText);
+                            setResult(null);
+                            setResultWarnings([]);
+                          }}
+                          className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
+                        >
+                          Werte aus Text übernehmen
+                        </button>
+                      </div>
+                    </div>
+                  </details>
+                )}
               </div>
             </>
           ) : (
@@ -217,8 +407,18 @@ function ScanPageContent() {
         )}
 
         {result && (
-          <section className="mt-6">
+          <section className="mt-6 space-y-4">
             <WaterScoreCard scanResult={result} />
+            {resultWarnings.length > 0 && (
+              <div className="rounded-lg border border-amber-600/40 bg-amber-500/5 p-4">
+                <h3 className="text-sm font-semibold text-amber-300">Hinweise zur Eingabe</h3>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-200">
+                  {resultWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         )}
       </div>

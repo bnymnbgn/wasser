@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTextToAnalysis, validateValue } from '../app/api/scan/ocr/route';
+import { parseTextToAnalysis, validateValue } from '../src/lib/ocrParsing';
 
 describe('parseTextToAnalysis', () => {
   describe('German labels', () => {
