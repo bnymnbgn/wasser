@@ -2,14 +2,15 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
-import Link from "next/link";
 
 import type { ProfileType, ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import { WaterScoreCard } from "@/src/components/WaterScoreCard";
 import { BarcodeScanner } from "@/src/components/BarcodeScanner";
 import { ImageOCRScanner } from "@/src/components/ImageOCRScanner";
 import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
+import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/capacitor";
 
 const METRIC_FIELDS = [
   { key: "ph", label: "pH-Wert" },
@@ -39,8 +40,10 @@ export default function ScanPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center">
-          <div className="text-sm text-slate-300">Scanner wird geladen…</div>
+        <main className="min-h-screen bg-md-background dark:bg-md-dark-background flex items-center justify-center">
+          <div className="text-sm text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
+            Scanner wird geladen…
+          </div>
         </main>
       }
     >
@@ -61,6 +64,7 @@ function ScanPageContent() {
   const [barcode, setBarcode] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const [valueInputs, setValueInputs] = useState<ValueInputState>(() =>
     createEmptyValueState()
   );
@@ -120,14 +124,18 @@ function ScanPageContent() {
       setLoading(false);
 
       if (!res.ok) {
+        await hapticError();
         alert(data.error ?? "Fehler beim Scannen");
         return;
       }
 
+      await hapticSuccess();
       setResult(data as ScanResult);
+      setShowResults(true);
     } catch (err) {
       console.error(err);
       setLoading(false);
+      await hapticError();
       alert("Unerwarteter Fehler bei der Analyse");
     }
   }
@@ -136,9 +144,11 @@ function ScanPageContent() {
     loading ||
     (mode === "ocr" ? !hasAnyValues || hasInvalidInputs : !barcode.trim());
 
-  function handleModeChange(nextMode: Mode) {
+  async function handleModeChange(nextMode: Mode) {
+    await hapticLight();
     setMode(nextMode);
     setResult(null);
+    setShowResults(false);
     if (nextMode === "barcode") {
       setValueInputs(createEmptyValueState());
     }
@@ -161,245 +171,286 @@ function ScanPageContent() {
   function handleTextExtracted(text: string) {
     setOcrText(text);
     setResult(null);
+    setShowResults(false);
     applyTextParsing(text);
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto max-w-3xl px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold mb-2">Scan & Analyse</h1>
-          <p className="text-sm text-slate-300 mb-4">
-            Fotografiere das Etikett oder scanne den Barcode für eine automatische Analyse.
+    <main className="min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">
+      <div className="mx-auto max-w-2xl px-4 py-4 safe-area-top">
+        {/* Header */}
+        <motion.header
+          className="mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h1 className="text-2xl font-bold tracking-tight text-md-onSurface dark:text-md-dark-onSurface mb-1">
+            Wasser scannen
+          </h1>
+          <p className="text-sm text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
+            Profil: <span className="font-medium">{profile}</span>
           </p>
-          <Link
-            href="/"
-            className="inline-flex items-center rounded-full border border-slate-700 px-3 py-1 text-xs hover:border-slate-500 hover:bg-slate-900"
-          >
-            ← Zur Startseite
-          </Link>
-        </div>
+        </motion.header>
 
-        {/* Mode-Toggle */}
-        <div className="inline-flex rounded-lg border border-slate-700 bg-slate-900 p-1 mb-6">
-          <button
-            type="button"
-            onClick={() => handleModeChange("ocr")}
-            className={clsx(
-              "px-3 py-1 text-xs font-medium rounded-md",
-              mode === "ocr"
-                ? "bg-slate-800 text-slate-50"
-                : "text-slate-300 hover:text-slate-50"
-            )}
-          >
-            📋 Etikett (OCR)
-          </button>
-          <button
-            type="button"
-            onClick={() => handleModeChange("barcode")}
-            className={clsx(
-              "px-3 py-1 text-xs font-medium rounded-md",
-              mode === "barcode"
-                ? "bg-slate-800 text-slate-50"
-                : "text-slate-300 hover:text-slate-50"
-            )}
-          >
-            🔲 Barcode
-          </button>
-        </div>
-
-        {/* Profil-Hinweis */}
-        <div className="mb-6 text-xs text-slate-400">
-          Aktives Profil: <span className="font-medium">{profile}</span>
-          {" • "}
-          <Link
-            href={{ pathname: "/", query: { profile } }}
-            className="text-emerald-400 hover:text-emerald-300"
-          >
-            Profil ändern
-          </Link>
-        </div>
-
-        {/* Formular */}
-        <form onSubmit={handleSubmit} className="space-y-4 mb-8">
-          {mode === "ocr" ? (
-            <>
-              {/* OCR Scanner */}
-              <ImageOCRScanner
-                onTextExtracted={handleTextExtracted}
-              />
-
-              <div className="pt-4 border-t border-slate-800">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Erkannte Werte (bearbeitbar)</p>
-                    <p className="text-xs text-slate-400">
-                      Alle Angaben in mg/L, pH ist dimensionslos. Ergänze oder korrigiere die Zahlen nach Bedarf.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setValueInputs(createEmptyValueState());
-                        setResult(null);
-                      }}
-                      className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
-                    >
-                      Felder leeren
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        applyTextParsing(ocrText);
-                        setResult(null);
-                      }}
-                      disabled={!ocrText.trim()}
-                      className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-40"
-                    >
-                      Text neu parsen
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  {METRIC_FIELDS.map((field) => {
-                    const warning = valueWarnings[field.key];
-                    const invalid = invalidFields[field.key];
-                    return (
-                      <label
-                        key={field.key}
-                        className="block rounded-lg border border-slate-800 bg-slate-900/50 p-3"
-                      >
-                        <span className="text-xs font-medium text-slate-200 flex items-center justify-between">
-                          {field.label}
-                          {field.unit ? (
-                            <span className="text-[10px] text-slate-400">{field.unit}</span>
-                          ) : null}
-                        </span>
-                        <input
-                          className={clsx(
-                            "mt-1 block w-full rounded-md border bg-slate-950 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500",
-                            invalid
-                              ? "border-rose-500 text-rose-100"
-                              : warning
-                              ? "border-amber-500"
-                              : "border-slate-800"
-                          )}
-                          value={valueInputs[field.key]}
-                          onChange={(e) => {
-                            const nextValue = e.target.value;
-                            setValueInputs((prev) => ({
-                              ...prev,
-                              [field.key]: nextValue,
-                            }));
-                            setResult(null);
-                          }}
-                          placeholder={field.unit ? "z. B. 80" : "z. B. 7.3"}
-                          inputMode="decimal"
-                        />
-                        {invalid && (
-                          <p className="mt-1 text-[11px] text-rose-400">
-                            Bitte eine gültige Zahl eingeben.
-                          </p>
-                        )}
-                        {!invalid && warning && (
-                          <p className="mt-1 text-[11px] text-amber-400">{warning}</p>
-                        )}
-                      </label>
-                    );
-                  })}
-                </div>
-
-                {ocrText && (
-                  <details className="mt-4 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
-                    <summary className="cursor-pointer text-xs font-medium text-slate-200">
-                      Erkannter Text anzeigen
-                    </summary>
-                    <div className="mt-3 space-y-2">
-                      <textarea
-                        className="block w-full rounded-md border border-slate-800 bg-slate-950 p-3 text-xs focus:border-emerald-500 focus:ring-emerald-500"
-                        rows={5}
-                        value={ocrText}
-                        onChange={(e) => setOcrText(e.target.value)}
-                      />
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            applyTextParsing(ocrText);
-                            setResult(null);
-                          }}
-                          className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
-                        >
-                          Werte aus Text übernehmen
-                        </button>
-                      </div>
-                    </div>
-                  </details>
-                )}
+        {/* Mode Tabs */}
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex gap-2 p-1 bg-md-surface-container dark:bg-md-dark-surface-container rounded-md-lg">
+            <button
+              type="button"
+              onClick={() => handleModeChange("ocr")}
+              className={clsx(
+                "flex-1 py-2.5 px-4 rounded-md-md text-sm font-medium transition-all touch-manipulation",
+                mode === "ocr"
+                  ? "bg-md-primary dark:bg-md-dark-primary text-white shadow-elevation-2"
+                  : "text-md-onSurface-variant dark:text-md-dark-onSurface-variant"
+              )}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Etikett
               </div>
-            </>
-          ) : (
-            <>
-              <label className="block max-w-sm">
-                <span className="text-sm font-medium">Barcode (EAN/GTIN)</span>
-                <input
-                  className="mt-1 block w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500"
-                  value={barcode}
-                  onChange={(e) => setBarcode(e.target.value)}
-                  placeholder="z. B. 1234567890123"
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange("barcode")}
+              className={clsx(
+                "flex-1 py-2.5 px-4 rounded-md-md text-sm font-medium transition-all touch-manipulation",
+                mode === "barcode"
+                  ? "bg-md-primary dark:bg-md-dark-primary text-white shadow-elevation-2"
+                  : "text-md-onSurface-variant dark:text-md-dark-onSurface-variant"
+              )}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+                Barcode
+              </div>
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Content */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <AnimatePresence mode="wait">
+            {mode === "ocr" ? (
+              <motion.div
+                key="ocr"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-4"
+              >
+                {/* OCR Scanner */}
+                <ImageOCRScanner onTextExtracted={handleTextExtracted} />
+
+                {/* Values Grid */}
+                {hasAnyValues && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="md-card p-4"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-md-onSurface dark:text-md-dark-onSurface">
+                        Erkannte Werte
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await hapticLight();
+                          setValueInputs(createEmptyValueState());
+                          setResult(null);
+                        }}
+                        className="text-xs text-md-primary dark:text-md-dark-primary font-medium touch-manipulation"
+                      >
+                        Leeren
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {METRIC_FIELDS.map((field) => {
+                        const value = valueInputs[field.key];
+                        if (!value) return null;
+
+                        const warning = valueWarnings[field.key];
+                        const invalid = invalidFields[field.key];
+
+                        return (
+                          <div
+                            key={field.key}
+                            className={clsx(
+                              "p-2 rounded-md-md border",
+                              invalid
+                                ? "border-md-error dark:border-md-dark-error bg-md-error-container/10 dark:bg-md-dark-error-container/10"
+                                : warning
+                                ? "border-md-warning dark:border-md-dark-warning bg-md-warning-container/10 dark:bg-md-dark-warning-container/10"
+                                : "border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow"
+                            )}
+                          >
+                            <label className="block">
+                              <span className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant uppercase tracking-wide">
+                                {field.label}
+                              </span>
+                              <input
+                                className={clsx(
+                                  "mt-0.5 block w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0",
+                                  invalid
+                                    ? "text-md-error dark:text-md-dark-error"
+                                    : "text-md-onSurface dark:text-md-dark-onSurface"
+                                )}
+                                value={value}
+                                onChange={(e) => {
+                                  setValueInputs((prev) => ({
+                                    ...prev,
+                                    [field.key]: e.target.value,
+                                  }));
+                                  setResult(null);
+                                }}
+                                placeholder="0"
+                                inputMode="decimal"
+                              />
+                              {field.unit && (
+                                <span className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
+                                  {field.unit}
+                                </span>
+                              )}
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="barcode"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                {/* Manual Barcode Input */}
+                <div className="md-card p-4">
+                  <label className="block">
+                    <span className="text-sm font-medium text-md-onSurface dark:text-md-dark-onSurface mb-2 block">
+                      Barcode eingeben
+                    </span>
+                    <input
+                      className="block w-full bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow border border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh rounded-md-md px-4 py-3 text-base focus:border-md-primary dark:focus:border-md-dark-primary focus:ring-2 focus:ring-md-primary/20 dark:focus:ring-md-dark-primary/20"
+                      value={barcode}
+                      onChange={(e) => setBarcode(e.target.value)}
+                      placeholder="z. B. 4008501011009"
+                      inputMode="numeric"
+                    />
+                  </label>
+                </div>
+
+                {/* Barcode Scanner */}
+                <BarcodeScanner
+                  onDetected={async (code) => {
+                    await hapticSuccess();
+                    setBarcode(code);
+                    setResult(null);
+                  }}
                 />
-                <p className="mt-1 text-[11px] text-slate-400">
-                  Du kannst den Barcode manuell eingeben oder den Webcam-Scanner
-                  unten verwenden.
-                </p>
-              </label>
 
-              <BarcodeScanner
-                onDetected={(code) => {
-                  setBarcode(code);
-                  setResult(null);
-                }}
-              />
-            </>
-          )}
+                {/* Example Barcodes */}
+                <div className="md-card p-4">
+                  <h3 className="text-xs font-medium text-md-onSurface-variant dark:text-md-dark-onSurface-variant mb-2">
+                    Beispiel-Barcodes
+                  </h3>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await hapticLight();
+                        setBarcode("4008501011009");
+                      }}
+                      className="w-full text-left p-2 rounded-md-md bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow hover:bg-md-surface-containerHigh dark:hover:bg-md-dark-surface-containerHigh transition touch-manipulation"
+                    >
+                      <code className="text-xs font-mono text-md-primary dark:text-md-dark-primary">
+                        4008501011009
+                      </code>
+                      <p className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant mt-0.5">
+                        Gerolsteiner Naturell
+                      </p>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <button
+          {/* Submit Button */}
+          <motion.button
             type="submit"
             disabled={formDisabled}
-            className="inline-flex items-center rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-black hover:bg-emerald-400 disabled:opacity-50"
+            className="w-full btn-touch bg-md-primary dark:bg-md-dark-primary text-white font-semibold rounded-md-lg shadow-elevation-2 disabled:opacity-50 disabled:shadow-none"
+            whileTap={{ scale: formDisabled ? 1 : 0.98 }}
+            onClick={() => !formDisabled && hapticMedium()}
           >
-            {loading
-              ? "Wird analysiert..."
-              : mode === "ocr"
-              ? "Etikett analysieren"
-              : "Barcode analysieren"}
-          </button>
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Analysiere...
+              </div>
+            ) : (
+              "Wasser analysieren"
+            )}
+          </motion.button>
         </form>
 
-        {/* Beispiel-Barcodes */}
-        {mode === "barcode" && (
-          <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4 mb-6">
-            <h3 className="text-xs font-medium text-slate-300 mb-2">Beispiel-Barcodes (MVP)</h3>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs">
-                <code className="bg-slate-800 px-2 py-1 rounded">1234567890123</code>
-                <span className="text-slate-400">Beispielquelle Sprudel Classic</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <code className="bg-slate-800 px-2 py-1 rounded">4008501011009</code>
-                <span className="text-slate-400">Gerolsteiner Naturell</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {result && (
-          <section className="mt-6 space-y-4">
-            <WaterScoreCard scanResult={result} />
-          </section>
-        )}
+        {/* Results Bottom Sheet */}
+        <AnimatePresence>
+          {showResults && result && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40 flex items-end"
+              onClick={() => setShowResults(false)}
+            >
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="bottom-sheet w-full overflow-y-auto custom-scrollbar pb-safe-bottom"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="sticky top-0 bg-md-surface dark:bg-md-dark-surface p-4 border-b border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-md-onSurface dark:text-md-dark-onSurface">
+                      Analyse-Ergebnis
+                    </h2>
+                    <button
+                      onClick={() => setShowResults(false)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-md-surface-containerHigh dark:hover:bg-md-dark-surface-containerHigh"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <WaterScoreCard scanResult={result} />
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );

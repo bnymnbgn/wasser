@@ -2,6 +2,183 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Root CSS Variables for Material Design 3 */
+:root {
+  /* Light theme colors */
+  --md-primary: #006494;
+  --md-primary-light: #4A9FD4;
+  --md-primary-container: #C2E7FF;
+  --md-on-primary: #FFFFFF;
+  --md-on-primary-container: #001E2E;
+
+  --md-secondary: #10B981;
+  --md-secondary-container: #D1FAE5;
+  --md-on-secondary: #FFFFFF;
+  --md-on-secondary-container: #022C22;
+
+  --md-surface: #F8FAFC;
+  --md-surface-container: #EFF6FF;
+  --md-on-surface: #1E293B;
+  --md-on-surface-variant: #475569;
+
+  --md-background: #FFFFFF;
+  --md-on-background: #1E293B;
+
+  --md-error: #EF4444;
+  --md-error-container: #FEE2E2;
+  --md-on-error: #FFFFFF;
+
+  /* Safe area insets */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+
+  /* App chrome heights */
+  --bottom-nav-height: 64px;
+  --top-bar-height: 56px;
+}
+
+/* Dark theme colors */
+.dark {
+  --md-primary: #80CAFF;
+  --md-primary-container: #004A77;
+  --md-on-primary: #003551;
+  --md-on-primary-container: #C2E7FF;
+
+  --md-secondary: #6EE7B7;
+  --md-secondary-container: #047857;
+  --md-on-secondary: #065F46;
+  --md-on-secondary-container: #D1FAE5;
+
+  --md-surface: #0F172A;
+  --md-surface-container: #1E293B;
+  --md-on-surface: #E2E8F0;
+  --md-on-surface-variant: #94A3B8;
+
+  --md-background: #0F172A;
+  --md-on-background: #E2E8F0;
+
+  --md-error: #F87171;
+  --md-error-container: #7F1D1D;
+  --md-on-error: #450A0A;
+}
+
+/* Base styles */
 html, body {
-  @apply bg-slate-950 text-slate-50;
+  @apply bg-md-background text-md-onBackground dark:bg-md-dark-background dark:text-md-dark-onBackground;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+}
+
+/* Mobile optimizations */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent pull-to-refresh on desktop */
+@media (min-width: 768px) {
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* Safe area handling */
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: var(--safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: var(--safe-area-inset-right);
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Material Design elevation */
+  .elevation-1 {
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  }
+
+  .elevation-2 {
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  .elevation-3 {
+    box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-md-surface dark:bg-md-dark-surface;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-md-primary/30 dark:bg-md-dark-primary/30 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-md-primary/50 dark:bg-md-dark-primary/50;
+  }
+}
+
+/* Component layer for reusable patterns */
+@layer components {
+  /* FAB (Floating Action Button) */
+  .fab {
+    @apply fixed z-50 w-14 h-14 rounded-full shadow-elevation-3 flex items-center justify-center;
+    @apply bg-md-secondary text-md-onSecondary dark:bg-md-dark-secondary dark:text-md-dark-onSecondary;
+    @apply transition-transform active:scale-95;
+    bottom: calc(var(--bottom-nav-height) + 16px);
+    right: 16px;
+  }
+
+  /* Bottom sheet */
+  .bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 z-50 rounded-t-md-xl;
+    @apply bg-md-surface dark:bg-md-dark-surface;
+    @apply shadow-elevation-5;
+    max-height: 90vh;
+  }
+
+  /* Card with Material Design elevation */
+  .md-card {
+    @apply rounded-md-lg bg-md-surface-container dark:bg-md-dark-surface-container;
+    @apply border border-md-surface-containerHigh/20 dark:border-md-dark-surface-containerHigh/20;
+    @apply shadow-elevation-1;
+  }
+
+  /* Touch-friendly button */
+  .btn-touch {
+    @apply min-h-touch min-w-touch flex items-center justify-center;
+    @apply rounded-md-md transition-all active:scale-95;
+    @apply touch-manipulation no-tap-highlight;
+  }
+
+  /* Ripple effect container */
+  .ripple-container {
+    @apply relative overflow-hidden;
+  }
 }
