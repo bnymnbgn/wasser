@@ -2,8 +2,16 @@ import withPWA from 'next-pwa';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Static export for Capacitor (comment out for dev with API routes)
+  output: process.env.CAPACITOR_BUILD === 'true' ? 'export' : undefined,
+
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
+  },
+
+  // Images config for static export
+  images: {
+    unoptimized: process.env.CAPACITOR_BUILD === 'true',
   },
 
   // Security Headers
