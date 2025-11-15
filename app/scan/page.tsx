@@ -60,7 +60,6 @@ function ScanPageContent() {
   const [ocrText, setOcrText] = useState("");
   const [barcode, setBarcode] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
-  const [resultWarnings, setResultWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [valueInputs, setValueInputs] = useState<ValueInputState>(() =>
     createEmptyValueState()
@@ -103,7 +102,6 @@ function ScanPageContent() {
     e.preventDefault();
     setLoading(true);
     setResult(null);
-    setResultWarnings([]);
 
     try {
       const endpoint = mode === "ocr" ? "/api/scan/ocr" : "/api/scan/barcode";
@@ -127,9 +125,6 @@ function ScanPageContent() {
       }
 
       setResult(data as ScanResult);
-      if (Array.isArray(data.warnings)) {
-        setResultWarnings(data.warnings);
-      }
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -144,7 +139,6 @@ function ScanPageContent() {
   function handleModeChange(nextMode: Mode) {
     setMode(nextMode);
     setResult(null);
-    setResultWarnings([]);
     if (nextMode === "barcode") {
       setValueInputs(createEmptyValueState());
     }
@@ -167,7 +161,6 @@ function ScanPageContent() {
   function handleTextExtracted(text: string) {
     setOcrText(text);
     setResult(null);
-    setResultWarnings([]);
     applyTextParsing(text);
   }
 
@@ -250,7 +243,6 @@ function ScanPageContent() {
                       onClick={() => {
                         setValueInputs(createEmptyValueState());
                         setResult(null);
-                        setResultWarnings([]);
                       }}
                       className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
                     >
@@ -261,7 +253,6 @@ function ScanPageContent() {
                       onClick={() => {
                         applyTextParsing(ocrText);
                         setResult(null);
-                        setResultWarnings([]);
                       }}
                       disabled={!ocrText.trim()}
                       className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-40"
@@ -303,7 +294,6 @@ function ScanPageContent() {
                               [field.key]: nextValue,
                             }));
                             setResult(null);
-                            setResultWarnings([]);
                           }}
                           placeholder={field.unit ? "z. B. 80" : "z. B. 7.3"}
                           inputMode="decimal"
@@ -339,7 +329,6 @@ function ScanPageContent() {
                           onClick={() => {
                             applyTextParsing(ocrText);
                             setResult(null);
-                            setResultWarnings([]);
                           }}
                           className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-slate-500"
                         >
@@ -409,16 +398,6 @@ function ScanPageContent() {
         {result && (
           <section className="mt-6 space-y-4">
             <WaterScoreCard scanResult={result} />
-            {resultWarnings.length > 0 && (
-              <div className="rounded-lg border border-amber-600/40 bg-amber-500/5 p-4">
-                <h3 className="text-sm font-semibold text-amber-300">Hinweise zur Eingabe</h3>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-200">
-                  {resultWarnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </section>
         )}
       </div>

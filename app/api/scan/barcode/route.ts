@@ -205,6 +205,7 @@ export async function POST(req: NextRequest) {
   // Erweitere Response mit zusätzlichen Infos
   return NextResponse.json({
     ...domainScan,
+    ocrParsedValues: domainScan.ocrParsedValues ?? lookup.analysis,
     productInfo: {
       brand: lookup.source.brand,
       productName: lookup.source.productName,
