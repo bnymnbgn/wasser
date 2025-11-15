@@ -1,0 +1,52 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'de.trinkwasser.check',
+  appName: 'Trinkwasser Check',
+  webDir: 'out',
+
+  // Server configuration for development
+  server: {
+    androidScheme: 'https',
+    iosScheme: 'https',
+    // Uncomment for local development with live reload:
+    // url: 'http://192.168.1.X:3000',
+    // cleartext: true
+  },
+
+  // Android specific configuration
+  android: {
+    buildOptions: {
+      keystorePath: undefined,
+      keystorePassword: undefined,
+      keystoreAlias: undefined,
+      keystoreAliasPassword: undefined,
+      releaseType: 'APK'
+    }
+  },
+
+  // Plugins configuration
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      backgroundColor: '#0F172A',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+      androidSpinnerStyle: 'large',
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+    StatusBar: {
+      style: 'dark',
+      backgroundColor: '#0F172A',
+    },
+    Keyboard: {
+      resize: 'body',
+      style: 'dark',
+      resizeOnFullScreen: true,
+    },
+  },
+};
+
+export default config;

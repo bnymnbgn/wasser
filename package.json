@@ -5,14 +5,27 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:export": "next build && next export",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "seed:openfoodfacts": "node scripts/seed-openfoodfacts.js"
+    "seed:openfoodfacts": "node scripts/seed-openfoodfacts.js",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npm run build:export && npx cap sync",
+    "cap:sync:android": "npm run build:export && npx cap sync android",
+    "cap:open:android": "npx cap open android",
+    "cap:run:android": "npm run cap:sync:android && npx cap run android",
+    "cap:build:android": "npm run cap:sync:android && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/haptics": "^7.0.2",
+    "@capacitor/splash-screen": "^7.0.3",
+    "@capacitor/status-bar": "^7.0.3",
     "@prisma/client": "^6.19.0",
     "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.35.6",
