@@ -26,6 +26,8 @@ type PrismaWaterAnalysis = {
   magnesium: number | null;
   sodium: number | null;
   potassium: number | null;
+  chloride: number | null;
+  sulfate: number | null;
   bicarbonate: number | null;
   nitrate: number | null;
   totalDissolvedSolids: number | null;
@@ -66,6 +68,8 @@ export function mapPrismaWaterAnalysis(analysis: PrismaWaterAnalysis): WaterAnal
     magnesium: analysis.magnesium ?? undefined,
     sodium: analysis.sodium ?? undefined,
     potassium: analysis.potassium ?? undefined,
+    chloride: analysis.chloride ?? undefined,
+    sulfate: analysis.sulfate ?? undefined,
     bicarbonate: analysis.bicarbonate ?? undefined,
     nitrate: analysis.nitrate ?? undefined,
     totalDissolvedSolids: analysis.totalDissolvedSolids ?? undefined,

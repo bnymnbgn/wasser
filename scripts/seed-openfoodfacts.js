@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 const { PrismaClient } = require("@prisma/client");
+const WATER_OVERRIDES = require("../src/config/waterOverrides.json");
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,7 @@ const BASE_URL =
 const PAGE_SIZE = Number(process.env.OFF_PAGE_SIZE ?? 100);
 const MAX_PAGES = Number(process.env.OFF_MAX_PAGES ?? 20); // Erhöht von 3 auf 20
 const COUNTRY_FILTER = process.env.OFF_COUNTRY ?? ""; // Optional: z.B. "germany"
+const DEBUG_BARCODE = process.env.DEBUG_BARCODE ?? "";
 
 function toNumber(value) {
   if (value === undefined || value === null) return null;
@@ -28,21 +30,45 @@ function normalizeUnit(value, rawUnit) {
 
 function readNutriment(nutriments, key) {
   if (!nutriments) return null;
-  const candidates = [
-    nutriments[`${key}_value`],
-    nutriments[`${key}_serving`],
-    nutriments[key],
-    nutriments[`${key}_100g`],
-  ];
-  const value = candidates.map(toNumber).find((v) => v !== null);
-  if (value === undefined || value === null) return null;
 
-  const unit =
-    nutriments[`${key}_unit`] ??
-    nutriments[`${key}_serving_unit`] ??
-    nutriments[`${key}_unit`];
+  // Priorität 1: _value (meist bereits mg/L)
+  const absoluteValue = toNumber(nutriments[`${key}_value`]);
+  if (absoluteValue !== null) {
+    const unit = nutriments[`${key}_unit`];
+    return normalizeUnit(absoluteValue, unit);
+  }
 
-  return normalizeUnit(value, unit);
+  // Priorität 2: _serving (häufig 1L) → direkt in mg/L
+  const servingValue = toNumber(nutriments[`${key}_serving`]);
+  if (servingValue !== null) {
+    const servingUnit = nutriments[`${key}_serving_unit`] ?? nutriments[`${key}_unit`];
+    return normalizeUnit(servingValue, servingUnit);
+  }
+
+  // Priorität 3: _100g oder direktes Feld → wird als 100 ml interpretiert → ×10
+  const per100Value = toNumber(nutriments[`${key}_100g`] ?? nutriments[key]);
+  if (per100Value !== null) {
+    const unit = nutriments[`${key}_100g_unit`] ?? nutriments[`${key}_unit`];
+    const normalized = normalizeUnit(per100Value, unit);
+    return normalized !== null ? normalized * 10 : null;
+  }
+
+  return null;
+}
+
+function readNutrimentMulti(nutriments, ...keys) {
+  for (const key of keys) {
+    const value = readNutriment(nutriments, key);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
+function applyOverrides(barcode, values) {
+  if (!barcode) return values;
+  const override = WATER_OVERRIDES?.[barcode];
+  if (!override) return values;
+  return { ...values, ...override };
 }
 
 function mapWaterValues(nutriments) {
@@ -54,13 +80,30 @@ function mapWaterValues(nutriments) {
     magnesium: readNutriment(nutriments, "magnesium"),
     sodium: readNutriment(nutriments, "sodium"),
     potassium: readNutriment(nutriments, "potassium"),
-    bicarbonate:
-      readNutriment(nutriments, "bicarbonates") ??
-      readNutriment(nutriments, "hydrogencarbonate"),
-    nitrate: readNutriment(nutriments, "nitrate"),
-    totalDissolvedSolids:
-      readNutriment(nutriments, "residue_dry") ??
-      readNutriment(nutriments, "dry_extract"),
+    chloride: readNutrimentMulti(nutriments, "chloride", "chlorure"),
+    sulfate: readNutrimentMulti(
+      nutriments,
+      "sulfates",
+      "sulfate",
+      "sulphates",
+      "sulphate",
+      "fr-sulfat"
+    ),
+    bicarbonate: readNutrimentMulti(
+      nutriments,
+      "bicarbonates",
+      "bicarbonate",
+      "hydrogencarbonate",
+      "hydrogen-carbonate",
+      "fr-hydrogencarbonat"
+    ),
+    nitrate: readNutrimentMulti(nutriments, "nitrate", "nitrates"),
+    totalDissolvedSolids: readNutrimentMulti(
+      nutriments,
+      "residue_dry",
+      "dry_extract",
+      "total_dissolved_solids"
+    ),
   };
 }
 
@@ -70,13 +113,14 @@ function hasAnyValue(values) {
 
 function buildAnalysisInput(product) {
   const values = mapWaterValues(product.nutriments);
-  if (!hasAnyValue(values)) return null;
+  const finalValues = applyOverrides(product.code, values);
+  if (!hasAnyValue(finalValues)) return null;
 
   return {
     sourceType: "api",
     reliabilityScore: product.nutriscore_grade ? 0.8 : 0.6,
     analysisDate: null,
-    ...values,
+    ...finalValues,
   };
 }
 
@@ -111,6 +155,13 @@ async function processProduct(product) {
   if (!product || !product.code) return { created: false, skipped: "missing_code" };
   const analysisInput = buildAnalysisInput(product);
   if (!analysisInput) return { created: false, skipped: "no_values" };
+
+  if (DEBUG_BARCODE && product.code === DEBUG_BARCODE) {
+    console.log("\n[DEBUG] Product nutriments for", DEBUG_BARCODE);
+    console.dir(product.nutriments, { depth: null });
+    console.log("[DEBUG] Parsed values:", analysisInput);
+    console.log("[DEBUG] Override lookup:", WATER_OVERRIDES?.[product.code] ?? null);
+  }
 
   const brand = product.brands ? product.brands.split(",")[0].trim() : "Unbekannt";
   const productName = product.product_name?.trim() || "Unbenanntes Wasser";

@@ -9,6 +9,7 @@ import {
   hasAnyWaterValue,
   extractProductInfo,
   calculateReliabilityScore,
+  applyWaterValueOverrides,
 } from "@/src/lib/openfoodfacts";
 
 /**
@@ -46,6 +47,8 @@ async function lookupWaterProduct(barcode: string): Promise<{
       magnesium: analysis.magnesium ?? undefined,
       sodium: analysis.sodium ?? undefined,
       potassium: analysis.potassium ?? undefined,
+      chloride: analysis.chloride ?? undefined,
+      sulfate: analysis.sulfate ?? undefined,
       bicarbonate: analysis.bicarbonate ?? undefined,
       nitrate: analysis.nitrate ?? undefined,
       totalDissolvedSolids: analysis.totalDissolvedSolids ?? undefined,
@@ -75,7 +78,8 @@ async function lookupWaterProduct(barcode: string): Promise<{
   }
 
   // Extrahiere Wasserwerte
-  const waterValues = mapOpenFoodFactsToWaterValues(offProduct.nutriments);
+  let waterValues = mapOpenFoodFactsToWaterValues(offProduct.nutriments);
+  waterValues = applyWaterValueOverrides(barcode, waterValues);
 
   if (!hasAnyWaterValue(waterValues)) {
     console.warn(`Product ${barcode} has no water analysis data`);
@@ -114,6 +118,8 @@ async function lookupWaterProduct(barcode: string): Promise<{
       magnesium: waterValues.magnesium ?? null,
       sodium: waterValues.sodium ?? null,
       potassium: waterValues.potassium ?? null,
+      chloride: waterValues.chloride ?? null,
+      sulfate: waterValues.sulfate ?? null,
       bicarbonate: waterValues.bicarbonate ?? null,
       nitrate: waterValues.nitrate ?? null,
       totalDissolvedSolids: waterValues.totalDissolvedSolids ?? null,

@@ -1,10 +1,12 @@
 import type { WaterAnalysisValues } from "@/src/domain/types";
+import waterOverrides from "@/src/config/waterOverrides.json";
 
 /**
  * OpenFoodFacts API configuration
  */
 const OFF_API_BASE = "https://world.openfoodfacts.org/api/v2";
 const OFF_USER_AGENT = "TrinkwasserCheck/1.0 (contact@trinkwasser-check.de)";
+const WATER_VALUE_OVERRIDES: Record<string, Partial<WaterAnalysisValues>> = waterOverrides;
 
 /**
  * Hilfsfunktion: Konvertiert Werte zu Zahlen
@@ -102,6 +104,16 @@ export function mapOpenFoodFactsToWaterValues(
       readNutriment(nutriments, "dry_extract") ??
       readNutriment(nutriments, "total_dissolved_solids"),
   };
+}
+
+export function applyWaterValueOverrides(
+  barcode: string | null | undefined,
+  values: Partial<WaterAnalysisValues>
+): Partial<WaterAnalysisValues> {
+  if (!barcode) return values;
+  const override = WATER_VALUE_OVERRIDES[barcode];
+  if (!override) return values;
+  return { ...values, ...override };
 }
 
 /**
