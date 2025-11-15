@@ -13,7 +13,7 @@
     "seed:openfoodfacts": "node scripts/seed-openfoodfacts.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^6.19.0",
     "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.35.6",
     "@zxing/browser": "^0.1.5",
@@ -21,7 +21,7 @@
     "framer-motion": "^12.23.24",
     "next": "^14.2.16",
     "next-pwa": "^5.6.0",
-    "prisma": "^5.22.0",
+    "prisma": "^6.19.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tesseract.js": "^6.0.1",
