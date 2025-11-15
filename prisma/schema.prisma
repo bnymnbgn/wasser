@@ -38,6 +38,8 @@ model WaterAnalysis {
   magnesium              Float?
   sodium                 Float?
   potassium              Float?
+  chloride               Float?
+  sulfate                Float?
   bicarbonate            Float?
   nitrate                Float?
   totalDissolvedSolids   Float?

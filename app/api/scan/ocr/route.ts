@@ -25,6 +25,9 @@ export function validateValue(
     calcium: { min: 0, max: 500, typical: "5-200 mg/L" },
     magnesium: { min: 0, max: 200, typical: "1-100 mg/L" },
     sodium: { min: 0, max: 500, typical: "1-200 mg/L" },
+    potassium: { min: 0, max: 100, typical: "1-20 mg/L" },
+    chloride: { min: 0, max: 500, typical: "1-250 mg/L" },
+    sulfate: { min: 0, max: 500, typical: "1-250 mg/L" },
     nitrate: { min: 0, max: 100, typical: "0-50 mg/L" },
     bicarbonate: { min: 0, max: 2000, typical: "50-600 mg/L" },
     totalDissolvedSolids: { min: 0, max: 3000, typical: "50-1500 mg/L" },
@@ -61,6 +64,9 @@ export function parseTextToAnalysis(text: string): Partial<WaterAnalysisValues> 
     calcium: getNumber(/(?:Kalzium|Calcium|Ca2?\+?)[:\s]*([0-9]+[.,]?[0-9]*)/i),
     magnesium: getNumber(/(?:Magnesium|Mg2?\+?)[:\s]*([0-9]+[.,]?[0-9]*)/i),
     sodium: getNumber(/(?:Natrium|Sodium|Na\+?)[:\s]*([0-9]+[.,]?[0-9]*)/i),
+    potassium: getNumber(/(?:Kalium|Potassium|Kaliumhydrogencarbonat|K\+?)[:\s]*([0-9]+[.,]?[0-9]*)/i),
+    chloride: getNumber(/(?:Chlorid|Chloride|Cl-?)[:\s]*([0-9]+[.,]?[0-9]*)/i),
+    sulfate: getNumber(/(?:Sulfat|Sulphate|Sulfate|SO4)[:\s-]*([0-9]+[.,]?[0-9]*)/i),
     nitrate: getNumber(/(?:Nitrat|Nitrate|NO3)[:\s-]*([0-9]+[.,]?[0-9]*)/i),
     bicarbonate: getNumber(
       /(?:Hydrogencarbonat|Bicarbonat|Bikarbonat|HCO3)[:\s-]*([0-9]+[.,]?[0-9]*)/i

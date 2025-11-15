@@ -35,6 +35,27 @@ describe('parseTextToAnalysis', () => {
       expect(parseTextToAnalysis('Na+: 15').sodium).toBe(15);
     });
 
+    it('should parse Potassium in various formats', () => {
+      expect(parseTextToAnalysis('Kalium: 5').potassium).toBe(5);
+      expect(parseTextToAnalysis('Potassium: 5').potassium).toBe(5);
+      expect(parseTextToAnalysis('K: 5').potassium).toBe(5);
+      expect(parseTextToAnalysis('K+: 5').potassium).toBe(5);
+    });
+
+    it('should parse Chloride in various formats', () => {
+      expect(parseTextToAnalysis('Chlorid: 10').chloride).toBe(10);
+      expect(parseTextToAnalysis('Chloride: 10').chloride).toBe(10);
+      expect(parseTextToAnalysis('Cl: 10').chloride).toBe(10);
+      expect(parseTextToAnalysis('Cl-: 10').chloride).toBe(10);
+    });
+
+    it('should parse Sulfate in various formats', () => {
+      expect(parseTextToAnalysis('Sulfat: 20').sulfate).toBe(20);
+      expect(parseTextToAnalysis('Sulphate: 20').sulfate).toBe(20);
+      expect(parseTextToAnalysis('Sulfate: 20').sulfate).toBe(20);
+      expect(parseTextToAnalysis('SO4: 20').sulfate).toBe(20);
+    });
+
     it('should parse Nitrate in various formats', () => {
       expect(parseTextToAnalysis('Nitrat: 10').nitrate).toBe(10);
       expect(parseTextToAnalysis('Nitrate: 10').nitrate).toBe(10);
@@ -87,6 +108,9 @@ describe('parseTextToAnalysis', () => {
         Calcium: 80 mg/l
         Magnesium: 25 mg/l
         Natrium: 15 mg/l
+        Kalium: 5 mg/l
+        Chlorid: 12 mg/l
+        Sulfat: 18 mg/l
         Nitrat: 5 mg/l
         Hydrogencarbonat: 250 mg/l
         Gesamtmineralisation: 450 mg/l
@@ -98,6 +122,9 @@ describe('parseTextToAnalysis', () => {
       expect(result.calcium).toBe(80);
       expect(result.magnesium).toBe(25);
       expect(result.sodium).toBe(15);
+      expect(result.potassium).toBe(5);
+      expect(result.chloride).toBe(12);
+      expect(result.sulfate).toBe(18);
       expect(result.nitrate).toBe(5);
       expect(result.bicarbonate).toBe(250);
       expect(result.totalDissolvedSolids).toBe(450);
@@ -199,6 +226,48 @@ describe('validateValue', () => {
     it('should reject extreme TDS values', () => {
       const result = validateValue('totalDissolvedSolids', 5000);
       expect(result.valid).toBe(false);
+    });
+  });
+
+  describe('Potassium validation', () => {
+    it('should accept typical potassium values', () => {
+      expect(validateValue('potassium', 1).valid).toBe(true);
+      expect(validateValue('potassium', 10).valid).toBe(true);
+      expect(validateValue('potassium', 20).valid).toBe(true);
+    });
+
+    it('should reject extreme potassium values', () => {
+      const result = validateValue('potassium', 150);
+      expect(result.valid).toBe(false);
+      expect(result.warning).toContain('potassium');
+    });
+  });
+
+  describe('Chloride validation', () => {
+    it('should accept typical chloride values', () => {
+      expect(validateValue('chloride', 5).valid).toBe(true);
+      expect(validateValue('chloride', 50).valid).toBe(true);
+      expect(validateValue('chloride', 250).valid).toBe(true);
+    });
+
+    it('should reject extreme chloride values', () => {
+      const result = validateValue('chloride', 600);
+      expect(result.valid).toBe(false);
+      expect(result.warning).toContain('chloride');
+    });
+  });
+
+  describe('Sulfate validation', () => {
+    it('should accept typical sulfate values', () => {
+      expect(validateValue('sulfate', 10).valid).toBe(true);
+      expect(validateValue('sulfate', 100).valid).toBe(true);
+      expect(validateValue('sulfate', 250).valid).toBe(true);
+    });
+
+    it('should reject extreme sulfate values', () => {
+      const result = validateValue('sulfate', 600);
+      expect(result.valid).toBe(false);
+      expect(result.warning).toContain('sulfate');
     });
   });
 
