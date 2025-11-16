@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { mapPrismaScanResult } from "@/src/domain/mappers";
+import { calculateScores } from "@/src/domain/scoring";
+import { deriveWaterInsights } from "@/src/domain/waterInsights";
 
 export async function GET() {
   try {
@@ -12,7 +14,26 @@ export async function GET() {
       },
     });
 
-    const domainScans = scans.map(mapPrismaScanResult);
+    const domainScans = scans.map((scan) => {
+      const mapped = mapPrismaScanResult(scan);
+      const mergedValues = {
+        ...(mapped.ocrParsedValues ?? {}),
+        ...(mapped.userOverrides ?? {}),
+      };
+      const hasValues = Object.keys(mergedValues).length > 0;
+      if (!hasValues) {
+        return mapped;
+      }
+
+      const scoreResult = calculateScores(mergedValues, mapped.profile);
+      const insights = deriveWaterInsights(mergedValues);
+
+      return {
+        ...mapped,
+        metricDetails: scoreResult.metrics,
+        insights,
+      };
+    });
 
     return NextResponse.json(domainScans);
   } catch (error) {

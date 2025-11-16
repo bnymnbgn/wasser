@@ -4,6 +4,8 @@ import { prisma } from "@/src/lib/prisma";
 import { mapPrismaScanResult } from "@/src/domain/mappers";
 import type { ScanResult as DomainScanResult } from "@/src/domain/types";
 import HistoryList from "@/src/components/HistoryList";
+import { calculateScores } from "@/src/domain/scoring";
+import { deriveWaterInsights } from "@/src/domain/waterInsights";
 
 export default async function HistoryPage() {
   const prismaScans = await prisma.scanResult.findMany({
@@ -14,7 +16,24 @@ export default async function HistoryPage() {
     },
   });
 
-  const scans: DomainScanResult[] = prismaScans.map(mapPrismaScanResult);
+  const scans: DomainScanResult[] = prismaScans.map((scan) => {
+    const mapped = mapPrismaScanResult(scan);
+    const mergedValues = {
+      ...(mapped.ocrParsedValues ?? {}),
+      ...(mapped.userOverrides ?? {}),
+    };
+    const hasValues = Object.keys(mergedValues).length > 0;
+    if (!hasValues) {
+      return mapped;
+    }
+    const scoreResult = calculateScores(mergedValues, mapped.profile);
+    const insights = deriveWaterInsights(mergedValues);
+    return {
+      ...mapped,
+      metricDetails: scoreResult.metrics,
+      insights,
+    };
+  });
 
   return (
     <main className="relative min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">

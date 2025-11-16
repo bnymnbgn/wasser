@@ -1,3 +1,6 @@
+import type { MetricScore } from "./scoring";
+import type { WaterInsights } from "./waterInsights";
+
 /** Herkunft der Analysewerte */
 export type SourceType = "manufacturer" | "authority" | "user" | "api";
 
@@ -54,7 +57,9 @@ export interface ScanResult {
 
   score?: number;
   metricScores?: Record<string, number>;
+  metricDetails?: MetricScore[];
   warnings?: string[];
+  insights?: WaterInsights;
 
   ocrTextRaw?: string;
   ocrParsedValues?: Partial<WaterAnalysisValues>;

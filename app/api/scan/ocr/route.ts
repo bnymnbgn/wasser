@@ -1,45 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { calculateScores } from "@/src/domain/scoring";
-import type { ProfileType, WaterAnalysisValues, ScanResult } from "@/src/domain/types";
+import { deriveWaterInsights } from "@/src/domain/waterInsights";
+import type { WaterAnalysisValues, ScanResult } from "@/src/domain/types";
 import { mapPrismaScanResult } from "@/src/domain/mappers";
 import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
-import { WaterAnalysisValuesSchema } from "@/src/lib/validation";
+import { OcrRequestSchema, validateRequest } from "@/src/lib/validation";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
+  const parsed = validateRequest(OcrRequestSchema, body);
 
-  if (!body) {
-    return NextResponse.json(
-      { error: "Ungültiger Request-Body." },
-      { status: 400 }
-    );
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const text = typeof body.text === "string" ? body.text : "";
-  const profile = (body.profile ?? "standard") as ProfileType;
-  const providedValuesRaw = body.values;
+  const { text, profile, values: providedValues } = parsed.data;
+  const ocrText = text ?? "";
 
-  let providedValues: Partial<WaterAnalysisValues> | undefined;
-  if (providedValuesRaw && typeof providedValuesRaw === "object") {
-    const parsed = WaterAnalysisValuesSchema.partial().safeParse(providedValuesRaw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Übergebene Werte sind ungültig.", details: parsed.error.flatten() },
-        { status: 400 }
-      );
-    }
-    providedValues = parsed.data;
-  }
-
-  if (!text.trim() && !providedValues) {
-    return NextResponse.json(
-      { error: "Es müssen entweder ein Etikett-Text oder Werte übergeben werden." },
-      { status: 400 }
-    );
-  }
-
-  const ocrValues = text.trim() ? parseTextToAnalysis(text) : {};
+  const ocrValues = ocrText ? parseTextToAnalysis(ocrText) : {};
   const mergedValues: Partial<WaterAnalysisValues> = {
     ...ocrValues,
     ...(providedValues ?? {}),
@@ -75,13 +54,14 @@ export async function POST(req: NextRequest) {
 
   // 2) Scoring berechnen
   const scoreResult = calculateScores(validatedValues, profile);
+  const insights = deriveWaterInsights(validatedValues);
 
   // 3) ScanResult in DB schreiben
   const prismaScan = await prisma.scanResult.create({
     data: {
       profile,
       timestamp: new Date(),
-      ocrTextRaw: text || null,
+      ocrTextRaw: ocrText || null,
       ocrParsedValues: Object.keys(ocrValues).length ? ocrValues : null,
       userOverrides: providedValues ?? null,
       score: scoreResult.totalScore,
@@ -106,5 +86,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ...domainScan,
     warnings: warnings.length > 0 ? warnings : undefined,
+    metricDetails: scoreResult.metrics,
+    insights,
   });
 }

@@ -36,6 +36,13 @@ const itemVariants = {
   show: { opacity: 1, y: 0 },
 };
 
+const PROFILE_TIPS: Record<ProfileType, string> = {
+  standard: "Nutze dieses Profil als Basis und wechsle bei speziellen Anforderungen gezielt zu Baby, Sport oder Blutdruck.",
+  baby: "Achte auf natrium- und nitratarmes Wasser – wechsle nur zu Standard, wenn keine Babynahrung zubereitet wird.",
+  sport: "Achte auf ausreichend Magnesium & Natrium für optimale Regeneration",
+  blood_pressure: "Bevorzuge natriumarme Wässer (<20 mg/L) und wechsle nur kurzzeitig zu Sport, falls nötig.",
+};
+
 export default function HomePage() {
   const [profile, setProfile] = useState<ProfileType>("standard");
 
@@ -235,9 +242,7 @@ export default function HomePage() {
                     Profil-Tipp
                   </p>
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    {profile === "sport"
-                      ? "Achte auf ausreichend Magnesium & Natrium für optimale Regeneration"
-                      : "Wechsle zu Sport-Profil für spezifische Athleten-Empfehlungen"}
+                    {PROFILE_TIPS[profile]}
                   </p>
                 </div>
               </div>

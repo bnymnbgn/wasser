@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { createWorker, type Worker } from "tesseract.js";
 
 interface ImageOCRScannerProps {
@@ -20,6 +20,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
   // Cache the Tesseract worker for reuse
   const workerRef = useRef<Worker | null>(null);
@@ -68,6 +69,12 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d")!;
 
+      const objectUrl = URL.createObjectURL(blob);
+
+      const cleanup = () => {
+        URL.revokeObjectURL(objectUrl);
+      };
+
       img.onload = () => {
         // Optimize size for OCR (target ~2000px width for good balance)
         const targetWidth = 2000;
@@ -82,13 +89,15 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
         canvas.toBlob(
           (processedBlob) => {
             resolve(processedBlob || blob);
+            cleanup();
           },
           "image/jpeg",
           0.95
         );
       };
+      img.onerror = () => cleanup();
 
-      img.src = URL.createObjectURL(blob);
+      img.src = objectUrl;
     });
   }
 
@@ -155,6 +164,40 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
     await processImage(file);
   }
 
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+    };
+  }, [stopCamera]);
+
+  useEffect(() => {
+    if (previewUrl) {
+      if (previewUrlRef.current && previewUrlRef.current !== previewUrl) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+      previewUrlRef.current = previewUrl;
+
+      return () => {
+        if (previewUrlRef.current === previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+          previewUrlRef.current = null;
+        }
+      };
+    }
+  }, [previewUrl]);
+
   async function startCamera() {
     setError(null);
     try {
@@ -189,14 +232,6 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
         setError(`Kamera-Fehler: ${err.message}`);
       }
     }
-  }
-
-  function stopCamera() {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsCameraActive(false);
   }
 
   async function capturePhoto() {

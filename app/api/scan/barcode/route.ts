@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 import { calculateScores } from "@/src/domain/scoring";
-import type { ProfileType, WaterAnalysisValues, ScanResult } from "@/src/domain/types";
+import { deriveWaterInsights } from "@/src/domain/waterInsights";
+import type { WaterAnalysisValues, ScanResult } from "@/src/domain/types";
 import { mapPrismaScanResult } from "@/src/domain/mappers";
 import {
   fetchProductByBarcode,
@@ -11,6 +12,7 @@ import {
   calculateReliabilityScore,
   applyWaterValueOverrides,
 } from "@/src/lib/openfoodfacts";
+import { BarcodeRequestSchema, validateRequest } from "@/src/lib/validation";
 
 /**
  * Sucht ein Wasserprodukt zuerst in der lokalen DB,
@@ -145,22 +147,12 @@ async function lookupWaterProduct(barcode: string): Promise<{
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
 
-  if (!body || typeof body.barcode !== "string") {
-    return NextResponse.json(
-      { error: "Body muss ein Feld 'barcode' (string) enthalten." },
-      { status: 400 }
-    );
+  const parsed = validateRequest(BarcodeRequestSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const barcode = body.barcode.trim();
-  const profile = (body.profile ?? "standard") as ProfileType;
-
-  if (!barcode) {
-    return NextResponse.json(
-      { error: "Barcode darf nicht leer sein." },
-      { status: 400 }
-    );
-  }
+  const { barcode, profile } = parsed.data;
 
   // Lookup in DB + OpenFoodFacts
   const lookup = await lookupWaterProduct(barcode);
@@ -177,6 +169,7 @@ export async function POST(req: NextRequest) {
 
   // Berechne Score
   const scoreResult = calculateScores(lookup.analysis, profile);
+  const insights = deriveWaterInsights(lookup.analysis);
 
   // Finde neueste Analyse für waterAnalysisId
   const latestAnalysis = await prisma.waterAnalysis.findFirst({
@@ -209,5 +202,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ...domainScan,
     fromCache: lookup.fromCache,
+    metricDetails: scoreResult.metrics,
+    insights,
   });
 }

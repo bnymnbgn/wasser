@@ -12,10 +12,15 @@ interface BarcodeScannerProps {
 
 export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const onDetectedRef = useRef(onDetected);
   const [active, setActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastCode, setLastCode] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    onDetectedRef.current = onDetected;
+  }, [onDetected]);
 
   useEffect(() => {
     if (!active) return;
@@ -50,7 +55,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
               const text = result.getText();
               setLastCode(text);
               setScanning(false);
-              onDetected(text);
+              onDetectedRef.current?.(text);
               // nach erfolgreichem Scan stoppen
               controls.stop();
               setActive(false);
@@ -71,7 +76,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
       canceled = true;
       controlsRef?.stop();
     };
-  }, [active, onDetected]);
+  }, [active]);
 
   return (
     <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-3">

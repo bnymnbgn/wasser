@@ -1,6 +1,7 @@
+'use client';
+
 import type { ScanResult, WaterAnalysisValues } from "@/src/domain/types";
-import { calculateScores } from "@/src/domain/scoring";
-import { deriveWaterInsights, type ProfileFit } from "@/src/domain/waterInsights";
+import type { ProfileFit } from "@/src/domain/waterInsights";
 import { CircularProgress } from "@/src/components/ui/CircularProgress";
 import { Droplet, AlertCircle, CheckCircle, Info, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
@@ -38,17 +39,23 @@ const METRIC_LABELS: Record<keyof WaterAnalysisValues, string> = {
 
 export function WaterScoreCard({ scanResult }: Props) {
   const [showDetails, setShowDetails] = useState(false);
-  const { score, metricScores, ocrParsedValues, profile, warnings, userOverrides, productInfo, barcode } = scanResult;
+  const {
+    score,
+    metricScores,
+    metricDetails,
+    insights,
+    ocrParsedValues,
+    profile,
+    warnings,
+    userOverrides,
+    productInfo,
+    barcode,
+  } = scanResult;
   const mergedValues: Partial<WaterAnalysisValues> = {
     ...(ocrParsedValues ?? {}),
     ...(userOverrides ?? {}),
   };
-  const insights = deriveWaterInsights(mergedValues);
-  const activeProfileFit = insights.profileFit?.[profile];
-
-  const scoring = Object.keys(mergedValues).length
-    ? calculateScores(mergedValues, profile)
-    : null;
+  const activeProfileFit: ProfileFit | undefined = insights?.profileFit?.[profile];
 
   const scoreColor = scoreToColor(score);
 
@@ -186,7 +193,7 @@ export function WaterScoreCard({ scanResult }: Props) {
       </div>
 
       {/* Badges */}
-      {insights.badges.length > 0 && (
+      {insights?.badges && insights.badges.length > 0 && (
         <div className="modern-card p-4 space-y-3">
           <h3 className="font-semibold text-slate-900 dark:text-slate-100">
             Kennzeichnungen
@@ -222,7 +229,7 @@ export function WaterScoreCard({ scanResult }: Props) {
       )}
 
       {/* Synergies */}
-      {insights.synergies.length > 0 && (
+      {insights?.synergies && insights.synergies.length > 0 && (
         <div className="modern-card p-4 space-y-3">
           <h3 className="font-semibold text-slate-900 dark:text-slate-100">
             Gesundheitliche Hinweise
@@ -269,7 +276,7 @@ export function WaterScoreCard({ scanResult }: Props) {
       )}
 
       {/* Expandable Scoring Details */}
-      {scoring && (
+      {metricDetails && metricDetails.length > 0 && (
         <div className="modern-card overflow-hidden">
           <button
             onClick={() => setShowDetails(!showDetails)}
@@ -287,9 +294,9 @@ export function WaterScoreCard({ scanResult }: Props) {
 
           {showDetails && (
             <div className="px-4 pb-4 space-y-3 border-t border-slate-200 dark:border-slate-700 pt-4">
-              {scoring.metrics
-                .filter(m => m.score !== 50)
-                .map(metric => (
+              {metricDetails
+                .filter((m) => m.score !== 50)
+                .map((metric) => (
                   <div key={metric.metric} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-slate-900 dark:text-slate-100 capitalize">

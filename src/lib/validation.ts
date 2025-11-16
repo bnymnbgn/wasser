@@ -22,23 +22,6 @@ export const BarcodeRequestSchema = z.object({
 export type BarcodeRequest = z.infer<typeof BarcodeRequestSchema>;
 
 /**
- * OCR Request Validation
- */
-export const OcrRequestSchema = z.object({
-  text: z.string()
-    .min(10, 'Text muss mindestens 10 Zeichen lang sein')
-    .max(5000, 'Text darf maximal 5000 Zeichen lang sein')
-    .transform(s => s.trim()),
-  profile: ProfileSchema.default('standard'),
-  confidence: z.number()
-    .min(0, 'Confidence muss zwischen 0 und 100 liegen')
-    .max(100, 'Confidence muss zwischen 0 und 100 liegen')
-    .optional(),
-});
-
-export type OcrRequest = z.infer<typeof OcrRequestSchema>;
-
-/**
  * Water Analysis Values Schema
  */
 export const WaterAnalysisValuesSchema = z.object({
@@ -55,6 +38,46 @@ export const WaterAnalysisValuesSchema = z.object({
 });
 
 export type WaterAnalysisValues = z.infer<typeof WaterAnalysisValuesSchema>;
+
+/**
+ * OCR Request Validation
+ */
+export const OcrRequestSchema = z.object({
+  text: z.string().trim().max(5000, 'Text darf maximal 5000 Zeichen lang sein').optional(),
+  profile: ProfileSchema.default('standard'),
+  values: WaterAnalysisValuesSchema.partial().optional(),
+  confidence: z.number()
+    .min(0, 'Confidence muss zwischen 0 und 100 liegen')
+    .max(100, 'Confidence muss zwischen 0 und 100 liegen')
+    .optional(),
+  brand: z.string().trim().max(200).optional(),
+  barcode: z.string().trim().max(32).optional(),
+}).superRefine((data, ctx) => {
+  const textLength = data.text?.length ?? 0;
+  const hasText = textLength > 0;
+  const hasValues = data.values && Object.keys(data.values).length > 0;
+
+  if (hasText && textLength < 10) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.too_small,
+      minimum: 10,
+      inclusive: true,
+      type: 'string',
+      message: 'Text muss mindestens 10 Zeichen lang sein',
+      path: ['text'],
+    });
+  }
+
+  if (!hasValues && textLength === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Es müssen entweder ein Etikett-Text oder Werte übergeben werden.',
+      path: ['text'],
+    });
+  }
+});
+
+export type OcrRequest = z.infer<typeof OcrRequestSchema>;
 
 /**
  * Scan History Filter Schema
