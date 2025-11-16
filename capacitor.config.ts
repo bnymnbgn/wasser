@@ -6,12 +6,13 @@ const config: CapacitorConfig = {
   webDir: 'out',
 
   // Server configuration for development
-  server: {
-    androidScheme: 'http',
-    iosScheme: 'http',
-    url: 'http://192.168.178.49:3000',
-    cleartext: true,
-  },
+  // Comment out for production build
+  // server: {
+  //   androidScheme: 'http',
+  //   iosScheme: 'http',
+  //   url: 'http://192.168.178.49:3000',
+  //   cleartext: true,
+  // },
 
   // Android specific configuration
   android: {

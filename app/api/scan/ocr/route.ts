@@ -74,8 +74,8 @@ export async function POST(req: NextRequest) {
       profile,
       timestamp: new Date(),
       ocrTextRaw: ocrText || null,
-      ocrParsedValues: Object.keys(ocrValues).length ? (ocrValues as Prisma.InputJsonValue) : Prisma.JsonNull,
-      userOverrides: providedValues ? (providedValues as Prisma.InputJsonValue) : Prisma.JsonNull,
+      ocrParsedValues: Object.keys(ocrValues).length ? (ocrValues as any) : null,
+      userOverrides: providedValues ? (providedValues as any) : null,
       score: scoreResult.totalScore,
       metricScores: scoreResult.metrics.reduce<Record<string, number>>(
         (acc, m) => {
