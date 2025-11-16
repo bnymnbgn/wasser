@@ -78,31 +78,36 @@ export function mapOpenFoodFactsToWaterValues(
   if (!nutriments) return {};
 
   return {
-    ph: toNumber(nutriments.ph),
-    calcium: readNutriment(nutriments, "calcium"),
-    magnesium: readNutriment(nutriments, "magnesium"),
-    sodium: readNutriment(nutriments, "sodium"),
-    potassium: readNutriment(nutriments, "potassium"),
+    ph: toNumber(nutriments.ph) ?? undefined,
+    calcium: readNutriment(nutriments, "calcium") ?? undefined,
+    magnesium: readNutriment(nutriments, "magnesium") ?? undefined,
+    sodium: readNutriment(nutriments, "sodium") ?? undefined,
+    potassium: readNutriment(nutriments, "potassium") ?? undefined,
     chloride:
       readNutriment(nutriments, "chloride") ??
-      readNutriment(nutriments, "chlorure"), // Französisch
+      readNutriment(nutriments, "chlorure") ??
+      undefined, // Französisch
     sulfate:
       readNutriment(nutriments, "sulfates") ?? // Plural!
       readNutriment(nutriments, "sulfate") ??
       readNutriment(nutriments, "sulphates") ??
-      readNutriment(nutriments, "sulphate"),
+      readNutriment(nutriments, "sulphate") ??
+      undefined,
     bicarbonate:
       readNutriment(nutriments, "bicarbonates") ??
       readNutriment(nutriments, "hydrogencarbonate") ??
       readNutriment(nutriments, "bicarbonate") ??
-      readNutriment(nutriments, "hydrogen-carbonate"),
+      readNutriment(nutriments, "hydrogen-carbonate") ??
+      undefined,
     nitrate:
       readNutriment(nutriments, "nitrate") ??
-      readNutriment(nutriments, "nitrates"), // Plural
+      readNutriment(nutriments, "nitrates") ??
+      undefined, // Plural
     totalDissolvedSolids:
       readNutriment(nutriments, "residue_dry") ??
       readNutriment(nutriments, "dry_extract") ??
-      readNutriment(nutriments, "total_dissolved_solids"),
+      readNutriment(nutriments, "total_dissolved_solids") ??
+      undefined,
   };
 }
 
@@ -201,7 +206,8 @@ export function extractProductInfo(product: OpenFoodFactsProduct): {
   productName: string;
   origin: string | null;
 } {
-  const brand = product.brands ? product.brands.split(",")[0].trim() : "Unbekannt";
+  const brand =
+    product.brands?.split(",")[0]?.trim() || "Unbekannt";
   const productName = product.product_name?.trim() || "Unbenanntes Wasser";
   const origin = product.countries?.trim() || null;
 

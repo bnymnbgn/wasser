@@ -326,6 +326,7 @@ function ScanPageContent() {
                       const value = valueInputs[field.key];
                       const warning = valueWarnings[field.key];
                       const invalid = invalidFields[field.key];
+                      const unit = "unit" in field ? field.unit : undefined;
 
                       return (
                         <div
@@ -358,12 +359,12 @@ function ScanPageContent() {
                                 }));
                                 setResult(null);
                               }}
-                              placeholder={field.unit ? `0 ${field.unit}` : "0"}
+                              placeholder={unit ? `0 ${unit}` : "0"}
                               inputMode="decimal"
                             />
-                            {field.unit && (
+                            {unit && (
                               <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                                {field.unit}
+                                {unit}
                               </span>
                             )}
                           </label>

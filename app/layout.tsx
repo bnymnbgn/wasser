@@ -1,20 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/src/components/ThemeProvider';
 import BottomNav from '@/src/components/BottomNav';
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-sans',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-display',
-});
 
 export const metadata: Metadata = {
   title: 'Wasserscan',
@@ -52,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans overscroll-none antialiased`}>
+      <body className="font-sans overscroll-none antialiased">
         <ThemeProvider defaultTheme="system">
           <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
             {children}

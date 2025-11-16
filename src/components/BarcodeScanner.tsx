@@ -5,6 +5,7 @@ import {
   BrowserMultiFormatReader,
   type IScannerControls,
 } from "@zxing/browser";
+import { Capacitor } from "@capacitor/core";
 
 interface BarcodeScannerProps {
   onDetected: (value: string) => void;
@@ -17,6 +18,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastCode, setLastCode] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  const permissionRequestedRef = useRef(false);
 
   useEffect(() => {
     onDetectedRef.current = onDetected;
@@ -31,10 +33,35 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
     let controlsRef: IScannerControls | null = null;
     let canceled = false;
 
+    async function ensureCameraPermission() {
+      if (permissionRequestedRef.current) return;
+      permissionRequestedRef.current = true;
+
+      // Capacitor native build: ensure permission via Capacitor bridge
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { Camera } = await import("@capacitor/camera");
+          await Camera.requestPermissions({ permissions: ["camera"] });
+          return;
+        } catch (err) {
+          // Fallback to web prompt if Camera plugin isn't available
+          console.warn("Capacitor camera permission request failed, falling back to web API", err);
+        }
+      }
+
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach((track) => track.stop());
+    }
+
     async function start() {
       try {
         setError(null);
         setScanning(true);
+        await ensureCameraPermission();
         const devices = await BrowserMultiFormatReader.listVideoInputDevices();
 
         // Bevorzuge Rückkamera (environment) wenn verfügbar
@@ -119,11 +146,34 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
             playsInline
           />
           {scanning && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-              <div className="rounded-md bg-emerald-500/90 px-3 py-1 text-xs font-medium text-black">
-                📱 Suche nach Barcode...
+            <>
+              <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] pointer-events-none" />
+              <div className="absolute inset-4 rounded-3xl border-2 border-emerald-400/70 animate-pulse pointer-events-none" />
+              <div className="absolute inset-x-6 top-4 flex items-center justify-between text-[11px] font-semibold text-emerald-100 drop-shadow-sm pointer-events-none">
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
+                  Suche Barcode…
+                </span>
+                <span className="text-emerald-200/80 font-normal">Gerät ruhig halten</span>
               </div>
-            </div>
+              <div className="absolute inset-x-6 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-emerald-300 to-transparent animate-scan-line pointer-events-none" />
+              <style jsx>{`
+                @keyframes scan-line {
+                  0% {
+                    transform: translateY(-50px);
+                  }
+                  50% {
+                    transform: translateY(50px);
+                  }
+                  100% {
+                    transform: translateY(-50px);
+                  }
+                }
+                .animate-scan-line {
+                  animation: scan-line 1.5s ease-in-out infinite;
+                }
+              `}</style>
+            </>
           )}
         </div>
       )}

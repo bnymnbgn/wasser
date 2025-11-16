@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { calculateScores } from "@/src/domain/scoring";
 import { deriveWaterInsights } from "@/src/domain/waterInsights";
 import type { WaterAnalysisValues, ScanResult } from "@/src/domain/types";
@@ -13,6 +14,7 @@ import {
   applyWaterValueOverrides,
 } from "@/src/lib/openfoodfacts";
 import { BarcodeRequestSchema, validateRequest } from "@/src/lib/validation";
+import { checkRateLimit } from "@/src/lib/rateLimit";
 
 /**
  * Sucht ein Wasserprodukt zuerst in der lokalen DB,
@@ -41,32 +43,32 @@ async function lookupWaterProduct(barcode: string): Promise<{
 
   if (dbSource && dbSource.analyses.length > 0) {
     const analysis = dbSource.analyses[0];
-
-    // Prüfe ob Analyse verwendbare Werte hat
-    const values: Partial<WaterAnalysisValues> = {
-      ph: analysis.ph ?? undefined,
-      calcium: analysis.calcium ?? undefined,
-      magnesium: analysis.magnesium ?? undefined,
-      sodium: analysis.sodium ?? undefined,
-      potassium: analysis.potassium ?? undefined,
-      chloride: analysis.chloride ?? undefined,
-      sulfate: analysis.sulfate ?? undefined,
-      bicarbonate: analysis.bicarbonate ?? undefined,
-      nitrate: analysis.nitrate ?? undefined,
-      totalDissolvedSolids: analysis.totalDissolvedSolids ?? undefined,
-    };
-
-    if (hasAnyWaterValue(values)) {
-      return {
-        source: {
-          id: dbSource.id,
-          brand: dbSource.brand,
-          productName: dbSource.productName,
-          origin: dbSource.origin,
-        },
-        analysis: values as WaterAnalysisValues,
-        fromCache: true,
+    if (analysis) {
+      const values: Partial<WaterAnalysisValues> = {
+        ph: analysis.ph ?? undefined,
+        calcium: analysis.calcium ?? undefined,
+        magnesium: analysis.magnesium ?? undefined,
+        sodium: analysis.sodium ?? undefined,
+        potassium: analysis.potassium ?? undefined,
+        chloride: analysis.chloride ?? undefined,
+        sulfate: analysis.sulfate ?? undefined,
+        bicarbonate: analysis.bicarbonate ?? undefined,
+        nitrate: analysis.nitrate ?? undefined,
+        totalDissolvedSolids: analysis.totalDissolvedSolids ?? undefined,
       };
+
+      if (hasAnyWaterValue(values)) {
+        return {
+          source: {
+            id: dbSource.id,
+            brand: dbSource.brand,
+            productName: dbSource.productName,
+            origin: dbSource.origin,
+          },
+          analysis: values as WaterAnalysisValues,
+          fromCache: true,
+        };
+      }
     }
   }
 
@@ -153,6 +155,15 @@ export async function POST(req: NextRequest) {
   }
 
   const { barcode, profile } = parsed.data;
+  const clientIdentifier =
+    req.ip ?? req.headers.get("x-forwarded-for") ?? "anonymous";
+  const rate = await checkRateLimit(`barcode:${clientIdentifier}`);
+  if (!rate.success) {
+    return NextResponse.json(
+      { error: "Zu viele Barcodescans. Bitte versuche es gleich erneut." },
+      { status: 429, headers: rate.headers }
+    );
+  }
 
   // Lookup in DB + OpenFoodFacts
   const lookup = await lookupWaterProduct(barcode);
@@ -189,7 +200,7 @@ export async function POST(req: NextRequest) {
       }, {}),
       waterSourceId: lookup.source.id,
       waterAnalysisId: latestAnalysis?.id ?? null,
-      ocrParsedValues: lookup.analysis,
+      ocrParsedValues: lookup.analysis as Prisma.InputJsonValue,
     },
     include: {
       waterSource: true,

@@ -59,6 +59,7 @@ export const OcrRequestSchema = z.object({
 
   if (hasText && textLength < 10) {
     ctx.addIssue({
+      origin: "string",
       code: z.ZodIssueCode.too_small,
       minimum: 10,
       inclusive: true,
@@ -120,7 +121,7 @@ export function validateRequest<T>(
     return { success: true, data: result.data };
   }
 
-  const firstError = result.error.errors[0];
+  const firstError = result.error.issues[0];
   const errorMessage = firstError
     ? `${firstError.path.join('.')}: ${firstError.message}`
     : 'Validierungsfehler';

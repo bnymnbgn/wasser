@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { calculateScores } from "@/src/domain/scoring";
 import { deriveWaterInsights } from "@/src/domain/waterInsights";
 import type { WaterAnalysisValues, ScanResult } from "@/src/domain/types";
 import { mapPrismaScanResult } from "@/src/domain/mappers";
 import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
 import { OcrRequestSchema, validateRequest } from "@/src/lib/validation";
+import { checkRateLimit } from "@/src/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -13,6 +15,16 @@ export async function POST(req: NextRequest) {
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  const clientIdentifier =
+    req.ip ?? req.headers.get("x-forwarded-for") ?? "anonymous";
+  const rate = await checkRateLimit(`ocr:${clientIdentifier}`);
+  if (!rate.success) {
+    return NextResponse.json(
+      { error: "Zu viele Anfragen. Bitte versuche es in Kürze erneut." },
+      { status: 429, headers: rate.headers }
+    );
   }
 
   const { text, profile, values: providedValues } = parsed.data;
@@ -62,8 +74,8 @@ export async function POST(req: NextRequest) {
       profile,
       timestamp: new Date(),
       ocrTextRaw: ocrText || null,
-      ocrParsedValues: Object.keys(ocrValues).length ? ocrValues : null,
-      userOverrides: providedValues ?? null,
+      ocrParsedValues: Object.keys(ocrValues).length ? (ocrValues as Prisma.InputJsonValue) : Prisma.JsonNull,
+      userOverrides: providedValues ? (providedValues as Prisma.InputJsonValue) : Prisma.JsonNull,
       score: scoreResult.totalScore,
       metricScores: scoreResult.metrics.reduce<Record<string, number>>(
         (acc, m) => {

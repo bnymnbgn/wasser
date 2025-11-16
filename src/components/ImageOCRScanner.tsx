@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { createWorker, type Worker } from "tesseract.js";
+import { Capacitor } from "@capacitor/core";
 
 interface ImageOCRScannerProps {
   onTextExtracted: (text: string, confidence?: number) => void;
@@ -115,7 +116,9 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
     try {
       // Preprocess image if it's a Blob/File
       let processedSource = imageSource;
-      if (imageSource instanceof Blob || imageSource instanceof File) {
+      const isBlob = typeof Blob !== "undefined" && imageSource instanceof Blob;
+      const isFile = typeof File !== "undefined" && imageSource instanceof File;
+      if (isBlob || isFile) {
         processedSource = await preprocessImage(imageSource);
       }
 
@@ -198,9 +201,34 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
     }
   }, [previewUrl]);
 
+  const cameraPermissionRef = useRef(false);
+
+  async function ensureCameraPermission() {
+    if (cameraPermissionRef.current) return;
+    cameraPermissionRef.current = true;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { Camera } = await import("@capacitor/camera");
+        await Camera.requestPermissions({ permissions: ["camera"] });
+        return;
+      } catch (err) {
+        console.warn("Capacitor camera permission request failed, falling back to web API", err);
+      }
+    }
+
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      return;
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    stream.getTracks().forEach((track) => track.stop());
+  }
+
   async function startCamera() {
     setError(null);
     try {
+      await ensureCameraPermission();
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" }, // Rückkamera bevorzugen
       });
@@ -263,7 +291,19 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
   }
 
   return (
-    <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-4">
+    <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-4 relative overflow-hidden">
+      {isProcessing && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm pointer-events-none">
+          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-200 mb-3">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            OCR analysiert dein Foto …
+          </div>
+          <div className="w-40 h-40 border-2 border-emerald-400/60 rounded-[32px] animate-pulse flex items-center justify-center">
+            <div className="border-emerald-300/70 border-t-transparent border-4 rounded-full w-12 h-12 animate-spin" />
+          </div>
+          <p className="text-xs text-emerald-100 mt-3">Bitte nicht verlassen – wir lesen die Etikettzeilen aus.</p>
+        </div>
+      )}
       <div className="mb-3">
         <h3 className="text-sm font-medium text-slate-200 mb-1">
           Etikett fotografieren oder hochladen
@@ -339,7 +379,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
 
       {/* Camera Preview */}
       <div
-        className={`overflow-hidden rounded-md border border-slate-700 mb-3 ${
+        className={`relative overflow-hidden rounded-md border border-slate-700 mb-3 ${
           isCameraActive ? "" : "hidden"
         }`}
       >
@@ -350,6 +390,19 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
           muted
           className="block w-full h-64 object-cover bg-black"
         />
+        {isCameraActive && (
+          <>
+            <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-slate-900/20 via-transparent to-slate-900/40" />
+            <div className="absolute inset-6 border-2 border-emerald-300/70 rounded-[28px] pointer-events-none animate-[slow-pulse_2s_ease-in-out_infinite]" />
+            <div className="absolute inset-x-6 top-4 flex items-center justify-between text-[11px] font-semibold text-white drop-shadow pointer-events-none">
+              <span className="inline-flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                Kamera aktiv – Etikett zentrieren
+              </span>
+              <span className="text-emerald-200/90">Tippe auf „Foto aufnehmen“</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Canvas (hidden, nur für Capture) */}
@@ -357,28 +410,79 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
 
       {/* Image Preview */}
       {previewUrl && !isCameraActive && (
-        <div className="overflow-hidden rounded-md border border-slate-700 mb-3">
+        <div className="relative overflow-hidden rounded-md border border-slate-700 mb-3">
           <img
             src={previewUrl}
             alt="Preview"
             className="block w-full h-auto max-h-64 object-contain bg-slate-950"
           />
+          {isProcessing && (
+            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 pointer-events-none">
+              <div className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-100">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                OCR liest dein Etikett …
+              </div>
+              <div className="w-32 h-32 border border-emerald-300/60 rounded-[28px] animate-pulse flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+              <p className="text-[11px] text-emerald-100/90">Bitte warte einen Moment.</p>
+            </div>
+          )}
         </div>
       )}
 
       {/* Progress */}
       {isProcessing && (
-        <div className="rounded-md bg-slate-800/60 px-3 py-2">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-slate-300">Texterkennung läuft...</span>
-            <span className="text-xs font-mono text-slate-400">{progress}%</span>
+        <div className="rounded-md bg-slate-800/80 px-3 py-3 space-y-2 relative overflow-hidden mt-3">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-1 rounded-2xl border border-emerald-400/40 animate-slow-pulse" />
           </div>
-          <div className="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-medium text-emerald-200 relative z-10">
+            <span className="inline-flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              Texterkennung läuft …
+            </span>
+            <span className="font-mono">{progress}%</span>
+          </div>
+          <div className="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden relative z-10">
             <div
-              className="bg-emerald-500 h-1.5 transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-emerald-500 h-1.5 animate-progress-bar"
+              style={{ width: `${Math.max(progress, 10)}%` }}
             />
           </div>
+          <div className="text-[11px] text-slate-300 relative z-10">
+            Halte das Foto ruhig – die OCR analysiert Zeile für Zeile.
+          </div>
+              <style jsx>{`
+            @keyframes progress-bar {
+              0% {
+                opacity: 0.6;
+              }
+              50% {
+                opacity: 1;
+              }
+              100% {
+                opacity: 0.6;
+              }
+            }
+            .animate-progress-bar {
+              animation: progress-bar 1.2s ease-in-out infinite;
+            }
+            @keyframes slow-pulse {
+              0% {
+                opacity: 0.2;
+              }
+              50% {
+                opacity: 0.6;
+              }
+              100% {
+                opacity: 0.2;
+              }
+            }
+            .animate-slow-pulse {
+              animation: slow-pulse 2s ease-in-out infinite;
+            }
+          `}</style>
         </div>
       )}
 

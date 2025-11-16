@@ -4,7 +4,7 @@ import type { ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import type { ProfileFit } from "@/src/domain/waterInsights";
 import { CircularProgress } from "@/src/components/ui/CircularProgress";
 import { Droplet, AlertCircle, CheckCircle, Info, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 function scoreToColor(score: number | undefined): "success" | "warning" | "error" {
   if (score == null) return "error";
@@ -36,6 +36,42 @@ const METRIC_LABELS: Record<keyof WaterAnalysisValues, string> = {
   nitrate: "Nitrat",
   totalDissolvedSolids: "Gesamtmineralisation",
 };
+
+const GLOSSARY_ENTRIES = [
+  {
+    term: "Hydrogencarbonat",
+    description: "Mineral, das als natürlicher Säurepuffer wirkt und Magen sowie Regeneration unterstützt.",
+  },
+  {
+    term: "Sulfat",
+    description: "Anion, das in höherer Konzentration verdauungsfördernd wirken kann.",
+  },
+  {
+    term: "Natrium",
+    description: "Elektrolyt, wichtig für Flüssigkeitshaushalt – bei Hypertonie sind niedrige Werte erwünscht.",
+  },
+  {
+    term: "Magnesium",
+    description: "Mineral für Muskel- und Nervenfunktion; hohe Werte unterstützen Regeneration.",
+  },
+  {
+    term: "Calcium",
+    description: "Zentrales Mineral für Knochen und Stoffwechsel, trägt auch zum Geschmack bei.",
+  },
+] as const;
+
+const GLOSSARY_MAP = GLOSSARY_ENTRIES.reduce<Record<string, (typeof GLOSSARY_ENTRIES)[number]>>(
+  (acc, entry) => {
+    acc[entry.term.toLowerCase()] = entry;
+    return acc;
+  },
+  {}
+);
+
+const glossaryRegex = new RegExp(
+  `\\b(${GLOSSARY_ENTRIES.map((entry) => entry.term).join("|")})\\b`,
+  "gi"
+);
 
 export function WaterScoreCard({ scanResult }: Props) {
   const [showDetails, setShowDetails] = useState(false);
@@ -220,7 +256,7 @@ export function WaterScoreCard({ scanResult }: Props) {
                   </span>
                 </div>
                 <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  {badge.description}
+                  <GlossaryText text={badge.description} />
                 </p>
               </div>
             ))}
@@ -248,7 +284,7 @@ export function WaterScoreCard({ scanResult }: Props) {
                   {item.title}
                 </p>
                 <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">
-                  {item.description}
+                  <GlossaryText text={item.description} />
                 </p>
               </div>
             ))}
@@ -316,5 +352,66 @@ export function WaterScoreCard({ scanResult }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+function GlossaryText({ text }: { text: string }) {
+  const nodes = useMemo(() => {
+    const parts: ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    const regex = new RegExp(glossaryRegex);
+
+    while ((match = regex.exec(text)) !== null) {
+      const [matched] = match;
+      const start = match.index;
+      if (start > lastIndex) {
+        parts.push(text.slice(lastIndex, start));
+      }
+      parts.push(
+        <GlossaryHint key={`${matched}-${start}`} display={matched} />
+      );
+      lastIndex = start + matched.length;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length ? parts : [text];
+  }, [text]);
+
+  return <>{nodes}</>;
+}
+
+function GlossaryHint({ display }: { display: string }) {
+  const [open, setOpen] = useState(false);
+  const normalized = display.toLowerCase();
+  const entry = GLOSSARY_MAP[normalized];
+
+  if (!entry) {
+    return display;
+  }
+
+  return (
+    <span className="relative inline-flex items-center">
+      <button
+        type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-300 underline decoration-dotted decoration-2"
+      >
+        {display}
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      {open && (
+        <span className="absolute left-0 top-full mt-2 w-64 rounded-2xl bg-slate-900 text-white text-xs shadow-2xl p-3 z-20">
+          <p className="font-semibold text-sm mb-1">{entry.term}</p>
+          <p className="text-slate-100/80">{entry.description}</p>
+        </span>
+      )}
+    </span>
   );
 }

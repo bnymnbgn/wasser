@@ -25,7 +25,7 @@ const shouldUseCapacitorStubs =
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Static export for Capacitor (comment out for dev with API routes)
-  output: process.env.CAPACITOR_BUILD === 'true' ? 'export' : undefined,
+  // output: process.env.CAPACITOR_BUILD === 'true' ? 'export' : undefined,
 
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],

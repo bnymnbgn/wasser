@@ -7,11 +7,10 @@ const config: CapacitorConfig = {
 
   // Server configuration for development
   server: {
-    androidScheme: 'https',
-    iosScheme: 'https',
-    // Uncomment for local development with live reload:
-    // url: 'http://192.168.1.X:3000',
-    // cleartext: true
+    androidScheme: 'http',
+    iosScheme: 'http',
+    url: 'http://192.168.178.49:3000',
+    cleartext: true,
   },
 
   // Android specific configuration

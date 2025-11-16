@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:capacitor": "cross-env CAPACITOR_BUILD=true next build",
+    "build:capacitor": "cross-env NEXT_FONT_IGNORE_ERRORS=1 next build",
+    "build:capacitor:static": "cross-env NEXT_FONT_IGNORE_ERRORS=1 CAPACITOR_BUILD=true next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
@@ -15,12 +16,14 @@
     "cap:add:android": "npx cap add android",
     "cap:sync": "npm run build:capacitor && npx cap sync",
     "cap:sync:android": "npm run build:capacitor && npx cap sync android",
+    "cap:sync:android:static": "npm run build:capacitor:static && npx cap sync android",
     "cap:open:android": "npx cap open android",
-    "cap:run:android": "npm run cap:sync:android && npx cap run android",
-    "cap:build:android": "npm run cap:sync:android && cd android && ./gradlew assembleDebug"
+    "cap:run:android": "npx cap run android --no-sync",
+    "cap:build:android": "npm run cap:sync:android:static && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
+    "@capacitor/camera": "^7.0.2",
     "@capacitor/core": "^7.4.4",
     "@capacitor/haptics": "^7.0.2",
     "@capacitor/splash-screen": "^7.0.3",
