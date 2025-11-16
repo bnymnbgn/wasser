@@ -175,20 +175,57 @@ body {
   }
 }
 
-/* Component layer for reusable patterns */
+/* Typography system */
 @layer components {
+  /* Display text - Large hero text */
+  .text-display {
+    @apply text-5xl md:text-6xl font-bold leading-tight tracking-tight;
+    letter-spacing: -0.02em;
+  }
+
+  /* Headline - Section headers */
+  .text-headline {
+    @apply text-3xl md:text-4xl font-semibold leading-tight;
+  }
+
+  /* Title - Card headers */
+  .text-title {
+    @apply text-2xl font-semibold leading-snug;
+  }
+
+  /* Body Large - Emphasized content */
+  .text-body-large {
+    @apply text-lg font-normal leading-relaxed;
+  }
+
+  /* Body - Default text */
+  .text-body {
+    @apply text-base font-normal leading-relaxed;
+  }
+
+  /* Label - Buttons and form labels */
+  .text-label {
+    @apply text-sm font-medium leading-tight tracking-wide uppercase;
+  }
+
+  /* Caption - Secondary info */
+  .text-caption {
+    @apply text-xs font-normal leading-tight;
+    color: var(--md-onSurface-variant);
+  }
+
   /* FAB (Floating Action Button) */
   .fab {
-    @apply fixed z-50 w-14 h-14 rounded-full shadow-elevation-3 flex items-center justify-center;
-    @apply bg-md-secondary text-md-onSecondary dark:bg-md-dark-secondary dark:text-md-dark-onSecondary;
-    @apply transition-transform active:scale-95;
-    bottom: calc(var(--bottom-nav-height) + 16px);
-    right: 16px;
+    @apply fixed z-50 w-16 h-16 rounded-full shadow-elevation-3 flex items-center justify-center;
+    @apply bg-md-primary text-md-onPrimary dark:bg-md-dark-primary dark:text-white;
+    @apply transition-all active:scale-95 hover:shadow-elevation-4;
+    bottom: calc(var(--bottom-nav-height) + 24px);
+    right: 24px;
   }
 
   /* Bottom sheet */
   .bottom-sheet {
-    @apply fixed inset-x-0 bottom-0 z-50 rounded-t-md-xl;
+    @apply fixed inset-x-0 bottom-0 z-50 rounded-t-[32px];
     @apply bg-md-surface dark:bg-md-dark-surface;
     @apply shadow-elevation-5;
     max-height: 90vh;
@@ -196,9 +233,22 @@ body {
 
   /* Card with Material Design elevation */
   .md-card {
-    @apply rounded-md-lg bg-md-surface-container dark:bg-md-dark-surface-container;
+    @apply rounded-3xl bg-md-surface-container dark:bg-md-dark-surface-container;
     @apply border border-md-surface-containerHigh/20 dark:border-md-dark-surface-containerHigh/20;
     @apply shadow-elevation-1;
+  }
+
+  /* Modern card with better styling */
+  .modern-card {
+    @apply rounded-[28px] bg-white dark:bg-slate-900;
+    @apply border border-slate-200/60 dark:border-slate-700/60;
+    @apply shadow-lg shadow-slate-900/5 dark:shadow-slate-950/20;
+    @apply transition-all duration-200;
+  }
+
+  .modern-card:hover {
+    @apply shadow-xl shadow-slate-900/10 dark:shadow-slate-950/30;
+    @apply border-slate-300/80 dark:border-slate-600/80;
   }
 
   /* Touch-friendly button */
@@ -206,6 +256,23 @@ body {
     @apply min-h-touch min-w-touch flex items-center justify-center;
     @apply rounded-md-md transition-all active:scale-95;
     @apply touch-manipulation no-tap-highlight;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply bg-md-primary dark:bg-md-dark-primary text-white;
+    @apply font-semibold rounded-full px-6 py-3;
+    @apply shadow-elevation-2 active:shadow-elevation-1;
+    @apply transition-all active:scale-98;
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply bg-md-surface-container dark:bg-md-dark-surface-container;
+    @apply text-md-primary dark:text-md-dark-primary;
+    @apply font-semibold rounded-full px-6 py-3;
+    @apply border border-md-primary/20 dark:border-md-dark-primary/20;
+    @apply transition-all active:scale-98;
   }
 
   /* Ripple effect container */
@@ -223,5 +290,46 @@ body {
 
   .section-heading {
     @apply text-sm uppercase tracking-[0.2em] text-md-onSurface-variant dark:text-md-dark-onSurface-variant font-semibold;
+  }
+
+  /* Stat card for metrics */
+  .stat-card {
+    @apply modern-card p-4 flex flex-col gap-2;
+  }
+
+  /* Badge variants */
+  .badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300;
+  }
+
+  .badge-error {
+    @apply badge bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300;
+  }
+
+  /* Circular progress indicator */
+  .circular-progress {
+    @apply relative inline-flex items-center justify-center;
+  }
+
+  /* Hide scrollbar */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

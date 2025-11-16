@@ -1,19 +1,22 @@
 import type { ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import { calculateScores } from "@/src/domain/scoring";
 import { deriveWaterInsights, type ProfileFit } from "@/src/domain/waterInsights";
+import { CircularProgress } from "@/src/components/ui/CircularProgress";
+import { Droplet, AlertCircle, CheckCircle, Info, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
-function scoreToColor(score: number | undefined) {
-  if (score == null) return "bg-slate-700 text-slate-100";
-  if (score >= 80) return "bg-emerald-500/20 text-emerald-200 border border-emerald-500/60";
-  if (score >= 50) return "bg-amber-500/20 text-amber-200 border border-amber-500/60";
-  return "bg-rose-500/20 text-rose-200 border border-rose-500/60";
+function scoreToColor(score: number | undefined): "success" | "warning" | "error" {
+  if (score == null) return "error";
+  if (score >= 80) return "success";
+  if (score >= 50) return "warning";
+  return "error";
 }
 
 function scoreLabel(score: number | undefined) {
   if (score == null) return "unbekannt";
-  if (score >= 80) return "sehr gut";
-  if (score >= 50) return "okay";
-  return "kritisch";
+  if (score >= 80) return "Sehr gut";
+  if (score >= 50) return "Okay";
+  return "Kritisch";
 }
 
 interface Props {
@@ -34,6 +37,7 @@ const METRIC_LABELS: Record<keyof WaterAnalysisValues, string> = {
 };
 
 export function WaterScoreCard({ scanResult }: Props) {
+  const [showDetails, setShowDetails] = useState(false);
   const { score, metricScores, ocrParsedValues, profile, warnings, userOverrides, productInfo, barcode } = scanResult;
   const mergedValues: Partial<WaterAnalysisValues> = {
     ...(ocrParsedValues ?? {}),
@@ -42,231 +46,256 @@ export function WaterScoreCard({ scanResult }: Props) {
   const insights = deriveWaterInsights(mergedValues);
   const activeProfileFit = insights.profileFit?.[profile];
 
-  // Erklärungen für die Metriken berechnen
   const scoring = Object.keys(mergedValues).length
     ? calculateScores(mergedValues, profile)
     : null;
 
+  const scoreColor = scoreToColor(score);
+
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-900/80 p-5">
-      <div className="flex flex-col gap-3 mb-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold">Ergebnis</h2>
-            <p className="text-xs text-slate-300">
-              Profil: <span className="font-medium">{scanResult.profile}</span>
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Hero Score Section */}
+      <div className="flex flex-col items-center py-6 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-950 rounded-[32px] border border-slate-200/60 dark:border-slate-700/60">
+        <CircularProgress
+          value={score ?? 0}
+          size={180}
+          strokeWidth={12}
+          color={scoreColor}
+          showValue={true}
+          className="mb-6"
+        />
 
-          <div className={`rounded-full px-4 py-2 text-sm font-medium ${scoreToColor(score ?? 0)}`}>
-            Gesamt-Score: {score?.toFixed(0) ?? "–"} / 100 ({scoreLabel(score)})
+        <div className="text-center space-y-2">
+          <div className={`badge ${
+            scoreColor === "success" ? "badge-success" :
+            scoreColor === "warning" ? "badge-warning" :
+            "badge-error"
+          }`}>
+            {scoreLabel(score)}
           </div>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Profil: <span className="font-medium">{profile}</span>
+          </p>
         </div>
-
-        {(productInfo || barcode) && (
-          <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm text-slate-200 space-y-1">
-            {productInfo && (
-              <>
-                <p className="font-semibold text-slate-100">
-                  {productInfo.brand ?? "Unbekannte Marke"}
-                  {productInfo.productName ? ` · ${productInfo.productName}` : ""}
-                </p>
-                {productInfo.origin && (
-                  <p className="text-xs text-slate-400">
-                    Herkunft: {productInfo.origin}
-                  </p>
-                )}
-              </>
-            )}
-            {barcode && (
-              <p className="text-xs text-slate-400">
-                Barcode: <span className="font-mono">{barcode}</span>
-              </p>
-            )}
-          </div>
-        )}
       </div>
 
-      {activeProfileFit && (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 mb-4 text-xs">
-          <p className="font-semibold text-slate-100">
-            Passung für Profil „{profile}“:{" "}
-            <span
-              className={clsxProfileBadge(activeProfileFit.status)}
-            >
-              {profileFitLabel(activeProfileFit.status)}
-            </span>
-          </p>
-          {activeProfileFit.reasons.length > 0 && (
-            <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-300">
-              {activeProfileFit.reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
-            </ul>
+      {/* Product Info */}
+      {(productInfo || barcode) && (
+        <div className="modern-card p-4 space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Droplet className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Produkt</h3>
+          </div>
+          {productInfo && (
+            <>
+              <p className="font-medium text-slate-900 dark:text-slate-100">
+                {productInfo.brand ?? "Unbekannte Marke"}
+                {productInfo.productName ? ` · ${productInfo.productName}` : ""}
+              </p>
+              {productInfo.origin && (
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Herkunft: {productInfo.origin}
+                </p>
+              )}
+            </>
+          )}
+          {barcode && (
+            <p className="text-xs font-mono text-slate-500 dark:text-slate-500">
+              {barcode}
+            </p>
           )}
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 mt-4">
-        <div className="text-sm">
-          <h3 className="font-medium mb-2">Erkannte Werte & Kennzeichnungen</h3>
-          <dl className="space-y-2 text-xs text-slate-200">
-            {Object.keys(METRIC_LABELS).map((key) => {
-              const metric = key as keyof WaterAnalysisValues;
-              const value = mergedValues[metric];
-              if (value == null) return null;
-              const unit = metric === "ph" ? "" : " mg/L";
-              return (
-                <div key={key} className="flex items-center justify-between gap-2 rounded-md border border-slate-800/70 bg-slate-950/30 px-3 py-2">
-                  <dt className="text-slate-300">{METRIC_LABELS[metric]}</dt>
-                  <dd className="font-mono">
-                    {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    {unit}
-                  </dd>
-                </div>
-              );
-            })}
-            {Object.values(mergedValues).every((v) => v == null) && (
-              <p className="text-slate-400 text-xs">Keine Werte verfügbar.</p>
+      {/* Profile Fit */}
+      {activeProfileFit && (
+        <div className={`modern-card p-4 border-2 ${
+          activeProfileFit.status === "ideal" ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30" :
+          activeProfileFit.status === "ok" ? "border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30" :
+          "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/30"
+        }`}>
+          <div className="flex items-start gap-3">
+            {activeProfileFit.status === "ideal" ? (
+              <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+            ) : activeProfileFit.status === "avoid" ? (
+              <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0" />
+            ) : (
+              <Info className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0" />
             )}
-          </dl>
-        </div>
-
-        {metricScores && (
-          <div className="text-sm">
-            <h3 className="font-medium mb-2">Score je Metrik</h3>
-            <ul className="space-y-2 text-xs">
-              {Object.entries(metricScores).map(([key, scoreValue]) => (
-                <li
-                  key={key}
-                  className={`flex justify-between rounded-md px-3 py-2 ${scoreToColor(scoreValue)}`}
-                >
-                  <span className="capitalize">{key}</span>
-                  <span className="font-mono">{scoreValue.toFixed(0)} / 100</span>
-                </li>
-              ))}
-            </ul>
+            <div className="flex-1">
+              <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                {activeProfileFit.status === "ideal" ? "Ideal" : activeProfileFit.status === "ok" ? "Geeignet" : "Nicht empfohlen"} für {profile}
+              </p>
+              {activeProfileFit.reasons.length > 0 && (
+                <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                  {activeProfileFit.reasons.map((reason, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-slate-400 dark:text-slate-600">•</span>
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Metric Chips - Horizontal Scroll */}
+      <div className="space-y-3">
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100 px-1">
+          Mineralwerte
+        </h3>
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory hide-scrollbar">
+          {Object.keys(METRIC_LABELS).map((key) => {
+            const metric = key as keyof WaterAnalysisValues;
+            const value = mergedValues[metric];
+            if (value == null) return null;
+            const unit = metric === "ph" ? "" : " mg/L";
+            const metricScore = metricScores?.[metric];
+            const chipColor = metricScore !== undefined && metricScore >= 80 ? "emerald" :
+                             metricScore !== undefined && metricScore >= 50 ? "amber" : "red";
+
+            return (
+              <div
+                key={key}
+                className="snap-start flex-shrink-0 modern-card p-3 min-w-[140px] border-l-4"
+                style={{
+                  borderLeftColor: `var(--${chipColor})`,
+                }}
+              >
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+                  {METRIC_LABELS[metric]}
+                </p>
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}{unit}
+                </p>
+                {metricScore !== undefined && (
+                  <p className={`text-xs font-medium ${
+                    chipColor === "emerald" ? "text-emerald-600 dark:text-emerald-400" :
+                    chipColor === "amber" ? "text-amber-600 dark:text-amber-400" :
+                    "text-red-600 dark:text-red-400"
+                  }`}>
+                    Score: {metricScore.toFixed(0)}/100
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
+      {/* Badges */}
       {insights.badges.length > 0 && (
-        <section className="mt-5">
-          <h3 className="text-sm font-medium mb-2">Regulatorische Hinweise</h3>
+        <div className="modern-card p-4 space-y-3">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+            Kennzeichnungen
+          </h3>
           <div className="flex flex-wrap gap-2">
             {insights.badges.map((badge) => (
               <span
                 key={badge.id}
-                className={badgeToneClass(badge.tone)}
+                className={
+                  badge.tone === "positive" ? "badge-success" :
+                  badge.tone === "warning" ? "badge-warning" :
+                  "badge-info"
+                }
                 title={badge.description}
               >
                 {badge.label}
               </span>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-slate-400">
-            Basierend auf Min/TafelWV und ernährungsphysiologischen Kategorien (z. B. „calciumhaltig“, „natriumarm“).
-          </p>
-        </section>
+        </div>
       )}
 
+      {/* Synergies */}
       {insights.synergies.length > 0 && (
-        <section className="mt-5">
-          <h3 className="text-sm font-medium mb-2">Synergien & klinische Hinweise</h3>
-          <div className="grid gap-2">
+        <div className="modern-card p-4 space-y-3">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+            Gesundheitliche Hinweise
+          </h3>
+          <div className="space-y-2">
             {insights.synergies.map((item) => (
-              <div key={item.id} className={synergyToneClass(item.tone)}>
-                <p className="text-xs font-semibold text-slate-100">{item.title}</p>
-                <p className="text-[11px] text-slate-200">{item.description}</p>
+              <div
+                key={item.id}
+                className={`p-3 rounded-2xl border ${
+                  item.tone === "positive" ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/50" :
+                  item.tone === "warning" ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-800/50" :
+                  "bg-blue-50 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-800/50"
+                }`}
+              >
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {item.title}
+                </p>
+                <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">
+                  {item.description}
+                </p>
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
+      {/* Warnings */}
       {warnings && warnings.length > 0 && (
-        <section className="mt-5">
-          <h3 className="text-sm font-medium text-amber-300 mb-2">Warnungen aus der Analyse</h3>
-          <ul className="list-disc pl-5 text-xs text-amber-200 space-y-1">
-            {warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </section>
+        <div className="modern-card p-4 border-2 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                Warnungen
+              </h3>
+              <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-200">
+                {warnings.map((warning, idx) => (
+                  <li key={idx}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
       )}
 
+      {/* Expandable Scoring Details */}
       {scoring && (
-        <div className="mt-4 pt-4 border-t border-slate-700">
-          <h3 className="text-sm font-medium mb-2">Wie die Bewertung zustande kam</h3>
-          <div className="grid gap-2 text-xs">
-            {scoring.metrics
-              .filter(m => m.score !== 50) // Zeige nur relevante Metriken
-              .map(metric => (
-                <div key={metric.metric} className="rounded-md bg-slate-950/40 p-2">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-medium capitalize text-slate-100">
-                      {metric.metric}
-                    </span>
-                    <span className="font-mono text-slate-300">
-                      {metric.score.toFixed(0)} / 100
-                    </span>
+        <div className="modern-card overflow-hidden">
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"
+          >
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+              Bewertungs-Details
+            </h3>
+            {showDetails ? (
+              <ChevronUp className="w-5 h-5 text-slate-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-slate-400" />
+            )}
+          </button>
+
+          {showDetails && (
+            <div className="px-4 pb-4 space-y-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+              {scoring.metrics
+                .filter(m => m.score !== 50)
+                .map(metric => (
+                  <div key={metric.metric} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                        {metric.metric}
+                      </span>
+                      <span className="text-sm font-mono text-slate-600 dark:text-slate-400">
+                        {metric.score.toFixed(0)}/100
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {metric.explanation}
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    {metric.explanation}
-                  </p>
-                </div>
-              ))}
-          </div>
+                ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
-}
-
-function profileFitLabel(status: ProfileFit["status"]) {
-  switch (status) {
-    case "ideal":
-      return "ideal";
-    case "ok":
-      return "ok";
-    case "avoid":
-      return "kritisch";
-    default:
-      return status;
-  }
-}
-
-function clsxProfileBadge(status: ProfileFit["status"]) {
-  switch (status) {
-    case "ideal":
-      return "inline-flex items-center rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] text-emerald-200";
-    case "ok":
-      return "inline-flex items-center rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] text-amber-200";
-    case "avoid":
-      return "inline-flex items-center rounded-full bg-rose-500/20 px-2 py-0.5 text-[11px] text-rose-200";
-    default:
-      return "inline-flex items-center rounded-full bg-slate-700/40 px-2 py-0.5 text-[11px] text-slate-200";
-  }
-}
-
-function badgeToneClass(tone: "positive" | "info" | "warning") {
-  switch (tone) {
-    case "positive":
-      return "rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] text-emerald-200 border border-emerald-500/40";
-    case "warning":
-      return "rounded-full bg-rose-500/20 px-3 py-1 text-[11px] text-rose-200 border border-rose-500/40";
-    default:
-      return "rounded-full bg-slate-600/20 px-3 py-1 text-[11px] text-slate-100 border border-slate-500/40";
-  }
-}
-
-function synergyToneClass(tone: "positive" | "info" | "warning") {
-  switch (tone) {
-    case "positive":
-      return "rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3";
-    case "warning":
-      return "rounded-lg border border-rose-500/40 bg-rose-500/10 p-3";
-    default:
-      return "rounded-lg border border-slate-600/40 bg-slate-600/10 p-3";
-  }
 }

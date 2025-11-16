@@ -240,6 +240,17 @@ module.exports = {
         'md-lg': '16px',
         'md-xl': '28px',
       },
+      // Additional utilities
+      scale: {
+        '98': '0.98',
+      },
+      transitionProperty: {
+        'height': 'height',
+        'spacing': 'margin, padding',
+      },
+      backdropBlur: {
+        'xs': '2px',
+      },
     },
   },
   plugins: [],
