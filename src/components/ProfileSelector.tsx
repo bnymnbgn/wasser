@@ -13,32 +13,37 @@ const PROFILE_PRESENTATION: Record<
   ProfileId,
   {
     icon: React.ReactNode;
-    gradient: string;
+    gradientFrom: string;
+    gradientTo: string;
     color: string;
     badge?: string;
   }
 > = {
   standard: {
     icon: <User className="w-6 h-6" />,
-    gradient: "from-blue-500 to-cyan-500",
+    gradientFrom: "#3b82f6", // blue-500
+    gradientTo: "#06b6d4", // cyan-500
     color: "bg-blue-500",
     badge: "Allgemein",
   },
   baby: {
     icon: <Baby className="w-6 h-6" />,
-    gradient: "from-pink-500 to-rose-500",
+    gradientFrom: "#ec4899", // pink-500
+    gradientTo: "#f43f5e", // rose-500
     color: "bg-pink-500",
     badge: "Schonend",
   },
   sport: {
     icon: <Zap className="w-6 h-6" />,
-    gradient: "from-orange-500 to-amber-500",
+    gradientFrom: "#f97316", // orange-500
+    gradientTo: "#f59e0b", // amber-500
     color: "bg-orange-500",
     badge: "Mineralreich",
   },
   blood_pressure: {
     icon: <Heart className="w-6 h-6" />,
-    gradient: "from-red-500 to-pink-500",
+    gradientFrom: "#ef4444", // red-500
+    gradientTo: "#ec4899", // pink-500
     color: "bg-red-500",
     badge: "Natriumarm",
   },
@@ -78,13 +83,11 @@ export function ProfileSelector({ value, onChange }: Props) {
               "relative flex flex-col items-center gap-3 rounded-2xl p-4 min-h-touch",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition-all",
               isActive
-                ? "bg-gradient-to-br shadow-elevation-3 text-white focus-visible:ring-white/50"
+                ? "shadow-elevation-3 text-white focus-visible:ring-white/50"
                 : "bg-md-surface-container dark:bg-md-dark-surface-container focus-visible:ring-md-primary/50"
             )}
             style={isActive ? {
-              backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))`,
-              ['--tw-gradient-from' as any]: presentation.gradient.split(' ')[1],
-              ['--tw-gradient-to' as any]: presentation.gradient.split(' ')[3],
+              backgroundImage: `linear-gradient(135deg, ${presentation.gradientFrom} 0%, ${presentation.gradientTo} 100%)`,
             } : undefined}
           >
             {/* Icon Circle */}
