@@ -43,7 +43,11 @@ const REGULATORY_RULES: ThresholdRule[] = [
     id: "calcium_high",
     metric: "calcium",
     label: "Calciumhaltig",
-    description: "Mehr als 150 mg/L Calcium – entspricht der Min/TafelWV.",
+    description:
+      "Mehr als 150 mg/L Calcium (Min/TafelWV). Randomisierte Studien (Leibniz Uni Hannover) belegen: " +
+      "Die Bioverfügbarkeit ist statistisch identisch zu Milch – aber kalorienfrei! " +
+      "Essentiell für Knochen, Muskeln und Nervenimpulse. " +
+      "Tipp: Bei Nierensteinrisiko auf ausreichend Magnesium & Hydrogencarbonat im selben Wasser achten (Inhibitoren).",
     tone: "positive",
     min: 150,
   },
@@ -51,7 +55,11 @@ const REGULATORY_RULES: ThresholdRule[] = [
     id: "magnesium_high",
     metric: "magnesium",
     label: "Magnesiumhaltig",
-    description: "Mehr als 50 mg/L Magnesium – deckt ein gutes Stück des Tagesbedarfs.",
+    description:
+      "Mehr als 50 mg/L Magnesium (Min/TafelWV). Klinische Evidenz: " +
+      "Bioverfügbarkeit vergleichbar mit Vollkornbrot oder Supplementen (RCT-Studien). " +
+      "Essentiell für Muskelfunktion, Energiestoffwechsel und Nervensystem. " +
+      "Wissenschaftlicher Tipp: Über den Tag verteilt trinken steigert die Absorption um 56% (29% bei Bolus vs. 47.5% verteilt)!",
     tone: "positive",
     min: 50,
   },
@@ -59,7 +67,11 @@ const REGULATORY_RULES: ThresholdRule[] = [
     id: "bicarbonate_high",
     metric: "bicarbonate",
     label: "Hydrogencarbonatreich",
-    description: "Über 600 mg/L Hydrogencarbonat – starker Säurepuffer.",
+    description:
+      "Über 600 mg/L Hydrogencarbonat (Min/TafelWV). " +
+      "Wirkt als natürlicher Säurepuffer (Alkalisierung) und fördert die Citratausscheidung – " +
+      "gut für die Regeneration nach Sport oder schwerem Essen. " +
+      "Hydrogencarbonat ist ein Schlüsselmineral für die Balance im Körper.",
     tone: "positive",
     min: 600,
   },
@@ -67,7 +79,11 @@ const REGULATORY_RULES: ThresholdRule[] = [
     id: "bicarbonate_heal",
     metric: "bicarbonate",
     label: "Heilwasser-Puffer",
-    description: "Über 1300 mg/L Hydrogencarbonat – klinische Evidenz bei Sodbrennen.",
+    description:
+      "Über 1300 mg/L Hydrogencarbonat (Heilwasser-Standard). " +
+      "Goldstandard-Evidenz: Die STOMACH STILL-Studie (multizentriert, doppelblind, placebokontrolliert) bewies " +
+      "signifikante Überlegenheit bei Sodbrennen – 84.7% Responder-Rate vs. 63.5% Placebo (p=0.0003). " +
+      "Klinisch wirksam zur Symptomreduktion bei Reflux (GERD).",
     tone: "positive",
     min: 1300,
   },
@@ -75,7 +91,10 @@ const REGULATORY_RULES: ThresholdRule[] = [
     id: "sulfate_high",
     metric: "sulfate",
     label: "Sulfathaltig",
-    description: "Mehr als 200 mg/L Sulfat – traditionell verdauungsfördernd.",
+    description:
+      "Mehr als 200 mg/L Sulfat (Min/TafelWV). " +
+      "Traditionell und regulatorisch als verdauungsfördernd anerkannt. " +
+      "Sulfat kann die Darmmotilität unterstützen – ideal morgens auf nüchternen Magen.",
     tone: "info",
     min: 200,
   },
@@ -83,7 +102,11 @@ const REGULATORY_RULES: ThresholdRule[] = [
     id: "sodium_low",
     metric: "sodium",
     label: "Natriumarm",
-    description: "Weniger als 20 mg/L Natrium – ideal für Babynahrung & Blutdruck.",
+    description:
+      "Weniger als 20 mg/L Natrium (Min/TafelWV). " +
+      "Vorteile: Ideal für Menschen mit Bluthochdruck (Hypertonie) oder natriumreduzierter Diät. " +
+      "Perfekt für Babynahrung (Babys benötigen sehr wenig Natrium). " +
+      "Kontext: Sportler nach intensivem Training profitieren eher von natriumhaltigem Wasser (Elektrolytersatz).",
     tone: "positive",
     max: 20,
   },
@@ -91,7 +114,10 @@ const REGULATORY_RULES: ThresholdRule[] = [
     id: "sodium_high",
     metric: "sodium",
     label: "Natriumhaltig",
-    description: "Mehr als 200 mg/L Natrium – sportlicher Elektrolytboost.",
+    description:
+      "Mehr als 200 mg/L Natrium (Min/TafelWV). " +
+      "Vorteil: Sportlicher Elektrolyt-Boost! Gleicht Natriumverluste durch Schweiß aus, besonders nach Training. " +
+      "Kontext: Nicht empfohlen für Menschen mit Bluthochdruck oder Herzerkrankungen – diese sollten natriumarmes Wasser (<20 mg/L) wählen.",
     tone: "info",
     min: 200,
   },
@@ -133,9 +159,12 @@ function evaluateCalciumMagnesiumRatio(
   if (ratio >= 1.6 && ratio <= 2.4) {
     return {
       id: "ca-mg-balanced",
-      title: "Ausgewogenes Cal/Mg Verhältnis",
+      title: "Optimales Ca:Mg-Verhältnis (Kardioprotektiv)",
       description:
-        "Das Verhältnis von Calcium zu Magnesium liegt nahe 2:1 – das gilt als günstig für Herz-Kreislauf und Muskelarbeit.",
+        `Ca:Mg-Verhältnis von ${ratio.toFixed(1)}:1 liegt im optimalen Bereich (~2:1). ` +
+        "Epidemiologische Studien (finnische Kohorte) zeigen: Ein Ca:Mg-Verhältnis von 2:1 oder mehr in hartem Wasser " +
+        "wird mit verbesserter Blutdruckregulation und reduziertem kardiovaskulären Risiko assoziiert. " +
+        "Meta-Analysen bestätigen: Verhältnis >1.7 bei Männern mit reduzierter Gesamtmortalität verbunden.",
       tone: "positive",
     };
   }
@@ -143,9 +172,11 @@ function evaluateCalciumMagnesiumRatio(
   if (ratio < 1.3) {
     return {
       id: "ca-mg-mag-high",
-      title: "Magnesium dominiert",
+      title: "Magnesium-Dominanz (sehr mineralreich)",
       description:
-        "Deutlich mehr Magnesium als Calcium – sehr mineralreich, kann geschmacklich intensiver wirken.",
+        `Ca:Mg-Verhältnis von ${ratio.toFixed(1)}:1 – deutlich mehr Magnesium als Calcium. ` +
+        "Sehr mineralreich, besonders gut für Sportler und Menschen mit Magnesiummangel. " +
+        "Kann geschmacklich intensiver/bitter wirken. Optimal für Muskelregeneration und Energiestoffwechsel.",
       tone: "info",
     };
   }
@@ -153,9 +184,12 @@ function evaluateCalciumMagnesiumRatio(
   if (ratio > 3) {
     return {
       id: "ca-mg-calcium-heavy",
-      title: "Calciumbetont",
+      title: "Calcium-Überschuss (Mg-Supplementierung erwägen)",
       description:
-        "Calcium überwiegt stark gegenüber Magnesium. Kombiniere das Wasser mit magnesiumreichen Quellen, wenn du Herz/Kreislauf unterstützen möchtest.",
+        `Ca:Mg-Verhältnis von ${ratio.toFixed(1)}:1 – Calcium überwiegt stark. ` +
+        "Bei Nierensteinrisiko (Calciumoxalat) fehlen wichtige Inhibitoren. " +
+        "Empfehlung: Mit magnesiumreichen Lebensmitteln (Nüsse, Vollkorn) oder anderem Wasser kombinieren, " +
+        "um die kardiovaskuläre Balance zu optimieren.",
       tone: "warning",
     };
   }
@@ -171,9 +205,13 @@ function evaluateKidneyBalance(values: Partial<WaterAnalysisValues>): SynergyIns
   if (calcium >= 150 && magnesium >= 70 && bicarbonate >= 1300) {
     return {
       id: "kidney-balance",
-      title: "Nierenstein-Schutzprofil",
+      title: "Nierenstein-Schutzprofil (Das Paradoxon)",
       description:
-        "Trotz hohem Calcium sorgen Magnesium und Hydrogencarbonat für natürliche Inhibitoren (zitratfördernd, Alkalisierung). Geeignet bei Calciumoxalat-Risiko.",
+        `Trotz hohem Calcium (${calcium} mg/L) enthält dieses Wasser die entscheidenden Inhibitoren: ` +
+        `Magnesium (${magnesium} mg/L) und Hydrogencarbonat (${bicarbonate} mg/L). ` +
+        "Wissenschaft (Uni Bonn, PMID 14749747): Diese Kombination führt zu erhöhter Citrat-Ausscheidung und Urin-Alkalisierung – " +
+        "beides hemmt die Calciumoxalat-Kristallisation. Netto-Effekt: Verringerte Übersättigung mit Calciumoxalat, " +
+        "trotz erhöhter Calcium-Ausscheidung. Das 'Paradoxon' löst sich durch Synergie!",
       tone: "positive",
     };
   }
@@ -181,9 +219,13 @@ function evaluateKidneyBalance(values: Partial<WaterAnalysisValues>): SynergyIns
   if (calcium >= 150 && magnesium < 30) {
     return {
       id: "kidney-risk",
-      title: "Calciumreich ohne Gegenspieler",
+      title: "Calcium ohne Schutzfaktoren (Risiko bei Nierensteinen)",
       description:
-        "Hoher Calciumwert bei wenig Magnesium. Bei Nierensteinrisiko lieber ein Wasser mit mehr Magnesium/HCO₃⁻ wählen.",
+        `Hoher Calciumwert (${calcium} mg/L) bei wenig Magnesium (${magnesium} mg/L). ` +
+        "Die natürlichen Inhibitoren (Magnesium, Citrat) fehlen weitgehend. " +
+        "Bei Nierensteinrisiko (Calciumoxalat-Bildner) ist ein Wasser mit hohem Magnesium (>70 mg/L) " +
+        "und Hydrogencarbonat (>1300 mg/L) wissenschaftlich besser geeignet. " +
+        "Alternativ: Mit magnesiumreichen Lebensmitteln kombinieren.",
       tone: "warning",
     };
   }
@@ -196,18 +238,23 @@ function evaluateSodbrennen(values: Partial<WaterAnalysisValues>): SynergyInsigh
   if (bicarbonate >= 1300) {
     return {
       id: "sodbrennen",
-      title: "Säurepuffer (klinisch belegt)",
+      title: "Säurepuffer (Phase-III-Studie validiert)",
       description:
-        "Über 1300 mg/L Hydrogencarbonat – Studien zeigen klare Vorteile bei Sodbrennen (STOMACH STILL).",
+        `Über ${bicarbonate} mg/L Hydrogencarbonat – erfüllt Heilwasser-Standard. ` +
+        "STOMACH STILL-Studie (multizentriert, doppelblind, placebokontrolliert): " +
+        "84.7% der Patienten zeigten signifikante Symptomverbesserung bei Sodbrennen vs. 63.5% Placebo (p=0.0003). " +
+        "Number Needed to Treat (NNT): 5. Klinisch wirksam bei GERD (Reflux).",
       tone: "positive",
     };
   }
   if (bicarbonate >= 600) {
     return {
       id: "magenfreundlich",
-      title: "Magenfreundliches Wasser",
+      title: "Magenfreundliches Wasser (Pufferwirkung)",
       description:
-        "Hoher Hydrogencarbonatwert unterstützt die Neutralisation von Säuren – gut zur Regeneration nach Sport oder schwerem Essen.",
+        `Hoher Hydrogencarbonatwert (${bicarbonate} mg/L) neutralisiert Magensäure. ` +
+        "Gut zur Regeneration nach Sport (Laktatpuffer) oder schwerem Essen. " +
+        "Fördert alkalischen Urin-pH und Citrat-Ausscheidung.",
       tone: "info",
     };
   }
@@ -220,17 +267,22 @@ function evaluateElectrolytes(values: Partial<WaterAnalysisValues>): SynergyInsi
   if (magnesium >= 50 && sodium >= 50) {
     return {
       id: "electrolyte-boost",
-      title: "Elektrolyt-Boost",
+      title: "Elektrolyt-Synergie (Sport & Training)",
       description:
-        "Magnesiumreich mit messbarem Natrium – ideal, um nach dem Training Mineralverluste zu kompensieren.",
+        `Magnesium (${magnesium} mg/L) + Natrium (${sodium} mg/L) – perfekte Kombination nach dem Training. ` +
+        "Gleicht Schweiß-bedingte Mineralverluste aus. " +
+        "Wissenschaftlicher Tipp: Über den Tag verteilt trinken optimiert die Magnesiumabsorption (Steigerung um 56%)!",
       tone: "positive",
     };
   }
   if (magnesium >= 50) {
     return {
       id: "magnesium-power",
-      title: "Magnesiumfokus",
-      description: "Mehr als 50 mg/L Magnesium – deckt schnell den Muskelbedarf.",
+      title: "Magnesium-Power (Muskel & Energie)",
+      description:
+        `${magnesium} mg/L Magnesium – kalorienfrei bioverfügbar (RCT-validiert). ` +
+        "Deckt schnell den Muskelbedarf. Essentiell für ATP-Produktion (Energie) und Muskelentspannung. " +
+        "Über den Tag verteilt trinken für maximale Absorption!",
       tone: "info",
     };
   }
