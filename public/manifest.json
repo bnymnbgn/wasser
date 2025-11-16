@@ -1,6 +1,6 @@
 {
-  "name": "Trinkwasser-Check",
-  "short_name": "Wasser-Check",
+  "name": "Wasserscan",
+  "short_name": "Wasserscan",
   "description": "Bewerte Trinkwasser-Qualität auf Basis von Etikett-Daten und Barcodes",
   "start_url": "/",
   "display": "standalone",

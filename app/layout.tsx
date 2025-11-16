@@ -17,13 +17,13 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'Trinkwasser-Check',
+  title: 'Wasserscan',
   description: 'Bewerte Trinkwasser-Qualität auf Basis von Etikett-Daten und Barcodes',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Trinkwasser-Check',
+    title: 'Wasserscan',
   },
   formatDetection: {
     telephone: false,
