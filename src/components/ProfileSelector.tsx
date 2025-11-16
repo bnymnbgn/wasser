@@ -5,52 +5,42 @@ import clsx from "clsx";
 import { PROFILE_CHEATSHEET, type ProfileId } from "@/src/domain/profileCheatsheet";
 import type { ProfileType } from "@/src/domain/types";
 import { hapticLight } from "@/lib/capacitor";
+import { User, Baby, Zap, Heart } from "lucide-react";
 
 const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure"];
 
 const PROFILE_PRESENTATION: Record<
   ProfileId,
-  { accent: string; iconBg: string; icon: JSX.Element; focusColor: string }
+  {
+    icon: React.ReactNode;
+    gradient: string;
+    color: string;
+    badge?: string;
+  }
 > = {
   standard: {
-    accent: "from-md-primary/15 via-transparent to-md-secondary/10",
-    iconBg: "bg-md-primary/15 text-md-primary",
-    focusColor: "text-md-primary dark:text-md-dark-primary",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c2.21 0 4-1.79 4-4m0 0a4 4 0 11-8 0m8 0v4a2 2 0 002 2h2m0 0a2 2 0 012 2v6a2 2 0 01-2 2h-2m0 0a2 2 0 01-2 2H8a2 2 0 01-2-2m0 0H4a2 2 0 01-2-2v-6a2 2 0 012-2h2" />
-      </svg>
-    ),
+    icon: <User className="w-6 h-6" />,
+    gradient: "from-blue-500 to-cyan-500",
+    color: "bg-blue-500",
+    badge: "Allgemein",
   },
   baby: {
-    accent: "from-pink-200/40 via-transparent to-md-secondary/10",
-    iconBg: "bg-pink-200/40 text-pink-500",
-    focusColor: "text-pink-500",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6.5 20a4.5 4.5 0 009 0m1-8a5.5 5.5 0 00-11 0v1h11z" />
-      </svg>
-    ),
+    icon: <Baby className="w-6 h-6" />,
+    gradient: "from-pink-500 to-rose-500",
+    color: "bg-pink-500",
+    badge: "Schonend",
   },
   sport: {
-    accent: "from-orange-300/40 via-transparent to-md-primary/10",
-    iconBg: "bg-orange-200/40 text-orange-500",
-    focusColor: "text-orange-500",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9l-6 6-3-3-5 5" />
-      </svg>
-    ),
+    icon: <Zap className="w-6 h-6" />,
+    gradient: "from-orange-500 to-amber-500",
+    color: "bg-orange-500",
+    badge: "Mineralreich",
   },
   blood_pressure: {
-    accent: "from-red-200/40 via-transparent to-md-primary/5",
-    iconBg: "bg-red-200/40 text-red-500",
-    focusColor: "text-red-500",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    icon: <Heart className="w-6 h-6" />,
+    gradient: "from-red-500 to-pink-500",
+    color: "bg-red-500",
+    badge: "Natriumarm",
   },
 };
 
@@ -67,7 +57,7 @@ export function ProfileSelector({ value, onChange }: Props) {
 
   return (
     <div
-      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-4"
       role="radiogroup"
       aria-label="Profil auswählen"
     >
@@ -83,58 +73,72 @@ export function ProfileSelector({ value, onChange }: Props) {
             role="radio"
             aria-checked={isActive}
             onClick={() => handleChange(id as ProfileType)}
-            whileTap={{ scale: 0.97 }}
-            whileHover={{ scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 320, damping: 20 }}
+            whileTap={{ scale: 0.95 }}
             className={clsx(
-              "relative flex flex-col gap-2 rounded-2xl border p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-md-primary/60 overflow-hidden",
+              "relative flex flex-col items-center gap-3 rounded-2xl p-4 min-h-touch",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition-all",
               isActive
-                ? "border-transparent bg-gradient-to-br from-md-primary-container to-md-secondary-container shadow-elevation-3"
-                : "border-md-surface-containerHigh/30 dark:border-md-dark-surface-containerHigh/30 bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl"
+                ? "bg-gradient-to-br shadow-elevation-3 text-white focus-visible:ring-white/50"
+                : "bg-md-surface-container dark:bg-md-dark-surface-container focus-visible:ring-md-primary/50"
             )}
+            style={isActive ? {
+              backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))`,
+              ['--tw-gradient-from' as any]: presentation.gradient.split(' ')[1],
+              ['--tw-gradient-to' as any]: presentation.gradient.split(' ')[3],
+            } : undefined}
           >
-            {/* Gradient Accent Background */}
+            {/* Icon Circle */}
             <div
               className={clsx(
-                "absolute inset-0 opacity-0 transition-opacity pointer-events-none",
-                isActive && "opacity-70",
-                `bg-gradient-to-br ${presentation.accent}`
+                "flex items-center justify-center rounded-full w-16 h-16 transition-all",
+                isActive
+                  ? "bg-white/20 text-white scale-110"
+                  : `${presentation.color} text-white`
               )}
-            />
-
-            {/* Content */}
-            <div className="relative flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
-                  {profile.whenToUse}
-                </p>
-                <span className="text-base font-semibold text-md-onSurface dark:text-md-dark-onSurface">
-                  {profile.label}
-                </span>
-              </div>
-              <span
-                className={clsx(
-                  "rounded-2xl p-2 shadow-sm",
-                  presentation.iconBg
-                )}
-              >
-                {presentation.icon}
-              </span>
+            >
+              {presentation.icon}
             </div>
 
-            <p className="relative text-sm text-md-onSurface-variant dark:text-md-dark-onSurface-variant line-clamp-2">
-              {profile.shortDescription}
-            </p>
-
-            {profile.scoringFocus && profile.scoringFocus.length > 0 && (
-              <p
+            {/* Label */}
+            <div className="flex flex-col items-center gap-1 text-center">
+              <span
                 className={clsx(
-                  "relative text-xs font-medium",
-                  presentation.focusColor
+                  "text-sm font-semibold line-clamp-1",
+                  isActive
+                    ? "text-white"
+                    : "text-md-onSurface dark:text-md-dark-onSurface"
                 )}
               >
-                {profile.scoringFocus[0]}
-              </p>
+                {profile.label}
+              </span>
+
+              {/* Badge */}
+              {presentation.badge && (
+                <span
+                  className={clsx(
+                    "text-xs px-2 py-0.5 rounded-full font-medium",
+                    isActive
+                      ? "bg-white/20 text-white"
+                      : "bg-md-surface-containerHigh dark:bg-md-dark-surface-containerHigh text-md-onSurface-variant dark:text-md-dark-onSurface-variant"
+                  )}
+                >
+                  {presentation.badge}
+                </span>
+              )}
+            </div>
+
+            {/* Active Indicator */}
+            {isActive && (
+              <motion.div
+                layoutId="activeProfileIndicator"
+                className="absolute inset-0 rounded-2xl ring-2 ring-white/30"
+                initial={false}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 30,
+                }}
+              />
             )}
           </motion.button>
         );
