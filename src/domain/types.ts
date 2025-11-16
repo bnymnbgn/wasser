@@ -5,7 +5,7 @@ export type SourceType = "manufacturer" | "authority" | "user" | "api";
 export type ProfileType = "standard" | "baby" | "sport" | "blood_pressure";
 
 /**
- * „Reine" Wasserwerte ohne DB-Felder – damit rechnet das Scoring.
+ * "Reine" Wasserwerte ohne DB-Felder – damit rechnet das Scoring.
  * Alle Werte in mg/L (außer pH).
  */
 export interface WaterAnalysisValues {
