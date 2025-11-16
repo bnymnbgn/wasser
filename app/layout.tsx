@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
-import { ThemeProvider } from '@/components/ThemeProvider';
-import BottomNav from '@/components/BottomNav';
+import { ThemeProvider } from '@/src/components/ThemeProvider';
+import BottomNav from '@/src/components/BottomNav';
 
 const inter = Inter({
   subsets: ['latin'],
