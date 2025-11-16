@@ -39,13 +39,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 1) Text -> Analysewerte (Teilmenge)
-  let analysisValues: Partial<WaterAnalysisValues> = providedValues ?? {};
-  if (!providedValues) {
-    analysisValues = parseTextToAnalysis(text);
-  }
+  const ocrValues = text.trim() ? parseTextToAnalysis(text) : {};
+  const mergedValues: Partial<WaterAnalysisValues> = {
+    ...ocrValues,
+    ...(providedValues ?? {}),
+  };
 
-  const hasAnyValue = Object.values(analysisValues).some(
+  const hasAnyValue = Object.values(mergedValues).some(
     (value) => value !== undefined && value !== null
   );
 
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   const warnings: string[] = [];
   const validatedValues: Partial<WaterAnalysisValues> = {};
 
-  for (const [key, value] of Object.entries(analysisValues)) {
+  for (const [key, value] of Object.entries(mergedValues)) {
     if (value !== undefined) {
       const validation = validateValue(key as keyof WaterAnalysisValues, value);
       if (validation.valid) {
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       profile,
       timestamp: new Date(),
       ocrTextRaw: text || null,
-      ocrParsedValues: analysisValues,
+      ocrParsedValues: Object.keys(ocrValues).length ? ocrValues : null,
       userOverrides: providedValues ?? null,
       score: scoreResult.totalScore,
       metricScores: scoreResult.metrics.reduce<Record<string, number>>(
@@ -93,6 +93,9 @@ export async function POST(req: NextRequest) {
         {}
       ),
       // waterSourceId / waterAnalysisId bleiben im OCR-MVP leer
+    },
+    include: {
+      waterSource: true,
     },
   });
 

@@ -4,11 +4,14 @@ import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
+import { Camera, Scan, X, RotateCcw } from "lucide-react";
 
 import type { ProfileType, ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import { WaterScoreCard } from "@/src/components/WaterScoreCard";
 import { BarcodeScanner } from "@/src/components/BarcodeScanner";
 import { ImageOCRScanner } from "@/src/components/ImageOCRScanner";
+import { RippleButton } from "@/src/components/ui/RippleButton";
+import { SkeletonScoreCard } from "@/src/components/ui/SkeletonLoader";
 import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/capacitor";
 
@@ -38,15 +41,7 @@ type Mode = "ocr" | "barcode";
 
 export default function ScanPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-md-background dark:bg-md-dark-background flex items-center justify-center">
-          <div className="text-sm text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
-            Scanner wird geladen…
-          </div>
-        </main>
-      }
-    >
+    <Suspense fallback={<SkeletonScoreCard />}>
       <ScanPageContent />
     </Suspense>
   );
@@ -62,6 +57,7 @@ function ScanPageContent() {
 
   const [ocrText, setOcrText] = useState("");
   const [barcode, setBarcode] = useState("");
+  const [brandName, setBrandName] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -111,7 +107,13 @@ function ScanPageContent() {
       const endpoint = mode === "ocr" ? "/api/scan/ocr" : "/api/scan/barcode";
       const body =
         mode === "ocr"
-          ? { text: ocrText, profile, values: numericValues }
+          ? {
+              text: ocrText,
+              profile,
+              values: numericValues,
+              brand: brandName || undefined,
+              barcode: barcode || undefined,
+            }
           : { barcode, profile };
 
       const res = await fetch(endpoint, {
@@ -151,6 +153,11 @@ function ScanPageContent() {
     setShowResults(false);
     if (nextMode === "barcode") {
       setValueInputs(createEmptyValueState());
+      setBrandName("");
+      setOcrText("");
+    }
+    if (nextMode === "ocr") {
+      setBarcode("");
     }
   }
 
@@ -176,19 +183,21 @@ function ScanPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">
-      <div className="mx-auto max-w-2xl px-4 py-4 safe-area-top">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-transparent to-purple-50 dark:from-blue-950/20 dark:via-transparent dark:to-purple-950/20 pointer-events-none" />
+
+      <div className="relative mx-auto max-w-2xl px-4 py-6 safe-area-top pb-[calc(var(--bottom-nav-height)+32px)]">
         {/* Header */}
         <motion.header
           className="mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-2xl font-bold tracking-tight text-md-onSurface dark:text-md-dark-onSurface mb-1">
+          <h1 className="text-headline text-slate-900 dark:text-slate-100 mb-1">
             Wasser scannen
           </h1>
-          <p className="text-sm text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
-            Profil: <span className="font-medium">{profile}</span>
+          <p className="text-body text-slate-600 dark:text-slate-400">
+            Profil: <span className="font-medium text-blue-600 dark:text-blue-400">{profile}</span>
           </p>
         </motion.header>
 
@@ -199,21 +208,19 @@ function ScanPageContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="flex gap-2 p-1 bg-md-surface-container dark:bg-md-dark-surface-container rounded-md-lg">
+          <div className="modern-card p-2 flex gap-2">
             <button
               type="button"
               onClick={() => handleModeChange("ocr")}
               className={clsx(
-                "flex-1 py-2.5 px-4 rounded-md-md text-sm font-medium transition-all touch-manipulation",
+                "flex-1 py-3 px-4 rounded-[20px] text-sm font-semibold transition-all touch-manipulation relative overflow-hidden",
                 mode === "ocr"
-                  ? "bg-md-primary dark:bg-md-dark-primary text-white shadow-elevation-2"
-                  : "text-md-onSurface-variant dark:text-md-dark-onSurface-variant"
+                  ? "bg-blue-500 dark:bg-blue-600 text-white shadow-lg"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               )}
             >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              <div className="flex items-center justify-center gap-2 relative z-10">
+                <Camera className="w-5 h-5" />
                 Etikett
               </div>
             </button>
@@ -221,16 +228,14 @@ function ScanPageContent() {
               type="button"
               onClick={() => handleModeChange("barcode")}
               className={clsx(
-                "flex-1 py-2.5 px-4 rounded-md-md text-sm font-medium transition-all touch-manipulation",
+                "flex-1 py-3 px-4 rounded-[20px] text-sm font-semibold transition-all touch-manipulation relative overflow-hidden",
                 mode === "barcode"
-                  ? "bg-md-primary dark:bg-md-dark-primary text-white shadow-elevation-2"
-                  : "text-md-onSurface-variant dark:text-md-dark-onSurface-variant"
+                  ? "bg-blue-500 dark:bg-blue-600 text-white shadow-lg"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               )}
             >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                </svg>
+              <div className="flex items-center justify-center gap-2 relative z-10">
+                <Scan className="w-5 h-5" />
                 Barcode
               </div>
             </button>
@@ -251,83 +256,122 @@ function ScanPageContent() {
                 {/* OCR Scanner */}
                 <ImageOCRScanner onTextExtracted={handleTextExtracted} />
 
+                {/* Brand and Barcode */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="modern-card p-4 grid gap-3 sm:grid-cols-2"
+                >
+                  <label className="block">
+                    <span className="text-label text-slate-700 dark:text-slate-300 mb-2 block">
+                      Marke / Quelle
+                    </span>
+                    <input
+                      className="w-full rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 outline-none transition-all"
+                      value={brandName}
+                      onChange={(e) => {
+                        setBrandName(e.target.value);
+                        setResult(null);
+                      }}
+                      placeholder="z. B. Gerolsteiner"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-label text-slate-700 dark:text-slate-300 mb-2 block">
+                      Barcode (optional)
+                    </span>
+                    <input
+                      className="w-full rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 outline-none transition-all"
+                      value={barcode}
+                      onChange={(e) => {
+                        setBarcode(e.target.value);
+                        setResult(null);
+                      }}
+                      placeholder="z. B. 4008501011009"
+                      inputMode="numeric"
+                    />
+                  </label>
+                </motion.div>
+
                 {/* Values Grid */}
-                {hasAnyValues && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="md-card p-4"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-md-onSurface dark:text-md-dark-onSurface">
-                        Erkannte Werte
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="modern-card p-5"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                        Mineralwerte
                       </h3>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await hapticLight();
-                          setValueInputs(createEmptyValueState());
-                          setResult(null);
-                        }}
-                        className="text-xs text-md-primary dark:text-md-dark-primary font-medium touch-manipulation"
-                      >
-                        Leeren
-                      </button>
+                      <p className="text-caption">
+                        Erkannt aus OCR oder manuell anpassen
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {METRIC_FIELDS.map((field) => {
-                        const value = valueInputs[field.key];
-                        if (!value) return null;
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await hapticLight();
+                        setValueInputs(createEmptyValueState());
+                        setResult(null);
+                      }}
+                      className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors touch-manipulation"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      Zurücksetzen
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {METRIC_FIELDS.map((field) => {
+                      const value = valueInputs[field.key];
+                      const warning = valueWarnings[field.key];
+                      const invalid = invalidFields[field.key];
 
-                        const warning = valueWarnings[field.key];
-                        const invalid = invalidFields[field.key];
-
-                        return (
-                          <div
-                            key={field.key}
-                            className={clsx(
-                              "p-2 rounded-md-md border",
-                              invalid
-                                ? "border-md-error dark:border-md-dark-error bg-md-error-container/10 dark:bg-md-dark-error-container/10"
-                                : warning
-                                ? "border-md-warning dark:border-md-dark-warning bg-md-warning-container/10 dark:bg-md-dark-warning-container/10"
-                                : "border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow"
-                            )}
-                          >
-                            <label className="block">
-                              <span className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant uppercase tracking-wide">
-                                {field.label}
-                              </span>
-                              <input
-                                className={clsx(
-                                  "mt-0.5 block w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0",
-                                  invalid
-                                    ? "text-md-error dark:text-md-dark-error"
-                                    : "text-md-onSurface dark:text-md-dark-onSurface"
-                                )}
-                                value={value}
-                                onChange={(e) => {
-                                  setValueInputs((prev) => ({
-                                    ...prev,
-                                    [field.key]: e.target.value,
-                                  }));
-                                  setResult(null);
-                                }}
-                                placeholder="0"
-                                inputMode="decimal"
-                              />
-                              {field.unit && (
-                                <span className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
-                                  {field.unit}
-                                </span>
+                      return (
+                        <div
+                          key={field.key}
+                          className={clsx(
+                            "p-3 rounded-2xl border-2 transition-all",
+                            invalid
+                              ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20"
+                              : warning
+                              ? "border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20"
+                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                          )}
+                        >
+                          <label className="block">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                              {field.label}
+                            </span>
+                            <input
+                              className={clsx(
+                                "w-full bg-transparent border-none p-0 text-base font-semibold focus:ring-0 outline-none",
+                                invalid
+                                  ? "text-red-600 dark:text-red-400"
+                                  : "text-slate-900 dark:text-slate-100"
                               )}
-                            </label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
+                              value={value}
+                              onChange={(e) => {
+                                setValueInputs((prev) => ({
+                                  ...prev,
+                                  [field.key]: e.target.value,
+                                }));
+                                setResult(null);
+                              }}
+                              placeholder={field.unit ? `0 ${field.unit}` : "0"}
+                              inputMode="decimal"
+                            />
+                            {field.unit && (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                {field.unit}
+                              </span>
+                            )}
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
               </motion.div>
             ) : (
               <motion.div
@@ -338,13 +382,13 @@ function ScanPageContent() {
                 className="space-y-4"
               >
                 {/* Manual Barcode Input */}
-                <div className="md-card p-4">
+                <div className="modern-card p-5">
                   <label className="block">
-                    <span className="text-sm font-medium text-md-onSurface dark:text-md-dark-onSurface mb-2 block">
+                    <span className="text-label text-slate-700 dark:text-slate-300 mb-3 block">
                       Barcode eingeben
                     </span>
                     <input
-                      className="block w-full bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow border border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh rounded-md-md px-4 py-3 text-base focus:border-md-primary dark:focus:border-md-dark-primary focus:ring-2 focus:ring-md-primary/20 dark:focus:ring-md-dark-primary/20"
+                      className="block w-full rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-5 py-4 text-base font-mono focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 outline-none transition-all"
                       value={barcode}
                       onChange={(e) => setBarcode(e.target.value)}
                       placeholder="z. B. 4008501011009"
@@ -363,8 +407,8 @@ function ScanPageContent() {
                 />
 
                 {/* Example Barcodes */}
-                <div className="md-card p-4">
-                  <h3 className="text-xs font-medium text-md-onSurface-variant dark:text-md-dark-onSurface-variant mb-2">
+                <div className="modern-card p-4">
+                  <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3">
                     Beispiel-Barcodes
                   </h3>
                   <div className="space-y-2">
@@ -374,12 +418,12 @@ function ScanPageContent() {
                         await hapticLight();
                         setBarcode("4008501011009");
                       }}
-                      className="w-full text-left p-2 rounded-md-md bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow hover:bg-md-surface-containerHigh dark:hover:bg-md-dark-surface-containerHigh transition touch-manipulation"
+                      className="w-full text-left p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors touch-manipulation"
                     >
-                      <code className="text-xs font-mono text-md-primary dark:text-md-dark-primary">
+                      <code className="text-sm font-mono text-blue-600 dark:text-blue-400 block">
                         4008501011009
                       </code>
-                      <p className="text-[10px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         Gerolsteiner Naturell
                       </p>
                     </button>
@@ -390,35 +434,33 @@ function ScanPageContent() {
           </AnimatePresence>
 
           {/* Submit Button */}
-          <motion.button
+          <RippleButton
             type="submit"
             disabled={formDisabled}
-            className="w-full btn-touch bg-md-primary dark:bg-md-dark-primary text-white font-semibold rounded-md-lg shadow-elevation-2 disabled:opacity-50 disabled:shadow-none"
-            whileTap={{ scale: formDisabled ? 1 : 0.98 }}
+            variant="primary"
+            size="lg"
+            className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => !formDisabled && hapticMedium()}
           >
             {loading ? (
-              <div className="flex items-center justify-center gap-2">
-                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Analysiere...
               </div>
             ) : (
               "Wasser analysieren"
             )}
-          </motion.button>
+          </RippleButton>
         </form>
 
-        {/* Results Bottom Sheet */}
+        {/* Results Modal */}
         <AnimatePresence>
           {showResults && result && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40 flex items-end"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center md:justify-center p-4"
               onClick={() => setShowResults(false)}
             >
               <motion.div
@@ -426,25 +468,24 @@ function ScanPageContent() {
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="bottom-sheet w-full overflow-y-auto custom-scrollbar pb-safe-bottom"
+                className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-[32px] md:rounded-[32px] shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="sticky top-0 bg-md-surface dark:bg-md-dark-surface p-4 border-b border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-md-onSurface dark:text-md-dark-onSurface">
-                      Analyse-Ergebnis
-                    </h2>
-                    <button
-                      onClick={() => setShowResults(false)}
-                      className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-md-surface-containerHigh dark:hover:bg-md-dark-surface-containerHigh"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
+                {/* Modal Header */}
+                <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 p-5 rounded-t-[32px] flex items-center justify-between">
+                  <h2 className="text-title text-slate-900 dark:text-slate-100">
+                    Analyse-Ergebnis
+                  </h2>
+                  <button
+                    onClick={() => setShowResults(false)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                  </button>
                 </div>
-                <div className="p-4">
+
+                {/* Modal Content */}
+                <div className="p-5 pb-safe-bottom">
                   <WaterScoreCard scanResult={result} />
                 </div>
               </motion.div>

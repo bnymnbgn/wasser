@@ -50,9 +50,10 @@ export default function ThemeToggle() {
   return (
     <motion.button
       onClick={handleToggle}
-      className="flex items-center gap-2 px-3 py-2 rounded-md-md bg-md-surface-container dark:bg-md-dark-surface-container text-md-onSurface dark:text-md-dark-onSurface transition-colors touch-manipulation"
+      className="inline-flex items-center gap-2 rounded-2xl border border-white/40 dark:border-white/10 bg-white/80 dark:bg-slate-900/70 text-md-onSurface dark:text-md-dark-onSurface px-3 py-2 backdrop-blur-xl shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-md-primary/50 transition-all"
       whileTap={{ scale: 0.95 }}
       aria-label={`Theme ändern (aktuell: ${getLabel()})`}
+      aria-live="polite"
     >
       <motion.div
         key={theme}

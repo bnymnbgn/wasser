@@ -1,3 +1,73 @@
+const materialLightColors = {
+  'md-primary': '#006494',
+  'md-primary-light': '#4A9FD4',
+  'md-primary-dark': '#003A5C',
+  'md-primary-container': '#C2E7FF',
+  'md-onPrimary': '#FFFFFF',
+  'md-onPrimary-container': '#001E2E',
+  'md-secondary': '#10B981',
+  'md-secondary-light': '#34D399',
+  'md-secondary-dark': '#059669',
+  'md-secondary-container': '#D1FAE5',
+  'md-onSecondary': '#FFFFFF',
+  'md-onSecondary-container': '#022C22',
+  'md-surface': '#F8FAFC',
+  'md-surface-dim': '#E2E8F0',
+  'md-surface-bright': '#FFFFFF',
+  'md-surface-container': '#EFF6FF',
+  'md-surface-containerLow': '#F1F5F9',
+  'md-surface-containerHigh': '#E0E7FF',
+  'md-onSurface': '#1E293B',
+  'md-onSurface-variant': '#475569',
+  'md-background': '#FFFFFF',
+  'md-onBackground': '#1E293B',
+  'md-error': '#EF4444',
+  'md-error-container': '#FEE2E2',
+  'md-onError': '#FFFFFF',
+  'md-onError-container': '#7F1D1D',
+  'md-success': '#10B981',
+  'md-success-container': '#D1FAE5',
+  'md-onSuccess': '#FFFFFF',
+  'md-onSuccess-container': '#022C22',
+  'md-warning': '#F59E0B',
+  'md-warning-container': '#FEF3C7',
+  'md-onWarning': '#FFFFFF',
+  'md-onWarning-container': '#78350F',
+};
+
+const materialDarkColors = {
+  'md-dark-primary': '#80CAFF',
+  'md-dark-primary-container': '#004A77',
+  'md-dark-onPrimary': '#003551',
+  'md-dark-onPrimary-container': '#C2E7FF',
+  'md-dark-secondary': '#6EE7B7',
+  'md-dark-secondary-container': '#047857',
+  'md-dark-onSecondary': '#065F46',
+  'md-dark-onSecondary-container': '#D1FAE5',
+  'md-dark-surface': '#0F172A',
+  'md-dark-surface-dim': '#020617',
+  'md-dark-surface-bright': '#334155',
+  'md-dark-surface-container': '#1E293B',
+  'md-dark-surface-containerLow': '#0F172A',
+  'md-dark-surface-containerHigh': '#334155',
+  'md-dark-onSurface': '#E2E8F0',
+  'md-dark-onSurface-variant': '#94A3B8',
+  'md-dark-background': '#0F172A',
+  'md-dark-onBackground': '#E2E8F0',
+  'md-dark-error': '#F87171',
+  'md-dark-error-container': '#7F1D1D',
+  'md-dark-onError': '#450A0A',
+  'md-dark-onError-container': '#FEE2E2',
+  'md-dark-success': '#6EE7B7',
+  'md-dark-success-container': '#065F46',
+  'md-dark-onSuccess': '#022C22',
+  'md-dark-onSuccess-container': '#D1FAE5',
+  'md-dark-warning': '#FBBF24',
+  'md-dark-warning-container': '#78350F',
+  'md-dark-onWarning': '#451A03',
+  'md-dark-onWarning-container': '#FEF3C7',
+};
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -8,9 +78,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Material Design 3 Color System
+        // Provide flattened tokens to match the utility classes used in the app
+        ...materialLightColors,
+        ...materialDarkColors,
+        // Keep structured palettes for potential future theming logic
         md: {
-          // Primary (Water/Blue theme)
           primary: {
             DEFAULT: '#006494',
             light: '#4A9FD4',
@@ -19,7 +91,6 @@ module.exports = {
             onPrimary: '#FFFFFF',
             onContainer: '#001E2E',
           },
-          // Secondary (Emerald accent)
           secondary: {
             DEFAULT: '#10B981',
             light: '#34D399',
@@ -28,7 +99,6 @@ module.exports = {
             onSecondary: '#FFFFFF',
             onContainer: '#022C22',
           },
-          // Surface colors
           surface: {
             DEFAULT: '#F8FAFC',
             dim: '#E2E8F0',
@@ -39,24 +109,20 @@ module.exports = {
             onSurface: '#1E293B',
             onSurfaceVariant: '#475569',
           },
-          // Background
           background: '#FFFFFF',
           onBackground: '#1E293B',
-          // Error states
           error: {
             DEFAULT: '#EF4444',
             container: '#FEE2E2',
             onError: '#FFFFFF',
             onContainer: '#7F1D1D',
           },
-          // Success states
           success: {
             DEFAULT: '#10B981',
             container: '#D1FAE5',
             onSuccess: '#FFFFFF',
             onContainer: '#022C22',
           },
-          // Warning states
           warning: {
             DEFAULT: '#F59E0B',
             container: '#FEF3C7',
@@ -64,7 +130,6 @@ module.exports = {
             onContainer: '#78350F',
           },
         },
-        // Dark mode colors
         'md-dark': {
           primary: {
             DEFAULT: '#80CAFF',
@@ -109,6 +174,10 @@ module.exports = {
             onContainer: '#FEF3C7',
           },
         },
+      },
+      fontFamily: {
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Space Grotesk', 'var(--font-sans)', 'sans-serif'],
       },
       // Mobile-first spacing
       spacing: {
@@ -170,6 +239,17 @@ module.exports = {
         'md-md': '12px',
         'md-lg': '16px',
         'md-xl': '28px',
+      },
+      // Additional utilities
+      scale: {
+        '98': '0.98',
+      },
+      transitionProperty: {
+        'height': 'height',
+        'spacing': 'margin, padding',
+      },
+      backdropBlur: {
+        'xs': '2px',
       },
     },
   },

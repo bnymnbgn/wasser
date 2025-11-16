@@ -7,6 +7,9 @@ export async function GET() {
     const scans = await prisma.scanResult.findMany({
       orderBy: { timestamp: "desc" },
       take: 50,
+      include: {
+        waterSource: true,
+      },
     });
 
     const domainScans = scans.map(mapPrismaScanResult);

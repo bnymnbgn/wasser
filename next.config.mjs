@@ -1,4 +1,26 @@
 import withPWA from 'next-pwa';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const hasCapacitorDeps = () => {
+  try {
+    require.resolve('@capacitor/core');
+    require.resolve('@capacitor/haptics');
+    require.resolve('@capacitor/status-bar');
+    require.resolve('@capacitor/splash-screen');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const shouldUseCapacitorStubs =
+  process.env.CAPACITOR_BUILD === 'true' ? false : !hasCapacitorDeps();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -12,6 +34,32 @@ const nextConfig = {
   // Images config for static export
   images: {
     unoptimized: process.env.CAPACITOR_BUILD === 'true',
+  },
+
+  webpack: (config) => {
+    if (shouldUseCapacitorStubs) {
+      const stubDir = path.join(__dirname, 'src/lib/stubs');
+      config.resolve = config.resolve || {};
+      config.resolve.alias = config.resolve.alias || {};
+
+      config.resolve.alias['@capacitor/core'] = path.join(
+        stubDir,
+        'capacitor-core.ts'
+      );
+      config.resolve.alias['@capacitor/haptics'] = path.join(
+        stubDir,
+        'capacitor-haptics.ts'
+      );
+      config.resolve.alias['@capacitor/status-bar'] = path.join(
+        stubDir,
+        'capacitor-status-bar.ts'
+      );
+      config.resolve.alias['@capacitor/splash-screen'] = path.join(
+        stubDir,
+        'capacitor-splash-screen.ts'
+      );
+    }
+    return config;
   },
 
   // Security Headers

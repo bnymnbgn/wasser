@@ -24,6 +24,10 @@
       }
     ],
     "paths": {
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/domain/*": ["./src/domain/*"],
+      "@/config/*": ["./src/config/*"],
       "@/*": ["./*"],
       "@/src/*": ["./src/*"]
     }

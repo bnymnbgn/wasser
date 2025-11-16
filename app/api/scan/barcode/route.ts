@@ -196,21 +196,18 @@ export async function POST(req: NextRequest) {
       }, {}),
       waterSourceId: lookup.source.id,
       waterAnalysisId: latestAnalysis?.id ?? null,
+      ocrParsedValues: lookup.analysis,
+    },
+    include: {
+      waterSource: true,
     },
   });
 
   // Mappe zu Domain-Objekt
   const domainScan: ScanResult = mapPrismaScanResult(prismaScan);
 
-  // Erweitere Response mit zusätzlichen Infos
   return NextResponse.json({
     ...domainScan,
-    ocrParsedValues: domainScan.ocrParsedValues ?? lookup.analysis,
-    productInfo: {
-      brand: lookup.source.brand,
-      productName: lookup.source.productName,
-      origin: lookup.source.origin,
-    },
     fromCache: lookup.fromCache,
   });
 }
