@@ -14,7 +14,7 @@ import {
   ChevronRight,
   Info
 } from "lucide-react";
-import ThemeToggle from "@/components/ThemeToggle";
+import ThemeToggle from "@/src/components/ThemeToggle";
 import { ProfileSelector } from "@/src/components/ProfileSelector";
 import { StatCard } from "@/src/components/ui/StatCard";
 import { RippleButton } from "@/src/components/ui/RippleButton";
