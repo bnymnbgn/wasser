@@ -54,7 +54,7 @@ export const PROFILE_CHEATSHEET = {
           "Calcium ist wichtig für Knochen und Zähne. Ein moderater bis höherer Gehalt wird als positiv gewertet.",
         hints: [
           "Werte zwischen 50–150 mg/L gelten als guter Bereich.",
-          "Sehr hohe Werte können zu „hartem“ Wasser führen.",
+          "Sehr hohe Werte können zu "hartem“ Wasser führen.",
         ],
       },
       {
@@ -64,7 +64,7 @@ export const PROFILE_CHEATSHEET = {
         explanation:
           "Magnesium spielt eine Rolle für Muskelfunktion und Nervensystem. Ein höherer Gehalt kann positiv sein.",
         hints: [
-          "Werte ab ca. 20 mg/L werden oft als „magnesiumreich“ beworben.",
+          "Werte ab ca. 20 mg/L werden oft als "magnesiumreich“ beworben.",
           "Sehr hohe Werte können den Geschmack beeinflussen.",
         ],
       },
@@ -75,7 +75,7 @@ export const PROFILE_CHEATSHEET = {
         explanation:
           "Hydrogencarbonat dient als Säurepuffer. Höhere Gehalte können Magenfreundlichkeit und Sporttauglichkeit unterstützen.",
         hints: [
-          "Werte über 300 mg/L werden häufig als „besonders magenfreundlich" oder „sportgeeignet" hervorgehoben.",
+          "Werte über 300 mg/L werden häufig als "besonders magenfreundlich" oder "sportgeeignet" hervorgehoben.",
           "Über 1300 mg/L (Heilwasser): Klinisch validiert gegen Sodbrennen (STOMACH STILL-Studie).",
         ],
       },
@@ -119,7 +119,7 @@ export const PROFILE_CHEATSHEET = {
         explanation:
           "Die Gesamtmineralisation zeigt, wie viele gelöste Mineralstoffe insgesamt enthalten sind. Achtung: TDS ist eine 'blinde Metrik' (WHO) – die spezifische Zusammensetzung (Ca, Mg, etc.) ist entscheidend, nicht die Gesamtsumme!",
         hints: [
-          "Niedrige TDS → eher „weiches", neutrales Wasser.",
+          "Niedrige TDS → eher "weiches", neutrales Wasser.",
           "Mittlere bis höhere TDS → deutlich mineralischer Geschmack.",
           "WHO: TDS hat keine gesundheitliche Relevanz, nur ästhetisch (Geschmack) und technisch (Verkalkung).",
         ],
@@ -254,7 +254,7 @@ export const PROFILE_CHEATSHEET = {
         explanation:
           "Magnesium unterstützt Muskel- und Nervenfunktion. Ein höherer Gehalt ist in diesem Profil erwünscht.",
         hints: [
-          "Werte ab ca. 20 mg/L sind oft als „magnesiumreich“ interessant.",
+          "Werte ab ca. 20 mg/L sind oft als "magnesiumreich“ interessant.",
           "Extrem hohe Werte können Geschmack und Verträglichkeit beeinflussen.",
         ],
       },
@@ -274,7 +274,7 @@ export const PROFILE_CHEATSHEET = {
         label: "Hydrogencarbonat",
         importance: "hoch",
         explanation:
-          "Hydrogencarbonat kann Säuren puffern und wird häufig bei „Sport-Wässern“ hervorgehoben.",
+          "Hydrogencarbonat kann Säuren puffern und wird häufig bei "Sport-Wässern“ hervorgehoben.",
         hints: [
           "Werte über 300–600 mg/L gelten in diesem Profil als besonders vorteilhaft.",
         ],
@@ -340,7 +340,7 @@ export const PROFILE_CHEATSHEET = {
         explanation:
           "Eine höhere Gesamtmineralisation deutet auf mineralreiches Wasser hin, was im Sportprofil meist erwünscht ist.",
         hints: [
-          "Sehr niedrige TDS → eher „leichtes“ Wasser, weniger Elektrolyte.",
+          "Sehr niedrige TDS → eher "leichtes“ Wasser, weniger Elektrolyte.",
           "Höhere TDS können für Regeneration hilfreich sein.",
         ],
       },
