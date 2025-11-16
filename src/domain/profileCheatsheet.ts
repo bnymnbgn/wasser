@@ -75,7 +75,41 @@ export const PROFILE_CHEATSHEET = {
         explanation:
           "Hydrogencarbonat dient als Säurepuffer. Höhere Gehalte können Magenfreundlichkeit und Sporttauglichkeit unterstützen.",
         hints: [
-          "Werte über 300 mg/L werden häufig als „besonders magenfreundlich“ oder „sportgeeignet“ hervorgehoben.",
+          "Werte über 300 mg/L werden häufig als „besonders magenfreundlich" oder „sportgeeignet" hervorgehoben.",
+          "Über 1300 mg/L (Heilwasser): Klinisch validiert gegen Sodbrennen (STOMACH STILL-Studie).",
+        ],
+      },
+      {
+        metric: "sulfate",
+        label: "Sulfat",
+        importance: "niedrig",
+        explanation:
+          "Sulfat kommt natürlich in Mineralwasser vor und wird traditionell als verdauungsfördernd anerkannt (Min/TafelWV ab 200 mg/L).",
+        hints: [
+          "Kann die Darmmotilität unterstützen – ideal morgens auf nüchternen Magen.",
+          "Sehr hohe Werte (>500 mg/L) können abführend wirken.",
+        ],
+      },
+      {
+        metric: "chloride",
+        label: "Chlorid",
+        importance: "niedrig",
+        explanation:
+          "Chlorid ist ein natürlicher Bestandteil von Mineralwasser und in moderaten Mengen unbedenklich.",
+        hints: [
+          "Niedrige bis moderate Werte (<250 mg/L) sind vorteilhaft.",
+          "Erhöhte Werte können den Geschmack salzig beeinflussen.",
+        ],
+      },
+      {
+        metric: "potassium",
+        label: "Kalium",
+        importance: "niedrig",
+        explanation:
+          "Kalium ist ein essentielles Mineral für Herzfunktion und Blutdruckregulation, kommt aber in Wasser meist in geringen Mengen vor.",
+        hints: [
+          "Werte ab 10-20 mg/L können einen kleinen Beitrag zur Kaliumversorgung leisten.",
+          "Hauptquellen sind Obst, Gemüse und Hülsenfrüchte.",
         ],
       },
       {
@@ -83,10 +117,11 @@ export const PROFILE_CHEATSHEET = {
         label: "Gesamtmineralisation (TDS)",
         importance: "niedrig",
         explanation:
-          "Die Gesamtmineralisation zeigt, wie viele gelöste Mineralstoffe insgesamt enthalten sind.",
+          "Die Gesamtmineralisation zeigt, wie viele gelöste Mineralstoffe insgesamt enthalten sind. Achtung: TDS ist eine 'blinde Metrik' (WHO) – die spezifische Zusammensetzung (Ca, Mg, etc.) ist entscheidend, nicht die Gesamtsumme!",
         hints: [
-          "Niedrige TDS → eher „weiches“, neutrales Wasser.",
+          "Niedrige TDS → eher „weiches", neutrales Wasser.",
           "Mittlere bis höhere TDS → deutlich mineralischer Geschmack.",
+          "WHO: TDS hat keine gesundheitliche Relevanz, nur ästhetisch (Geschmack) und technisch (Verkalkung).",
         ],
       },
     ],
@@ -168,6 +203,34 @@ export const PROFILE_CHEATSHEET = {
           "Dieses Profil fokussiert stärker auf Nitrat und Natrium als auf Säurepufferung.",
         ],
       },
+      {
+        metric: "sulfate",
+        label: "Sulfat",
+        importance: "niedrig",
+        explanation:
+          "Sulfat ist natürlich vorhanden. Für Babys sollten sehr hohe Werte vermieden werden (können abführend wirken).",
+        hints: [
+          "Werte unter 200 mg/L sind für Babynahrung unbedenklich.",
+        ],
+      },
+      {
+        metric: "chloride",
+        label: "Chlorid",
+        importance: "niedrig",
+        explanation:
+          "Chlorid ist in moderaten Mengen unproblematisch für Babys.",
+        hints: [
+          "Niedrige Werte sind vorteilhaft.",
+        ],
+      },
+      {
+        metric: "potassium",
+        label: "Kalium",
+        importance: "niedrig",
+        explanation:
+          "Kalium in geringen Mengen ist unbedenklich.",
+        hints: [],
+      },
     ],
   },
 
@@ -236,6 +299,38 @@ export const PROFILE_CHEATSHEET = {
         hints: [
           "Werte unter 25 mg/L werden positiv bewertet.",
           "Die Grenzen orientieren sich grob an Trinkwasserempfehlungen.",
+        ],
+      },
+      {
+        metric: "sulfate",
+        label: "Sulfat",
+        importance: "mittel",
+        explanation:
+          "Sulfat kann verdauungsfördernd wirken und wird bei Sportwässern teilweise geschätzt (Min/TafelWV ab 200 mg/L).",
+        hints: [
+          "Moderate Werte können die Regeneration unterstützen.",
+          "Ideal morgens vor dem Training auf nüchternen Magen.",
+        ],
+      },
+      {
+        metric: "chloride",
+        label: "Chlorid",
+        importance: "niedrig",
+        explanation:
+          "Chlorid ist ein natürlicher Bestandteil. Moderate Werte sind unproblematisch.",
+        hints: [
+          "Niedrige bis moderate Werte sind vorteilhaft.",
+        ],
+      },
+      {
+        metric: "potassium",
+        label: "Kalium",
+        importance: "mittel",
+        explanation:
+          "Kalium ist wichtig für Muskel- und Herzfunktion. Wasser trägt meist wenig bei, aber jeder Beitrag zählt beim Sport.",
+        hints: [
+          "Werte ab 10-20 mg/L sind ein Bonus.",
+          "Hauptquellen bleiben Bananen, Kartoffeln, Hülsenfrüchte.",
         ],
       },
       {
@@ -321,6 +416,37 @@ export const PROFILE_CHEATSHEET = {
           "Hydrogencarbonat ist hier eher ein Nice-to-have und weniger relevant als Natrium.",
         hints: [
           "Es kann Magenfreundlichkeit unterstützen, spielt aber im Blutdruckprofil eine Nebenrolle.",
+        ],
+      },
+      {
+        metric: "sulfate",
+        label: "Sulfat",
+        importance: "niedrig",
+        explanation:
+          "Sulfat ist natürlich vorhanden und in moderaten Mengen unbedenklich.",
+        hints: [
+          "Niedrige bis moderate Werte sind unproblematisch.",
+        ],
+      },
+      {
+        metric: "chloride",
+        label: "Chlorid",
+        importance: "niedrig",
+        explanation:
+          "Chlorid ist ein natürlicher Bestandteil. Niedrige Werte sind vorteilhaft.",
+        hints: [
+          "Chlorid trägt zum Salzgeschmack bei – niedrige Werte bevorzugt.",
+        ],
+      },
+      {
+        metric: "potassium",
+        label: "Kalium",
+        importance: "mittel",
+        explanation:
+          "Kalium ist wichtig für die Blutdruckregulation und Herzfunktion. Höhere Kaliumzufuhr kann blutdrucksenkend wirken.",
+        hints: [
+          "Wasser trägt wenig bei, aber jeder Beitrag zählt.",
+          "Hauptquellen: Obst, Gemüse, Hülsenfrüchte.",
         ],
       },
     ],

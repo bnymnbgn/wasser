@@ -191,19 +191,31 @@ export function WaterScoreCard({ scanResult }: Props) {
           <h3 className="font-semibold text-slate-900 dark:text-slate-100">
             Kennzeichnungen
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-3">
             {insights.badges.map((badge) => (
-              <span
+              <div
                 key={badge.id}
-                className={
-                  badge.tone === "positive" ? "badge-success" :
-                  badge.tone === "warning" ? "badge-warning" :
-                  "badge-info"
-                }
-                title={badge.description}
+                className={`p-3 rounded-2xl border ${
+                  badge.tone === "positive" ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/50" :
+                  badge.tone === "warning" ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-800/50" :
+                  "bg-blue-50 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-800/50"
+                }`}
               >
-                {badge.label}
-              </span>
+                <div className="flex items-start gap-2 mb-2">
+                  <span
+                    className={`flex-shrink-0 px-2 py-1 rounded-md text-xs font-semibold ${
+                      badge.tone === "positive" ? "bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100" :
+                      badge.tone === "warning" ? "bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100" :
+                      "bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100"
+                    }`}
+                  >
+                    {badge.label}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {badge.description}
+                </p>
+              </div>
             ))}
           </div>
         </div>
