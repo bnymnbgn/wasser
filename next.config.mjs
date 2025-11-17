@@ -64,27 +64,36 @@ const nextConfig = {
 
   // Security Headers
   async headers() {
+    const isDev = process.env.NODE_ENV === 'development';
+
+    // Build CSP directives
+    const cspDirectives = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https: blob:",
+      "worker-src 'self' blob:",
+      "child-src 'self' blob:",
+      "connect-src 'self' https://world.openfoodfacts.org blob: data:",
+      "font-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ];
+
+    // Only add upgrade-insecure-requests in production
+    if (!isDev) {
+      cspDirectives.push("upgrade-insecure-requests");
+    }
+
     return [
       {
         source: '/:path*',
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https: blob:",
-              "worker-src 'self' blob:",
-              "child-src 'self' blob:",
-              "connect-src 'self' https://world.openfoodfacts.org blob: data:",
-              "font-src 'self'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-            ].join('; '),
+            value: cspDirectives.join('; '),
           },
           {
             key: 'X-Frame-Options',
