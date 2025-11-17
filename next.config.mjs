@@ -74,7 +74,7 @@ const nextConfig = {
       "img-src 'self' data: https: blob:",
       "worker-src 'self' blob:",
       "child-src 'self' blob:",
-      "connect-src 'self' https://world.openfoodfacts.org blob: data:",
+      "connect-src 'self' https://world.openfoodfacts.org https://cdn.jsdelivr.net blob: data:",
       "font-src 'self'",
       "object-src 'none'",
       "base-uri 'self'",
