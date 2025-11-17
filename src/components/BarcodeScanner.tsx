@@ -20,11 +20,17 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
   const [scanning, setScanning] = useState(false);
   const permissionRequestedRef = useRef(false);
 
+  // Disable camera scanner in Capacitor builds (use manual input instead)
+  const isCapacitor = Capacitor.isNativePlatform();
+
   useEffect(() => {
     onDetectedRef.current = onDetected;
   }, [onDetected]);
 
   useEffect(() => {
+    // Skip camera functionality in Capacitor
+    if (isCapacitor) return;
+
     if (!active) return;
     if (typeof window === "undefined") return;
     if (!videoRef.current) return;
@@ -103,7 +109,21 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
       canceled = true;
       controlsRef?.stop();
     };
-  }, [active]);
+  }, [active, isCapacitor]);
+
+  // Show simplified message in Capacitor builds
+  if (isCapacitor) {
+    return (
+      <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-3">
+        <div className="text-xs font-medium text-slate-200 mb-1">
+          Webcam-Scanner
+        </div>
+        <div className="text-[11px] text-slate-400">
+          Kamera-Scanner ist in der mobilen App nicht verfügbar. Bitte gib den Barcode manuell ein oder verwende eine externe Barcode-Scanner-App.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-3">
