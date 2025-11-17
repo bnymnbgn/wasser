@@ -20,10 +20,11 @@
     "cap:sync:android:static": "npm run build:capacitor:static && npx cap sync android",
     "cap:open:android": "npx cap open android",
     "cap:run:android": "npx cap run android --no-sync",
-    "cap:build:android": "npm run cap:sync:android:static && cd android && ./gradlew assembleDebug"
+    "cap:build:android": "npm run cap:sync:android:static && cd android && ./gradlew assembleDebug",
+    "cap:build:android:release": "npm run cap:sync:android:static && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
-    "@capacitor-community/barcode-scanner": "^6.0.2",
+    "@capacitor-community/barcode-scanner": "^4.0.1",
     "@capacitor-community/sqlite": "^7.0.2",
     "@capacitor/android": "^7.4.4",
     "@capacitor/camera": "^7.0.2",
