@@ -72,7 +72,7 @@ const nextConfig = {
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
-      "worker-src 'self' blob:",
+      "worker-src 'self' blob: data:",
       "child-src 'self' blob:",
       "connect-src 'self' https://world.openfoodfacts.org blob: data:",
       "font-src 'self'",
