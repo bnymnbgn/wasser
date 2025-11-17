@@ -23,6 +23,7 @@
     "cap:build:android": "npm run cap:sync:android:static && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor-community/barcode-scanner": "^6.0.2",
     "@capacitor-community/sqlite": "^7.0.2",
     "@capacitor/android": "^7.4.4",
     "@capacitor/camera": "^7.0.2",
