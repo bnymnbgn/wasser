@@ -54,7 +54,7 @@ export default function HistoryPageCapacitor() {
 
           return {
             id: scan.id,
-            timestamp: new Date(scan.timestamp),
+            timestamp: new Date(scan.timestamp).toISOString(),
             barcode: scan.barcode ?? undefined,
             profile: scan.profile as any,
             score: scan.score ?? undefined,
@@ -67,7 +67,6 @@ export default function HistoryPageCapacitor() {
                   brand: scan.waterSource.brand,
                   productName: scan.waterSource.productName,
                   origin: scan.waterSource.origin ?? undefined,
-                  barcode: scan.waterSource.barcode ?? undefined,
                 }
               : undefined,
           };

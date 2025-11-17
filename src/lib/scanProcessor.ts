@@ -63,7 +63,7 @@ export async function processBarcodeLocally(
   // Return scan result in domain format
   return {
     id: scanRecord.id,
-    timestamp: new Date(scanRecord.timestamp),
+    timestamp: new Date(scanRecord.timestamp).toISOString(),
     barcode,
     profile,
     score: scoreResult.totalScore,
@@ -73,10 +73,9 @@ export async function processBarcodeLocally(
       brand: waterSource.brand,
       productName: waterSource.productName,
       origin: waterSource.origin ?? undefined,
-      barcode: waterSource.barcode ?? undefined,
     },
-    ocrParsedValues: null,
-    userOverrides: null,
+    ocrParsedValues: undefined,
+    userOverrides: undefined,
   };
 }
 
@@ -103,7 +102,6 @@ export async function processOCRLocally(
         brand: existing.brand,
         productName: existing.productName,
         origin: existing.origin ?? undefined,
-        barcode: existing.barcode ?? undefined,
       };
     }
   }
@@ -121,7 +119,6 @@ export async function processOCRLocally(
       brand: newSource.brand,
       productName: newSource.productName,
       origin: undefined,
-      barcode: newSource.barcode ?? undefined,
     };
   }
 
@@ -165,7 +162,7 @@ export async function processOCRLocally(
 
   return {
     id: scanRecord.id,
-    timestamp: new Date(scanRecord.timestamp),
+    timestamp: new Date(scanRecord.timestamp).toISOString(),
     barcode: barcode,
     profile,
     score: scoreResult.totalScore,
@@ -173,6 +170,6 @@ export async function processOCRLocally(
     insights,
     productInfo,
     ocrParsedValues: parsedValues,
-    userOverrides: null,
+    userOverrides: undefined,
   };
 }
