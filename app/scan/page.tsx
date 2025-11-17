@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import { Camera, Scan, X, RotateCcw } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 
 import type { ProfileType, ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import { WaterScoreCard } from "@/src/components/WaterScoreCard";
@@ -14,6 +15,7 @@ import { RippleButton } from "@/src/components/ui/RippleButton";
 import { SkeletonScoreCard } from "@/src/components/ui/SkeletonLoader";
 import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/capacitor";
+import { processBarcodeLocally, processOCRLocally } from "@/src/lib/scanProcessor";
 
 const METRIC_FIELDS = [
   { key: "ph", label: "pH-Wert" },
@@ -104,41 +106,59 @@ function ScanPageContent() {
     setResult(null);
 
     try {
-      const endpoint = mode === "ocr" ? "/api/scan/ocr" : "/api/scan/barcode";
-      const body =
-        mode === "ocr"
-          ? {
-              text: ocrText,
-              profile,
-              values: numericValues,
-              brand: brandName || undefined,
-              barcode: barcode || undefined,
-            }
-          : { barcode, profile };
+      let scanResult: ScanResult;
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      // Use local SQLite for Capacitor builds, API for web builds
+      if (Capacitor.isNativePlatform()) {
+        // Local processing for mobile app
+        if (mode === "barcode") {
+          scanResult = await processBarcodeLocally(barcode, profile);
+        } else {
+          scanResult = await processOCRLocally(
+            ocrText,
+            profile,
+            numericValues,
+            brandName || undefined,
+            barcode || undefined
+          );
+        }
+      } else {
+        // API processing for web app
+        const endpoint = mode === "ocr" ? "/api/scan/ocr" : "/api/scan/barcode";
+        const body =
+          mode === "ocr"
+            ? {
+                text: ocrText,
+                profile,
+                values: numericValues,
+                brand: brandName || undefined,
+                barcode: barcode || undefined,
+              }
+            : { barcode, profile };
 
-      const data = await res.json();
-      setLoading(false);
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
 
-      if (!res.ok) {
-        await hapticError();
-        alert(data.error ?? "Fehler beim Scannen");
-        return;
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error ?? "Fehler beim Scannen");
+        }
+
+        scanResult = await res.json();
       }
 
+      setLoading(false);
       await hapticSuccess();
-      setResult(data as ScanResult);
+      setResult(scanResult);
       setShowResults(true);
     } catch (err) {
       console.error(err);
       setLoading(false);
       await hapticError();
-      alert("Unerwarteter Fehler bei der Analyse");
+      alert(err instanceof Error ? err.message : "Unerwarteter Fehler bei der Analyse");
     }
   }
 
