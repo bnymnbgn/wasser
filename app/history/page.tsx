@@ -14,7 +14,7 @@ async function loadScans(): Promise<DomainScanResult[]> {
     },
   });
 
-  return prismaScans.map((scan) => {
+  return prismaScans.map((scan: any) => {
     const mapped = mapPrismaScanResult(scan);
     const mergedValues = {
       ...(mapped.ocrParsedValues ?? {}),

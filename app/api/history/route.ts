@@ -14,7 +14,7 @@ export async function GET() {
       },
     });
 
-    const domainScans = scans.map((scan) => {
+    const domainScans = scans.map((scan: any) => {
       const mapped = mapPrismaScanResult(scan);
       const mergedValues = {
         ...(mapped.ocrParsedValues ?? {}),

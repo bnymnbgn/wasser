@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
       }, {}),
       waterSourceId: lookup.source.id,
       waterAnalysisId: latestAnalysis?.id ?? null,
-      ocrParsedValues: lookup.analysis as Prisma.InputJsonValue,
+      ocrParsedValues: lookup.analysis as any,
     },
     include: {
       waterSource: true,
