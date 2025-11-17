@@ -49,6 +49,21 @@ const config: CapacitorConfig = {
       style: 'dark',
       resizeOnFullScreen: true,
     },
+    CapacitorSQLite: {
+      iosDatabaseLocation: 'Library/CapacitorDatabase',
+      iosIsEncryption: false,
+      iosKeychainPrefix: 'trinkwasser',
+      iosBiometric: {
+        biometricAuth: false,
+        biometricTitle: "Biometric login for capacitor sqlite"
+      },
+      androidIsEncryption: false,
+      androidBiometric: {
+        biometricAuth: false,
+        biometricTitle: "Biometric login for capacitor sqlite",
+        biometricSubTitle: "Log in using your biometric"
+      }
+    },
   },
 };
 

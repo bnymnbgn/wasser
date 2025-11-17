@@ -1,0 +1,76 @@
+// SQLite schema for mobile app deployment
+// This schema is used for the Capacitor build with local database
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/client-sqlite"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./app.db"
+}
+
+model WaterSource {
+  id          String          @id
+  brand       String
+  productName String
+  origin      String?
+  barcode     String?         @unique
+  analyses    WaterAnalysis[]
+  scans       ScanResult[]
+  createdAt   String          // ISO 8601 DateTime string
+
+  @@index([barcode])
+  @@index([brand, productName])
+  @@index([createdAt])
+}
+
+model WaterAnalysis {
+  id                     String       @id
+  waterSourceId          String
+  waterSource            WaterSource  @relation(fields: [waterSourceId], references: [id])
+  scanResults            ScanResult[]
+  analysisDate           String?      // ISO 8601 DateTime string
+  sourceType             String       // "manufacturer" | "authority" | "user" | "api"
+  reliabilityScore       Real         // 0–1
+  ph                     Real?
+  calcium                Real?
+  magnesium              Real?
+  sodium                 Real?
+  potassium              Real?
+  chloride               Real?
+  sulfate                Real?
+  bicarbonate            Real?
+  nitrate                Real?
+  totalDissolvedSolids   Real?
+  createdAt              String       // ISO 8601 DateTime string
+
+  @@index([waterSourceId, createdAt])
+  @@index([sourceType])
+  @@index([reliabilityScore])
+}
+
+model ScanResult {
+  id              String        @id
+  timestamp       String        // ISO 8601 DateTime string
+  barcode         String?
+  profile         String        // "standard" | "baby" | "sport" | "blood_pressure"
+  score           Real?
+  metricScores    String?       // JSON string
+  ocrTextRaw      String?
+  ocrParsedValues String?       // JSON string
+  userOverrides   String?       // JSON string
+
+  waterSourceId   String?
+  waterSource     WaterSource?  @relation(fields: [waterSourceId], references: [id])
+
+  waterAnalysisId String?
+  waterAnalysis   WaterAnalysis? @relation(fields: [waterAnalysisId], references: [id])
+
+  @@index([timestamp])
+  @@index([profile])
+  @@index([waterSourceId])
+  @@index([barcode])
+  @@index([score])
+}

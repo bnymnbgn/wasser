@@ -13,6 +13,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "seed:openfoodfacts": "node scripts/seed-openfoodfacts.js",
+    "export:data": "node scripts/export-to-json.js",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npm run build:capacitor && npx cap sync",
     "cap:sync:android": "npm run build:capacitor && npx cap sync android",
@@ -22,6 +23,7 @@
     "cap:build:android": "npm run cap:sync:android:static && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor-community/sqlite": "^7.0.2",
     "@capacitor/android": "^7.4.4",
     "@capacitor/camera": "^7.0.2",
     "@capacitor/core": "^7.4.4",
@@ -53,6 +55,7 @@
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
+    "dotenv": "^17.2.3",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.16",
     "happy-dom": "^20.0.10",
