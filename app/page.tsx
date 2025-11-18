@@ -5,6 +5,7 @@ import { HowItWorksSection } from "@/src/components/landing/HowItWorksSection";
 import { SocialProofSection } from "@/src/components/landing/SocialProofSection";
 import { CTASection } from "@/src/components/landing/CTASection";
 import { Footer } from "@/src/components/landing/Footer";
+import { CapacitorRedirect } from "@/src/components/CapacitorRedirect";
 
 // SEO Metadata
 export const metadata: Metadata = {
@@ -137,6 +138,9 @@ const jsonLd = {
 export default function LandingPage() {
   return (
     <>
+      {/* Redirect Capacitor apps to /scan */}
+      <CapacitorRedirect />
+
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
