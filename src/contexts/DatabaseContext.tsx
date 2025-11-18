@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { sqliteService, WaterSource, WaterAnalysis } from '@/lib/sqlite';
+// Import JSON data directly for reliability in Capacitor apps
+import waterSourcesData from '@/public/data/water-sources.json';
+import waterAnalysesData from '@/public/data/water-analyses.json';
 
 interface DatabaseContextType {
   isReady: boolean;
@@ -83,20 +86,16 @@ async function loadPreloadedData(): Promise<void> {
   try {
     console.log('[DatabaseProvider] Loading preloaded data...');
 
-    // Fetch JSON files from public/data directory
-    const [sourcesResponse, analysesResponse] = await Promise.all([
-      fetch('/data/water-sources.json'),
-      fetch('/data/water-analyses.json'),
-    ]);
+    // Use directly imported JSON data (more reliable for Capacitor apps)
+    const sources: WaterSource[] = waterSourcesData as WaterSource[];
+    const analyses: WaterAnalysis[] = waterAnalysesData as WaterAnalysis[];
 
-    if (!sourcesResponse.ok || !analysesResponse.ok) {
-      throw new Error('Failed to fetch preloaded data files');
+    console.log(`[DatabaseProvider] Loaded ${sources.length} sources and ${analyses.length} analyses from imported data`);
+
+    // Verify data is not empty
+    if (sources.length === 0 || analyses.length === 0) {
+      throw new Error(`Invalid data: sources=${sources.length}, analyses=${analyses.length}`);
     }
-
-    const sources: WaterSource[] = await sourcesResponse.json();
-    const analyses: WaterAnalysis[] = await analysesResponse.json();
-
-    console.log(`[DatabaseProvider] Loaded ${sources.length} sources and ${analyses.length} analyses`);
 
     // Import into SQLite
     await sqliteService.importPreloadedData(sources, analyses);

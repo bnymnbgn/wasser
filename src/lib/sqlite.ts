@@ -190,19 +190,28 @@ class SQLiteService {
    */
   async findWaterSourceByBarcode(barcode: string): Promise<(WaterSource & { analyses: WaterAnalysis[] }) | null> {
     await this.ensureInitialized();
-    if (!this.db) return null;
+    if (!this.db) {
+      console.error('[SQLite] Database not initialized when searching for barcode');
+      return null;
+    }
 
     try {
+      console.log(`[SQLite] Searching for barcode: ${barcode}`);
+
       const sourceResult = await this.db.query(
         'SELECT * FROM WaterSource WHERE barcode = ? LIMIT 1',
         [barcode]
       );
 
+      console.log(`[SQLite] Query returned ${sourceResult.values?.length || 0} results`);
+
       if (!sourceResult.values || sourceResult.values.length === 0) {
+        console.log('[SQLite] Barcode not found in database');
         return null;
       }
 
       const source = sourceResult.values[0] as WaterSource;
+      console.log(`[SQLite] Found source: ${source.brand} - ${source.productName}`);
 
       // Get latest analysis
       const analysisResult = await this.db.query(
@@ -211,6 +220,7 @@ class SQLiteService {
       );
 
       const analyses = (analysisResult.values || []) as WaterAnalysis[];
+      console.log(`[SQLite] Found ${analyses.length} analyses for source`);
 
       return {
         ...source,
@@ -395,7 +405,7 @@ class SQLiteService {
     await this.ensureInitialized();
     if (!this.db) throw new Error('Database not initialized');
 
-    console.log(`[SQLite] Importing ${sources.length} water sources and ${analyses.length} analyses`);
+    console.log(`[SQLite] Starting import: ${sources.length} water sources and ${analyses.length} analyses`);
 
     try {
       // Check if data already exists
@@ -403,20 +413,32 @@ class SQLiteService {
       const count = countResult.values?.[0]?.count || 0;
 
       if (count > 0) {
-        console.log('[SQLite] Data already imported, skipping');
+        console.log(`[SQLite] Data already imported (${count} sources found), skipping`);
         return;
       }
 
+      console.log('[SQLite] Database is empty, proceeding with import...');
+
       // Import water sources
+      let importedSources = 0;
       for (const source of sources) {
         await this.db.run(
           `INSERT INTO WaterSource (id, brand, productName, origin, barcode, createdAt)
            VALUES (?, ?, ?, ?, ?, ?)`,
           [source.id, source.brand, source.productName, source.origin, source.barcode, source.createdAt]
         );
+        importedSources++;
+
+        // Log progress every 10 sources
+        if (importedSources % 10 === 0) {
+          console.log(`[SQLite] Imported ${importedSources}/${sources.length} sources...`);
+        }
       }
 
+      console.log(`[SQLite] Imported all ${importedSources} water sources`);
+
       // Import analyses
+      let importedAnalyses = 0;
       for (const analysis of analyses) {
         await this.db.run(
           `INSERT INTO WaterAnalysis (
@@ -443,11 +465,26 @@ class SQLiteService {
             analysis.createdAt
           ]
         );
+        importedAnalyses++;
+
+        // Log progress every 10 analyses
+        if (importedAnalyses % 10 === 0) {
+          console.log(`[SQLite] Imported ${importedAnalyses}/${analyses.length} analyses...`);
+        }
       }
 
-      console.log('[SQLite] Data import completed successfully');
+      console.log(`[SQLite] Imported all ${importedAnalyses} analyses`);
+
+      // Verify import success
+      const finalCount = await this.db.query('SELECT COUNT(*) as count FROM WaterSource');
+      const finalSourceCount = finalCount.values?.[0]?.count || 0;
+
+      const analysisCount = await this.db.query('SELECT COUNT(*) as count FROM WaterAnalysis');
+      const finalAnalysisCount = analysisCount.values?.[0]?.count || 0;
+
+      console.log(`[SQLite] ✅ Data import completed: ${finalSourceCount} sources, ${finalAnalysisCount} analyses`);
     } catch (error) {
-      console.error('[SQLite] Error importing data:', error);
+      console.error('[SQLite] ❌ Error importing data:', error);
       throw error;
     }
   }
