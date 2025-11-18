@@ -15,12 +15,17 @@ export async function processBarcodeLocally(
   barcode: string,
   profile: ProfileType
 ): Promise<ScanResult> {
+  console.log(`[ScanProcessor] Processing barcode: ${barcode}`);
+
   // Find water source by barcode in local database
   const waterSourceWithAnalyses = await sqliteService.findWaterSourceByBarcode(barcode);
 
   if (!waterSourceWithAnalyses) {
+    console.log(`[ScanProcessor] Barcode ${barcode} not found in database`);
     throw new Error('Barcode nicht in der Datenbank gefunden. Bitte verwende OCR-Scan.');
   }
+
+  console.log(`[ScanProcessor] Found water source: ${waterSourceWithAnalyses.brand} - ${waterSourceWithAnalyses.productName}`);
 
   const { analyses, ...waterSource } = waterSourceWithAnalyses;
   const latestAnalysis = analyses[0];
