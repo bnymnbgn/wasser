@@ -1,0 +1,66 @@
+[
+  {
+    "id": "test_evian_001",
+    "brand": "Evian",
+    "productName": "Evian Natürliches Mineralwasser",
+    "origin": "Frankreich, Evian-les-Bains",
+    "barcode": "3068320053561",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "test_volvic_001",
+    "brand": "Volvic",
+    "productName": "Volvic Naturelle",
+    "origin": "Frankreich, Auvergne",
+    "barcode": "3068320091501",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "test_vittel_001",
+    "brand": "Vittel",
+    "productName": "Vittel Natürliches Mineralwasser",
+    "origin": "Frankreich, Vittel",
+    "barcode": "3083680085489",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "test_gerolsteiner_001",
+    "brand": "Gerolsteiner",
+    "productName": "Gerolsteiner Sprudel",
+    "origin": "Deutschland, Gerolstein",
+    "barcode": "4001513045004",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "test_san_pellegrino_001",
+    "brand": "San Pellegrino",
+    "productName": "San Pellegrino Sparkling Natural Mineral Water",
+    "origin": "Italien, San Pellegrino Terme",
+    "barcode": "8000680005262",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "test_contrex_001",
+    "brand": "Contrex",
+    "productName": "Contrex Mineralwasser",
+    "origin": "Frankreich, Contrexéville",
+    "barcode": "3068320112428",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "test_adelholzener_001",
+    "brand": "Adelholzener",
+    "productName": "Adelholzener Classic",
+    "origin": "Deutschland, Bayern",
+    "barcode": "4001514002557",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "test_apollinaris_001",
+    "brand": "Apollinaris",
+    "productName": "Apollinaris Classic",
+    "origin": "Deutschland, Bad Neuenahr",
+    "barcode": "4001541104008",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+]
