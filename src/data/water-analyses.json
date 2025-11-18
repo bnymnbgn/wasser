@@ -142,7 +142,6 @@
     "nitrate": 0.3,
     "totalDissolvedSolids": 2900,
     "createdAt": "2024-01-01T00:00:00.000Z"
-<<<<<<< HEAD
   },
   {
     "id": "analysis_black_forest_001",
@@ -161,7 +160,5 @@
     "nitrate": null,
     "totalDissolvedSolids": null,
     "createdAt": "2024-01-01T00:00:00.000Z"
-=======
->>>>>>> 5517ae642ef89a47450a51ff0897b4b6eaa46e32
   }
 ]
