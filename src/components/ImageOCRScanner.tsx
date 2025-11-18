@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { createWorker, type Worker } from "tesseract.js";
 import { Capacitor } from "@capacitor/core";
+import type { TextDetections } from "@capacitor-community/image-to-text";
 
 interface ImageOCRScannerProps {
   onTextExtracted: (text: string, confidence?: number) => void;
@@ -58,6 +59,32 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
       }
     };
   }, []);
+
+  /**
+   * Process image using native ML Kit (Google ML Kit for Android, Apple Vision for iOS)
+   * Much faster and more accurate than Tesseract.js
+   */
+  async function processImageWithMLKit(imagePath: string): Promise<{ text: string; confidence: number }> {
+    try {
+      // Dynamically import to avoid issues on web
+      const { Ocr } = await import("@capacitor-community/image-to-text");
+
+      const data: TextDetections = await Ocr.detectText({ filename: imagePath });
+
+      // Combine all detected text blocks
+      const fullText = data.textDetections.map((detection) => detection.text).join("\n");
+
+      // ML Kit doesn't provide confidence scores like Tesseract
+      // We assume high confidence (90%) if text was detected
+      const confidence = fullText.trim() ? 90 : 0;
+
+      return { text: fullText, confidence };
+    } catch (err: unknown) {
+      console.error("ML Kit OCR Error:", err);
+      const message = err instanceof Error ? err.message : "Unbekannter Fehler";
+      throw new Error(`ML Kit Fehler: ${message}`);
+    }
+  }
 
   /**
    * Preprocesses an image for better OCR quality:
@@ -147,9 +174,10 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
       } else {
         setError("Kein Text erkannt. Bitte versuche ein klareres Foto.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("OCR Error:", err);
-      setError(err?.message ?? "Fehler bei der Texterkennung");
+      const message = err instanceof Error ? err.message : "Fehler bei der Texterkennung";
+      setError(message);
     } finally {
       setIsProcessing(false);
       setProgress(0);
@@ -236,26 +264,54 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
         saveToGallery: false,
       });
 
-      const photoUrl = photo.webPath ?? (photo.path ? Capacitor.convertFileSrc(photo.path) : null);
+      const photoUrl = photo.webPath ?? photo.path;
       if (!photoUrl) {
         throw new Error("Konnte kein Foto aus der Kamera laden.");
       }
 
+      // Create preview
       const response = await fetch(photoUrl);
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
       setPreviewUrl(objectUrl);
-      await processImage(blob);
-    } catch (cameraError: any) {
-      if (cameraError?.message?.toLowerCase().includes("permission")) {
+
+      // Use ML Kit for native OCR (faster & more accurate)
+      setIsProcessing(true);
+      setProgress(0);
+      setError(null);
+      setConfidence(null);
+
+      try {
+        // ML Kit requires the file path, not webPath
+        const filePath = photo.path!;
+        const result = await processImageWithMLKit(filePath);
+
+        setConfidence(result.confidence);
+
+        if (result.text.trim()) {
+          onTextExtracted(result.text, result.confidence);
+        } else {
+          setError("Kein Text erkannt. Bitte versuche ein klareres Foto.");
+        }
+      } catch (ocrError: unknown) {
+        console.error("Native OCR Error:", ocrError);
+        const message = ocrError instanceof Error ? ocrError.message : "Fehler bei der Texterkennung";
+        setError(message);
+      } finally {
+        setIsProcessing(false);
+        setProgress(0);
+      }
+    } catch (cameraError: unknown) {
+      const errorMessage = cameraError instanceof Error ? cameraError.message : String(cameraError);
+      if (errorMessage.toLowerCase().includes("permission")) {
         setError("📷 Kamerazugriff wurde verweigert. Bitte erlaube den Zugriff in den Systemeinstellungen.");
-      } else if (cameraError?.message?.includes("No activity")) {
+      } else if (errorMessage.includes("No activity")) {
         setError("📷 Kamera-App nicht gefunden. Bitte installiere eine Kamera-App oder nutze den Upload.");
-      } else if (cameraError === "User cancelled photos app") {
+      } else if (errorMessage === "User cancelled photos app") {
         // Benutzer hat Dialog geschlossen -> kein Fehler anzeigen.
         return;
       } else {
-        setError(`Kamera-Fehler: ${cameraError?.message ?? "Unbekannter Fehler"}`);
+        setError(`Kamera-Fehler: ${errorMessage}`);
       }
     }
   }
@@ -283,23 +339,28 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
         streamRef.current = stream;
         setIsCameraActive(true);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Camera Error:", err);
       // Improved error messages
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        setError(
-          "📷 Kamerazugriff wurde verweigert. Bitte erlaube den Kamerazugriff in deinen Browser-Einstellungen."
-        );
-      } else if (err.name === "NotFoundError") {
-        setError("📷 Keine Kamera gefunden. Bitte verwende den Upload-Button.");
-      } else if (err.name === "NotReadableError") {
-        setError(
-          "📷 Kamera wird bereits verwendet. Bitte schließe andere Apps, die auf die Kamera zugreifen."
-        );
+      if (err instanceof Error) {
+        const errorName = (err as DOMException).name;
+        if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
+          setError(
+            "📷 Kamerazugriff wurde verweigert. Bitte erlaube den Kamerazugriff in deinen Browser-Einstellungen."
+          );
+        } else if (errorName === "NotFoundError") {
+          setError("📷 Keine Kamera gefunden. Bitte verwende den Upload-Button.");
+        } else if (errorName === "NotReadableError") {
+          setError(
+            "📷 Kamera wird bereits verwendet. Bitte schließe andere Apps, die auf die Kamera zugreifen."
+          );
+        } else {
+          setError(`Kamera-Fehler: ${err.message}`);
+        }
       } else if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
         setError("📷 Live-Vorschau wird von dieser Plattform nicht unterstützt. Bitte nutze den Foto-Upload.");
       } else {
-        setError(`Kamera-Fehler: ${err.message}`);
+        setError("Kamera-Fehler: Unbekannter Fehler");
       }
     }
   }
