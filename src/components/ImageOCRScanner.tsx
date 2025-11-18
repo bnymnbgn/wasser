@@ -22,6 +22,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
   const previewUrlRef = useRef<string | null>(null);
+  const isNativeApp = Capacitor.isNativePlatform();
 
   // Cache the Tesseract worker for reuse
   const workerRef = useRef<Worker | null>(null);
@@ -207,7 +208,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
     if (cameraPermissionRef.current) return;
     cameraPermissionRef.current = true;
 
-    if (Capacitor.isNativePlatform()) {
+    if (isNativeApp) {
       try {
         const { Camera } = await import("@capacitor/camera");
         await Camera.requestPermissions({ permissions: ["camera"] });
@@ -225,8 +226,47 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
     stream.getTracks().forEach((track) => track.stop());
   }
 
+  async function captureNativePhoto() {
+    try {
+      const { Camera, CameraResultType, CameraDirection } = await import("@capacitor/camera");
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        direction: CameraDirection.Rear,
+        quality: 90,
+        saveToGallery: false,
+      });
+
+      const photoUrl = photo.webPath ?? (photo.path ? Capacitor.convertFileSrc(photo.path) : null);
+      if (!photoUrl) {
+        throw new Error("Konnte kein Foto aus der Kamera laden.");
+      }
+
+      const response = await fetch(photoUrl);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      setPreviewUrl(objectUrl);
+      await processImage(blob);
+    } catch (cameraError: any) {
+      if (cameraError?.message?.toLowerCase().includes("permission")) {
+        setError("📷 Kamerazugriff wurde verweigert. Bitte erlaube den Zugriff in den Systemeinstellungen.");
+      } else if (cameraError?.message?.includes("No activity")) {
+        setError("📷 Kamera-App nicht gefunden. Bitte installiere eine Kamera-App oder nutze den Upload.");
+      } else if (cameraError === "User cancelled photos app") {
+        // Benutzer hat Dialog geschlossen -> kein Fehler anzeigen.
+        return;
+      } else {
+        setError(`Kamera-Fehler: ${cameraError?.message ?? "Unbekannter Fehler"}`);
+      }
+    }
+  }
+
   async function startCamera() {
     setError(null);
+    if (isNativeApp) {
+      await captureNativePhoto();
+      return;
+    }
+
     try {
       await ensureCameraPermission();
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -256,6 +296,8 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
         setError(
           "📷 Kamera wird bereits verwendet. Bitte schließe andere Apps, die auf die Kamera zugreifen."
         );
+      } else if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        setError("📷 Live-Vorschau wird von dieser Plattform nicht unterstützt. Bitte nutze den Foto-Upload.");
       } else {
         setError(`Kamera-Fehler: ${err.message}`);
       }
