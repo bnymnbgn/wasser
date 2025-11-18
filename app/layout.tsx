@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/src/components/ThemeProvider';
 import { DatabaseProvider } from '@/src/contexts/DatabaseContext';
-import BottomNav from '@/src/components/BottomNav';
+import ConditionalBottomNav from '@/src/components/ConditionalBottomNav';
 
 export const metadata: Metadata = {
   title: 'Wasserscan',
@@ -43,10 +43,8 @@ export default function RootLayout({
       <body className="font-sans overscroll-none antialiased">
         <ThemeProvider defaultTheme="system">
           <DatabaseProvider>
-            <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
-              {children}
-            </div>
-            <BottomNav />
+            {children}
+            <ConditionalBottomNav />
           </DatabaseProvider>
         </ThemeProvider>
       </body>

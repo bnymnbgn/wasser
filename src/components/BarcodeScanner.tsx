@@ -36,7 +36,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
 
       if (result.barcodes && result.barcodes.length > 0) {
         const barcode = result.barcodes[0];
-        onDetected(barcode.rawValue || "");
+        onDetected(barcode?.rawValue || "");
       }
     } catch (err) {
       console.error("Native barcode scan error:", err);
