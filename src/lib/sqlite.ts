@@ -408,40 +408,46 @@ class SQLiteService {
     console.log(`[SQLite] Starting import: ${sources.length} water sources and ${analyses.length} analyses`);
 
     try {
-      // Check if data already exists
+      // Check how many sources are already present
       const countResult = await this.db.query('SELECT COUNT(*) as count FROM WaterSource');
-      const count = countResult.values?.[0]?.count || 0;
+      const existingCount = countResult.values?.[0]?.count || 0;
+      const isFreshImport = existingCount === 0;
 
-      if (count > 0) {
-        console.log(`[SQLite] Data already imported (${count} sources found), skipping`);
-        return;
+      if (isFreshImport) {
+        console.log('[SQLite] Database is empty, proceeding with initial import...');
+      } else {
+        console.log(`[SQLite] Found ${existingCount} existing sources, syncing any missing entries...`);
       }
-
-      console.log('[SQLite] Database is empty, proceeding with import...');
 
       // Import water sources
       let importedSources = 0;
       for (const source of sources) {
-        await this.db.run(
-          `INSERT INTO WaterSource (id, brand, productName, origin, barcode, createdAt)
+        const result = await this.db.run(
+          `INSERT OR IGNORE INTO WaterSource (id, brand, productName, origin, barcode, createdAt)
            VALUES (?, ?, ?, ?, ?, ?)`,
           [source.id, source.brand, source.productName, source.origin, source.barcode, source.createdAt]
         );
-        importedSources++;
+        const changes = result.changes?.changes ?? 0;
+        if (changes > 0) {
+          importedSources++;
+        }
 
         // Log progress every 10 sources
-        if (importedSources % 10 === 0) {
-          console.log(`[SQLite] Imported ${importedSources}/${sources.length} sources...`);
+        if (importedSources > 0 && importedSources % 10 === 0) {
+          console.log(`[SQLite] Imported ${importedSources} new sources so far...`);
         }
       }
 
-      console.log(`[SQLite] Imported all ${importedSources} water sources`);
+      const skippedSources = sources.length - importedSources;
+      console.log(
+        `[SQLite] Imported ${importedSources} new water sources${skippedSources > 0 ? `, skipped ${skippedSources} existing entries` : ''}`
+      );
 
       // Import analyses
       let importedAnalyses = 0;
       for (const analysis of analyses) {
-        await this.db.run(
-          `INSERT INTO WaterAnalysis (
+        const result = await this.db.run(
+          `INSERT OR IGNORE INTO WaterAnalysis (
             id, waterSourceId, analysisDate, sourceType, reliabilityScore,
             ph, calcium, magnesium, sodium, potassium, chloride, sulfate,
             bicarbonate, nitrate, totalDissolvedSolids, createdAt
@@ -465,15 +471,21 @@ class SQLiteService {
             analysis.createdAt
           ]
         );
-        importedAnalyses++;
+        const changes = result.changes?.changes ?? 0;
+        if (changes > 0) {
+          importedAnalyses++;
+        }
 
         // Log progress every 10 analyses
-        if (importedAnalyses % 10 === 0) {
-          console.log(`[SQLite] Imported ${importedAnalyses}/${analyses.length} analyses...`);
+        if (importedAnalyses > 0 && importedAnalyses % 10 === 0) {
+          console.log(`[SQLite] Imported ${importedAnalyses} new analyses so far...`);
         }
       }
 
-      console.log(`[SQLite] Imported all ${importedAnalyses} analyses`);
+      const skippedAnalyses = analyses.length - importedAnalyses;
+      console.log(
+        `[SQLite] Imported ${importedAnalyses} new analyses${skippedAnalyses > 0 ? `, skipped ${skippedAnalyses} existing entries` : ''}`
+      );
 
       // Verify import success
       const finalCount = await this.db.query('SELECT COUNT(*) as count FROM WaterSource');
@@ -482,7 +494,9 @@ class SQLiteService {
       const analysisCount = await this.db.query('SELECT COUNT(*) as count FROM WaterAnalysis');
       const finalAnalysisCount = analysisCount.values?.[0]?.count || 0;
 
-      console.log(`[SQLite] ✅ Data import completed: ${finalSourceCount} sources, ${finalAnalysisCount} analyses`);
+      console.log(
+        `[SQLite] ✅ Data import completed: ${finalSourceCount} sources, ${finalAnalysisCount} analyses`
+      );
     } catch (error) {
       console.error('[SQLite] ❌ Error importing data:', error);
       throw error;
