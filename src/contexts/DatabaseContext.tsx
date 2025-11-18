@@ -4,8 +4,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { sqliteService, WaterSource, WaterAnalysis } from '@/lib/sqlite';
 // Import JSON data directly for reliability in Capacitor apps
-import waterSourcesData from '@/public/data/water-sources.json';
-import waterAnalysesData from '@/public/data/water-analyses.json';
+import waterSourcesData from '@/src/data/water-sources.json';
+import waterAnalysesData from '@/src/data/water-analyses.json';
 
 interface DatabaseContextType {
   isReady: boolean;
