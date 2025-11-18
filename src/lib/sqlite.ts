@@ -79,15 +79,7 @@ class SQLiteService {
     try {
       this.sqliteConnection = new SQLiteConnection(CapacitorSQLite);
 
-      // Check if database exists
-      const dbExists = await this.sqliteConnection.isDatabase(DB_NAME);
-
-      if (!dbExists.result) {
-        // Create new database with schema
-        await this.createDatabase();
-      }
-
-      // Open the database
+      // Open or create the database
       this.db = await this.sqliteConnection.createConnection(
         DB_NAME,
         false, // encrypted
@@ -97,6 +89,7 @@ class SQLiteService {
       );
 
       await this.db.open();
+      await this.ensureSchema();
       this.isInitialized = true;
 
       console.log('[SQLite] Database initialized successfully');
@@ -107,24 +100,28 @@ class SQLiteService {
   }
 
   /**
-   * Create database schema
+   * Ensure database schema exists
    */
-  private async createDatabase(): Promise<void> {
-    const schema = `
-      CREATE TABLE IF NOT EXISTS WaterSource (
+  private async ensureSchema(): Promise<void> {
+    if (!this.db) {
+      throw new Error('[SQLite] Database not available');
+    }
+
+    console.log('[SQLite] Ensuring database schema');
+
+    const statements = [
+      `CREATE TABLE IF NOT EXISTS WaterSource (
         id TEXT PRIMARY KEY,
         brand TEXT NOT NULL,
         productName TEXT NOT NULL,
         origin TEXT,
         barcode TEXT UNIQUE,
         createdAt TEXT NOT NULL
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_watersource_barcode ON WaterSource(barcode);
-      CREATE INDEX IF NOT EXISTS idx_watersource_brand_product ON WaterSource(brand, productName);
-      CREATE INDEX IF NOT EXISTS idx_watersource_created ON WaterSource(createdAt);
-
-      CREATE TABLE IF NOT EXISTS WaterAnalysis (
+      );`,
+      `CREATE INDEX IF NOT EXISTS idx_watersource_barcode ON WaterSource(barcode);`,
+      `CREATE INDEX IF NOT EXISTS idx_watersource_brand_product ON WaterSource(brand, productName);`,
+      `CREATE INDEX IF NOT EXISTS idx_watersource_created ON WaterSource(createdAt);`,
+      `CREATE TABLE IF NOT EXISTS WaterAnalysis (
         id TEXT PRIMARY KEY,
         waterSourceId TEXT NOT NULL,
         analysisDate TEXT,
@@ -142,13 +139,11 @@ class SQLiteService {
         totalDissolvedSolids REAL,
         createdAt TEXT NOT NULL,
         FOREIGN KEY (waterSourceId) REFERENCES WaterSource(id)
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_wateranalysis_source_created ON WaterAnalysis(waterSourceId, createdAt);
-      CREATE INDEX IF NOT EXISTS idx_wateranalysis_source_type ON WaterAnalysis(sourceType);
-      CREATE INDEX IF NOT EXISTS idx_wateranalysis_reliability ON WaterAnalysis(reliabilityScore);
-
-      CREATE TABLE IF NOT EXISTS ScanResult (
+      );`,
+      `CREATE INDEX IF NOT EXISTS idx_wateranalysis_source_created ON WaterAnalysis(waterSourceId, createdAt);`,
+      `CREATE INDEX IF NOT EXISTS idx_wateranalysis_source_type ON WaterAnalysis(sourceType);`,
+      `CREATE INDEX IF NOT EXISTS idx_wateranalysis_reliability ON WaterAnalysis(reliabilityScore);`,
+      `CREATE TABLE IF NOT EXISTS ScanResult (
         id TEXT PRIMARY KEY,
         timestamp TEXT NOT NULL,
         barcode TEXT,
@@ -162,17 +157,17 @@ class SQLiteService {
         waterAnalysisId TEXT,
         FOREIGN KEY (waterSourceId) REFERENCES WaterSource(id),
         FOREIGN KEY (waterAnalysisId) REFERENCES WaterAnalysis(id)
-      );
+      );`,
+      `CREATE INDEX IF NOT EXISTS idx_scanresult_timestamp ON ScanResult(timestamp);`,
+      `CREATE INDEX IF NOT EXISTS idx_scanresult_profile ON ScanResult(profile);`,
+      `CREATE INDEX IF NOT EXISTS idx_scanresult_source ON ScanResult(waterSourceId);`,
+      `CREATE INDEX IF NOT EXISTS idx_scanresult_barcode ON ScanResult(barcode);`,
+      `CREATE INDEX IF NOT EXISTS idx_scanresult_score ON ScanResult(score);`
+    ];
 
-      CREATE INDEX IF NOT EXISTS idx_scanresult_timestamp ON ScanResult(timestamp);
-      CREATE INDEX IF NOT EXISTS idx_scanresult_profile ON ScanResult(profile);
-      CREATE INDEX IF NOT EXISTS idx_scanresult_source ON ScanResult(waterSourceId);
-      CREATE INDEX IF NOT EXISTS idx_scanresult_barcode ON ScanResult(barcode);
-      CREATE INDEX IF NOT EXISTS idx_scanresult_score ON ScanResult(score);
-    `;
-
-    console.log('[SQLite] Creating database schema');
-    // Schema will be created when the connection opens
+    for (const statement of statements) {
+      await this.db.execute(statement);
+    }
   }
 
   /**
