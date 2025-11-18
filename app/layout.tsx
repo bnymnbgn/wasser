@@ -1,24 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { ThemeProvider } from '@/src/components/ThemeProvider';
-import { DatabaseProvider } from '@/src/contexts/DatabaseContext';
-import BottomNav from '@/src/components/BottomNav';
 
+// Minimal root layout - NO providers, NO app-specific logic
+// This keeps the landing page lightweight and SEO-friendly
 export const metadata: Metadata = {
-  title: 'Wasserscan',
-  description: 'Bewerte Trinkwasser-Qualität auf Basis von Etikett-Daten und Barcodes',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Wasserscan',
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  other: {
-    'mobile-web-app-capable': 'yes',
-  },
+  title: 'Trinkwasser Check',
+  description: 'Intelligente Wasserqualität-Analyse',
 };
 
 export const viewport: Viewport = {
@@ -41,14 +28,7 @@ export default function RootLayout({
   return (
     <html lang="de" suppressHydrationWarning>
       <body className="font-sans overscroll-none antialiased">
-        <ThemeProvider defaultTheme="system">
-          <DatabaseProvider>
-            <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
-              {children}
-            </div>
-            <BottomNav />
-          </DatabaseProvider>
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );
