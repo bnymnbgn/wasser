@@ -398,9 +398,24 @@ npm run dev
 
 Einige mögliche nächste Schritte:
 
-### Echte OCR
-- Integration von `tesseract.js` oder externem OCR-Service
-- Upload von Etikett-Fotos statt reiner Texteingabe
+### ✅ Echte OCR (IMPLEMENTIERT)
+- ✅ Native ML Kit Text Recognition für Android (Google ML Kit) und iOS (Apple Vision Framework)
+- ✅ Tesseract.js als Web-Fallback
+- ✅ Upload und Kamera-Aufnahme von Etikett-Fotos
+
+**Android Setup erforderlich:**
+Für die native OCR auf Android benötigst du eine `google-services.json` Datei:
+
+1. Gehe zu [Firebase Console](https://console.firebase.google.com/)
+2. Erstelle ein neues Projekt oder wähle ein bestehendes
+3. Klicke auf "Android-App hinzufügen"
+4. Package Name: `de.trinkwasser.check` (muss mit `android/app/AndroidManifest.xml` übereinstimmen)
+5. Lade die `google-services.json` herunter
+6. Speichere sie in `android/app/google-services.json`
+7. Führe `npx cap sync android` aus
+
+**iOS Setup:**
+Keine zusätzliche Konfiguration erforderlich - Apple Vision Framework ist bereits verfügbar.
 
 ### Echte Barcode-Daten
 - Anbindung an Open Food Facts API
