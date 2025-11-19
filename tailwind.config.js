@@ -202,6 +202,8 @@ module.exports = {
         'fade-in': 'fade-in 0.2s ease-out',
         'scale-in': 'scale-in 0.2s ease-out',
         'ripple': 'ripple 0.6s ease-out',
+        'fill-bottle': 'fill 2s ease-in-out infinite',
+        'scan-down': 'scan 3s ease-in-out infinite',
       },
       keyframes: {
         'slide-up': {
@@ -223,6 +225,14 @@ module.exports = {
         'ripple': {
           '0%': { transform: 'scale(0)', opacity: '0.5' },
           '100%': { transform: 'scale(4)', opacity: '0' },
+        },
+        fill: {
+          '0%': { height: '0%' },
+          '100%': { height: '100%' },
+        },
+        scan: {
+          '0%, 100%': { top: '0%' },
+          '50%': { top: '100%' },
         },
       },
       // Elevation shadows (Material Design)

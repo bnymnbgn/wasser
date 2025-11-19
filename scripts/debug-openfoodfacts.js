@@ -12,7 +12,7 @@ async function debugProduct() {
 
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "TrinkwasserCheck/1.0 Debug",
+      "User-Agent": "Wasserscan/1.0 Debug",
     },
   });
 

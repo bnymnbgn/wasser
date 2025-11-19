@@ -364,7 +364,7 @@ describe('fetchProductByBarcode', () => {
       expect.stringContaining('4008501011009'),
       expect.objectContaining({
         headers: expect.objectContaining({
-          'User-Agent': expect.stringContaining('TrinkwasserCheck'),
+          'User-Agent': expect.stringContaining('Wasserscan'),
         }),
       })
     );

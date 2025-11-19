@@ -4,7 +4,7 @@ import './globals.css';
 // Minimal root layout - NO providers, NO app-specific logic
 // This keeps the landing page lightweight and SEO-friendly
 export const metadata: Metadata = {
-  title: 'Trinkwasser Check',
+  title: 'Wasserscan',
   description: 'Intelligente Wasserqualität-Analyse',
 };
 

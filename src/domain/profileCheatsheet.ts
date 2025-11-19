@@ -7,10 +7,12 @@ export const PROFILE_CHEATSHEET = {
     whenToUse:
       "Wenn du keine speziellen gesundheitlichen Anforderungen hast und einfach ein Gefühl für die Wasserqualität bekommen möchtest.",
     scoringFocus: [
-      "Ausgewogenes Verhältnis aller Metriken.",
-      "pH-Wert sollte im angenehmen Trinkbereich liegen (ca. 6,5–8,5).",
-      "Nitrat und Natrium werden beachtet, aber nicht übergewichtet.",
-      "Mineralstoffe (Calcium, Magnesium, Hydrogencarbonat) gelten eher als Pluspunkte.",
+      { metric: "nitrat", label: "Nitrat", weight: 0.4, tone: "critical" },
+      { metric: "natrium", label: "Natrium", weight: 0.35, tone: "critical" },
+      { metric: "ph", label: "pH-Wert", weight: 0.3, tone: "positive" },
+      { metric: "calcium", label: "Calcium", weight: 0.5, tone: "positive" },
+      { metric: "magnesium", label: "Magnesium", weight: 0.45, tone: "positive" },
+      { metric: "bicarbonate", label: "Hydrogencarbonat", weight: 0.4, tone: "positive" },
     ],
     metrics: [
       {
@@ -135,10 +137,11 @@ export const PROFILE_CHEATSHEET = {
     whenToUse:
       "Wenn du wissen möchtest, ob ein Wasser für die Zubereitung von Babynahrung besonders geeignet ist.",
     scoringFocus: [
-      "Nitrat und Natrium sind besonders stark gewichtet.",
-      "Sehr niedrige Nitratwerte sind entscheidend.",
-      "Natrium sollte möglichst gering sein.",
-      "Mineralstoffe werden eher vorsichtig bewertet – Extreme werden vermieden.",
+      { metric: "nitrat", label: "Nitrat", weight: 0.9, tone: "critical" },
+      { metric: "natrium", label: "Natrium", weight: 0.85, tone: "critical" },
+      { metric: "ph", label: "pH-Wert", weight: 0.5, tone: "positive" },
+      { metric: "calcium", label: "Calcium", weight: 0.35, tone: "avoid" },
+      { metric: "magnesium", label: "Magnesium", weight: 0.3, tone: "avoid" },
     ],
     metrics: [
       {
@@ -242,9 +245,11 @@ export const PROFILE_CHEATSHEET = {
     whenToUse:
       "Wenn du viel Sport treibst und ein Wasser suchst, das Mineralstoffverluste sinnvoll ergänzt.",
     scoringFocus: [
-      "Magnesium, Calcium und Hydrogencarbonat werden stärker gewichtet.",
-      "Natrium wird berücksichtigt, aber weniger streng als im Blutdruck-/Babyprofil.",
-      "Nitrat sollte trotzdem nicht zu hoch sein.",
+      { metric: "magnesium", label: "Magnesium", weight: 0.85, tone: "positive" },
+      { metric: "calcium", label: "Calcium", weight: 0.55, tone: "positive" },
+      { metric: "bicarbonate", label: "Hydrogencarbonat", weight: 0.75, tone: "positive" },
+      { metric: "natrium", label: "Natrium", weight: 0.6, tone: "positive" },
+      { metric: "nitrat", label: "Nitrat", weight: 0.3, tone: "avoid" },
     ],
     metrics: [
       {
@@ -355,9 +360,11 @@ export const PROFILE_CHEATSHEET = {
     whenToUse:
       "Wenn du blutdrucksensibel bist oder dir von Fachpersonal zu natriumärmerer Ernährung geraten wurde.",
     scoringFocus: [
-      "Natrium wird sehr stark gewichtet und bevorzugt niedrige Werte.",
-      "Nitrat bleibt relevant, aber weniger streng als im Babyprofil.",
-      "Mineralstoffe werden moderat bewertet.",
+      { metric: "natrium", label: "Natrium", weight: 0.85, tone: "critical" },
+      { metric: "potassium", label: "Kalium", weight: 0.6, tone: "positive" },
+      { metric: "nitrat", label: "Nitrat", weight: 0.45, tone: "avoid" },
+      { metric: "magnesium", label: "Magnesium", weight: 0.35, tone: "positive" },
+      { metric: "calcium", label: "Calcium", weight: 0.3, tone: "positive" },
     ],
     metrics: [
       {

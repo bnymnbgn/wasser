@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "851850091934",
+    "project_id": "wasserscan-746f2",
+    "storage_bucket": "wasserscan-746f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851850091934:android:19cb0e7f4b92ab19fcca8f",
+        "android_client_info": {
+          "package_name": "de.wasserscan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRXWBm8MaFGKBtW-kyai58kotRvo2gIsM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

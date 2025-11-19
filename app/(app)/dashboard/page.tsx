@@ -68,7 +68,7 @@ export default function HomePage() {
                 Willkommen zurück
               </p>
               <h1 className="text-display text-slate-900 dark:text-slate-100">
-                Trinkwasser-Check
+                Wasserscan
               </h1>
               <p className="mt-2 text-slate-600 dark:text-slate-400">
                 KI-gestützte Wasseranalyse

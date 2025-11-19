@@ -3,7 +3,12 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { createWorker, type Worker } from "tesseract.js";
 import { Capacitor } from "@capacitor/core";
-import type { TextDetections } from "@capacitor-community/image-to-text";
+import type { WaterAnalysisValues } from "@/src/domain/types";
+import { parseTextToAnalysis } from "@/src/lib/ocrParsing";
+import { scanImageNative } from "@/src/lib/ocrService";
+import { captureEnhancedFrame, enhanceImageBlob } from "@/src/lib/imageProcessing";
+import { ScanValidationModal } from "@/src/components/ScanValidationModal";
+import { BottleLoader } from "@/src/components/ui/BottleLoader";
 
 interface ImageOCRScannerProps {
   onTextExtracted: (text: string, confidence?: number) => void;
@@ -16,6 +21,8 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<number | null>(null);
+  const [pendingValues, setPendingValues] = useState<Partial<WaterAnalysisValues> | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -60,76 +67,6 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
     };
   }, []);
 
-  /**
-   * Process image using native ML Kit (Google ML Kit for Android, Apple Vision for iOS)
-   * Much faster and more accurate than Tesseract.js
-   */
-  async function processImageWithMLKit(imagePath: string): Promise<{ text: string; confidence: number }> {
-    try {
-      // Dynamically import to avoid issues on web
-      const { Ocr } = await import("@capacitor-community/image-to-text");
-
-      const data: TextDetections = await Ocr.detectText({ filename: imagePath });
-
-      // Combine all detected text blocks
-      const fullText = data.textDetections.map((detection) => detection.text).join("\n");
-
-      // ML Kit doesn't provide confidence scores like Tesseract
-      // We assume high confidence (90%) if text was detected
-      const confidence = fullText.trim() ? 90 : 0;
-
-      return { text: fullText, confidence };
-    } catch (err: unknown) {
-      console.error("ML Kit OCR Error:", err);
-      const message = err instanceof Error ? err.message : "Unbekannter Fehler";
-      throw new Error(`ML Kit Fehler: ${message}`);
-    }
-  }
-
-  /**
-   * Preprocesses an image for better OCR quality:
-   * - Converts to grayscale
-   * - Increases contrast
-   * - Optimizes resolution
-   */
-  async function preprocessImage(blob: Blob): Promise<Blob> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d")!;
-
-      const objectUrl = URL.createObjectURL(blob);
-
-      const cleanup = () => {
-        URL.revokeObjectURL(objectUrl);
-      };
-
-      img.onload = () => {
-        // Optimize size for OCR (target ~2000px width for good balance)
-        const targetWidth = 2000;
-        const scale = Math.min(1, targetWidth / img.width);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-
-        // Apply image enhancements
-        ctx.filter = "grayscale(100%) contrast(150%) brightness(110%)";
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(
-          (processedBlob) => {
-            resolve(processedBlob || blob);
-            cleanup();
-          },
-          "image/jpeg",
-          0.95
-        );
-      };
-      img.onerror = () => cleanup();
-
-      img.src = objectUrl;
-    });
-  }
-
   async function processImage(imageSource: string | File | Blob) {
     if (!workerRef.current) {
       setError("OCR-Engine wird noch initialisiert. Bitte kurz warten...");
@@ -143,11 +80,9 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
 
     try {
       // Preprocess image if it's a Blob/File
-      let processedSource = imageSource;
-      const isBlob = typeof Blob !== "undefined" && imageSource instanceof Blob;
-      const isFile = typeof File !== "undefined" && imageSource instanceof File;
-      if (isBlob || isFile) {
-        processedSource = await preprocessImage(imageSource);
+      let processedSource: string | Blob = imageSource;
+      if (typeof Blob !== "undefined" && imageSource instanceof Blob) {
+        processedSource = await enhanceImageBlob(imageSource);
       }
 
       const { data } = await workerRef.current.recognize(processedSource);
@@ -155,22 +90,11 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
       // Store confidence score
       setConfidence(data.confidence);
 
-      if (data.text.trim()) {
-        // Check confidence and warn user if low
-        if (data.confidence < 60) {
-          setError(
-            `⚠️ Texterkennung unsicher (${Math.round(data.confidence)}% Genauigkeit). ` +
-            `Bitte versuche ein klareres Foto oder gebe die Werte manuell ein.`
-          );
-          // Still pass the text for manual correction
-          onTextExtracted(data.text, data.confidence);
-        } else if (data.confidence < 80) {
-          // Low confidence warning but usable
-          onTextExtracted(data.text, data.confidence);
-        } else {
-          // Good confidence
-          onTextExtracted(data.text, data.confidence);
-        }
+      const sanitizedText = data.text.trim();
+      if (sanitizedText) {
+        const parsedValues = parseTextToAnalysis(sanitizedText);
+        setPendingValues(parsedValues);
+        setShowValidation(true);
       } else {
         setError("Kein Text erkannt. Bitte versuche ein klareres Foto.");
       }
@@ -264,7 +188,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
         saveToGallery: false,
       });
 
-      const photoUrl = photo.webPath ?? photo.path;
+      const photoUrl = photo.webPath ?? (photo.path ? Capacitor.convertFileSrc(photo.path) : null);
       if (!photoUrl) {
         throw new Error("Konnte kein Foto aus der Kamera laden.");
       }
@@ -275,21 +199,21 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
       const objectUrl = URL.createObjectURL(blob);
       setPreviewUrl(objectUrl);
 
-      // Use ML Kit for native OCR (faster & more accurate)
       setIsProcessing(true);
       setProgress(0);
       setError(null);
       setConfidence(null);
 
       try {
-        // ML Kit requires the file path, not webPath
-        const filePath = photo.path!;
-        const result = await processImageWithMLKit(filePath);
+        const scanResult = await scanImageNative(photoUrl);
+        const normalizedText = scanResult.text.trim();
 
-        setConfidence(result.confidence);
+        setConfidence(normalizedText ? 92 : 0);
 
-        if (result.text.trim()) {
-          onTextExtracted(result.text, result.confidence);
+        if (normalizedText) {
+          const parsedValues = parseTextToAnalysis(normalizedText);
+          setPendingValues(parsedValues);
+          setShowValidation(true);
         } else {
           setError("Kein Text erkannt. Bitte versuche ein klareres Foto.");
         }
@@ -368,43 +292,24 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
   async function capturePhoto() {
     if (!videoRef.current || !canvasRef.current) return;
 
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
-
-    if (!context) return;
-
-    // Canvas auf Video-Größe setzen
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    // Video-Frame auf Canvas zeichnen
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Canvas als Blob für OCR
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-
+    try {
+      const blob = await captureEnhancedFrame(videoRef.current, canvasRef.current);
       const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
       stopCamera();
 
       await processImage(blob);
-    }, "image/jpeg", 0.9);
+    } catch (frameError) {
+      console.error("Frame capture failed:", frameError);
+      setError("Foto konnte nicht verarbeitet werden. Bitte erneut versuchen.");
+    }
   }
 
   return (
     <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-4 relative overflow-hidden">
       {isProcessing && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm pointer-events-none">
-          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-200 mb-3">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            OCR analysiert dein Foto …
-          </div>
-          <div className="w-40 h-40 border-2 border-emerald-400/60 rounded-[32px] animate-pulse flex items-center justify-center">
-            <div className="border-emerald-300/70 border-t-transparent border-4 rounded-full w-12 h-12 animate-spin" />
-          </div>
-          <p className="text-xs text-emerald-100 mt-3">Bitte nicht verlassen – wir lesen die Etikettzeilen aus.</p>
+          <BottleLoader />
         </div>
       )}
       <div className="mb-3">
@@ -494,17 +399,28 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
           className="block w-full h-64 object-cover bg-black"
         />
         {isCameraActive && (
-          <>
-            <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-slate-900/20 via-transparent to-slate-900/40" />
-            <div className="absolute inset-6 border-2 border-emerald-300/70 rounded-[28px] pointer-events-none animate-[slow-pulse_2s_ease-in-out_infinite]" />
-            <div className="absolute inset-x-6 top-4 flex items-center justify-between text-[11px] font-semibold text-white drop-shadow pointer-events-none">
-              <span className="inline-flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-                Kamera aktiv – Etikett zentrieren
-              </span>
-              <span className="text-emerald-200/90">Tippe auf „Foto aufnehmen“</span>
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none text-white">
+            <div className="w-full flex-1 bg-black/60 backdrop-blur-sm" />
+            <div className="flex w-full">
+              <div className="flex-1 bg-black/60 backdrop-blur-sm" />
+              <div className="relative w-[85%] aspect-[3/4] border-2 border-white/80 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-400 -mt-1 -ml-1" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-400 -mt-1 -mr-1" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-400 -mb-1 -ml-1" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-400 -mb-1 -mr-1" />
+                <div className="absolute top-0 left-0 w-full h-0.5 bg-emerald-300 shadow-[0_0_15px_rgba(16,185,129,1)] animate-scan-down opacity-90" />
+                <div className="absolute bottom-4 left-0 w-full text-center">
+                  <span className="bg-black/50 text-white text-xs px-2 py-1 rounded font-medium tracking-wide">
+                    Werte hier platzieren
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1 bg-black/60 backdrop-blur-sm" />
             </div>
-          </>
+            <div className="w-full flex-1 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-8 text-[11px] font-medium tracking-wide">
+              Halte die Kamera ruhig &amp; parallel
+            </div>
+          </div>
         )}
       </div>
 
@@ -603,6 +519,26 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
           {confidence >= 80 ? "✓" : "⚠️"} OCR-Qualität: {Math.round(confidence)}%
           {confidence < 80 && " – Bitte Werte überprüfen"}
         </div>
+      )}
+
+      {showValidation && pendingValues && (
+        <ScanValidationModal
+          initialValues={pendingValues}
+          onCancel={() => {
+            setShowValidation(false);
+            setPendingValues(null);
+          }}
+          onConfirm={(values) => {
+            setShowValidation(false);
+            setPendingValues(null);
+            onTextExtracted(
+              Object.entries(values)
+                .map(([key, val]) => `${key}: ${val}`)
+                .join("\n"),
+              confidence ?? undefined
+            );
+          }}
+        />
       )}
     </div>
   );

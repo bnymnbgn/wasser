@@ -16,25 +16,13 @@ import { SkeletonScoreCard } from "@/src/components/ui/SkeletonLoader";
 import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/capacitor";
 import { processBarcodeLocally, processOCRLocally } from "@/src/lib/scanProcessor";
+import { WATER_METRIC_FIELDS } from "@/src/constants/waterMetrics";
 
-const METRIC_FIELDS = [
-  { key: "ph", label: "pH-Wert" },
-  { key: "calcium", label: "Calcium", unit: "mg/L" },
-  { key: "magnesium", label: "Magnesium", unit: "mg/L" },
-  { key: "sodium", label: "Natrium", unit: "mg/L" },
-  { key: "potassium", label: "Kalium", unit: "mg/L" },
-  { key: "chloride", label: "Chlorid", unit: "mg/L" },
-  { key: "sulfate", label: "Sulfat", unit: "mg/L" },
-  { key: "nitrate", label: "Nitrat", unit: "mg/L" },
-  { key: "bicarbonate", label: "Hydrogencarbonat", unit: "mg/L" },
-  { key: "totalDissolvedSolids", label: "Gesamtmineralisation", unit: "mg/L" },
-] as const;
-
-type MetricKey = (typeof METRIC_FIELDS)[number]["key"];
+type MetricKey = (typeof WATER_METRIC_FIELDS)[number]["key"];
 type ValueInputState = Record<MetricKey, string>;
 
 const createEmptyValueState = (): ValueInputState =>
-  METRIC_FIELDS.reduce((acc, field) => {
+  WATER_METRIC_FIELDS.reduce((acc, field) => {
     acc[field.key] = "";
     return acc;
   }, {} as ValueInputState);
@@ -71,7 +59,7 @@ function ScanPageContent() {
     const values: Partial<WaterAnalysisValues> = {};
     const invalid: Partial<Record<MetricKey, boolean>> = {};
 
-    for (const field of METRIC_FIELDS) {
+    for (const field of WATER_METRIC_FIELDS) {
       const raw = valueInputs[field.key];
       if (!raw.trim()) continue;
       const normalized = raw.replace(",", ".");
@@ -188,7 +176,7 @@ function ScanPageContent() {
     }
     const parsed = parseTextToAnalysis(text);
     const nextValues = createEmptyValueState();
-    METRIC_FIELDS.forEach((field) => {
+    WATER_METRIC_FIELDS.forEach((field) => {
       const maybe = parsed[field.key];
       nextValues[field.key] = maybe !== undefined ? String(maybe) : "";
     });
@@ -342,7 +330,7 @@ function ScanPageContent() {
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    {METRIC_FIELDS.map((field) => {
+                    {WATER_METRIC_FIELDS.map((field) => {
                       const value = valueInputs[field.key];
                       const warning = valueWarnings[field.key];
                       const invalid = invalidFields[field.key];

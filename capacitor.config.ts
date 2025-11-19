@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'de.trinkwasser.check',
-  appName: 'Trinkwasser Check',
+  appId: 'de.wasserscan',
+  appName: 'Wasserscan',
   webDir: 'out',
 
   // Server configuration for development
@@ -52,7 +52,7 @@ const config: CapacitorConfig = {
     CapacitorSQLite: {
       iosDatabaseLocation: 'Library/CapacitorDatabase',
       iosIsEncryption: false,
-      iosKeychainPrefix: 'trinkwasser',
+      iosKeychainPrefix: 'wasserscan',
       iosBiometric: {
         biometricAuth: false,
         biometricTitle: "Biometric login for capacitor sqlite"

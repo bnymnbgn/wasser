@@ -3,8 +3,19 @@
 import type { ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import type { ProfileFit } from "@/src/domain/waterInsights";
 import { CircularProgress } from "@/src/components/ui/CircularProgress";
-import { Droplet, AlertCircle, CheckCircle, Info, ChevronDown, ChevronUp } from "lucide-react";
+import { Droplet, AlertCircle, CheckCircle, Info, ChevronDown, ChevronUp, Columns } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
+import { useComparison } from "@/src/contexts/ComparisonContext";
+import { WATER_METRIC_LABELS, WATER_METRIC_FIELDS } from "@/src/constants/waterMetrics";
+import {
+  computeWaterHardness,
+  computeCalciumMagnesiumRatio,
+  computeBufferCapacity,
+  computeTasteBalance,
+  computeSodiumPotassiumRatio,
+} from "@/src/lib/waterMath";
+import { VisualMetricBar } from "@/src/components/ui/VisualMetricBar";
+import { ScoreExplanation, type ImpactFactor } from "@/src/components/ScoreExplanation";
 
 function scoreToColor(score: number | undefined): "success" | "warning" | "error" {
   if (score == null) return "error";
@@ -23,19 +34,6 @@ function scoreLabel(score: number | undefined) {
 interface Props {
   scanResult: ScanResult;
 }
-
-const METRIC_LABELS: Record<keyof WaterAnalysisValues, string> = {
-  ph: "pH-Wert",
-  calcium: "Calcium",
-  magnesium: "Magnesium",
-  sodium: "Natrium",
-  potassium: "Kalium",
-  chloride: "Chlorid",
-  sulfate: "Sulfat",
-  bicarbonate: "Hydrogencarbonat",
-  nitrate: "Nitrat",
-  totalDissolvedSolids: "Gesamtmineralisation",
-};
 
 const GLOSSARY_ENTRIES = [
   {
@@ -75,6 +73,7 @@ const glossaryRegex = new RegExp(
 
 export function WaterScoreCard({ scanResult }: Props) {
   const [showDetails, setShowDetails] = useState(false);
+  const { addScan, removeScan, isSelected } = useComparison();
   const {
     score,
     metricScores,
@@ -91,9 +90,87 @@ export function WaterScoreCard({ scanResult }: Props) {
     ...(ocrParsedValues ?? {}),
     ...(userOverrides ?? {}),
   };
+  const hardness =
+    insights?.hardness ??
+    mergedValues.hardness ??
+    computeWaterHardness(mergedValues) ??
+    undefined;
+  const caMgRatio =
+    insights?.calciumMagnesiumRatio ??
+    mergedValues.calciumMagnesiumRatio ??
+    computeCalciumMagnesiumRatio(mergedValues.calcium, mergedValues.magnesium) ??
+    undefined;
+  const bufferCapacity =
+    insights?.bufferCapacity ??
+    mergedValues.bufferCapacity ??
+    computeBufferCapacity(mergedValues) ??
+    undefined;
+  const tasteBalance =
+    insights?.tastePalatability ??
+    mergedValues.tastePalatability ??
+    computeTasteBalance(mergedValues) ??
+    undefined;
+  const sodiumPotassiumRatio =
+    insights?.sodiumPotassiumRatio ??
+    mergedValues.sodiumPotassiumRatio ??
+    computeSodiumPotassiumRatio(mergedValues.sodium, mergedValues.potassium) ??
+    undefined;
+
   const activeProfileFit: ProfileFit | undefined = insights?.profileFit?.[profile];
 
   const scoreColor = scoreToColor(score);
+  const isInComparison = isSelected(scanResult.id);
+
+  const handleComparisonToggle = () => {
+    if (isInComparison) {
+      removeScan(scanResult.id);
+    } else {
+      addScan(scanResult);
+    }
+  };
+
+  const metricInsights = useMemo(() => {
+    if (!metricDetails) return [];
+    return metricDetails
+      .map((detail) => ({
+        ...detail,
+        label: WATER_METRIC_LABELS[detail.metric] ?? detail.metric,
+        impact: detail.weight * (detail.score - 50),
+      }))
+      .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+  }, [metricDetails]);
+
+  const positiveImpacts = metricInsights.filter((item) => item.impact >= 5).slice(0, 3);
+  const negativeImpacts = metricInsights.filter((item) => item.impact <= -5).slice(0, 3);
+
+  const explanationFactors: ImpactFactor[] =
+    metricDetails
+      ?.map((metric) => {
+        if (metric.score >= 80) {
+          return {
+            label: WATER_METRIC_LABELS[metric.metric] ?? metric.metric,
+            impact: "positive" as const,
+            value: `${metric.score.toFixed(0)}/100`,
+          };
+        }
+        if (metric.score <= 40) {
+          return {
+            label: WATER_METRIC_LABELS[metric.metric] ?? metric.metric,
+            impact: "negative" as const,
+            value: `${metric.score.toFixed(0)}/100`,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean) as ImpactFactor[] ?? [];
+
+  const explanationSummary =
+    explanationFactors.length > 0
+      ? `Besonders auffällig: ${explanationFactors
+          .slice(0, 2)
+          .map((f) => f.label)
+          .join(", ")}.`
+      : "Mineralprofile ausgeglichen – keine starken Ausreißer.";
 
   return (
     <div className="space-y-6">
@@ -119,8 +196,89 @@ export function WaterScoreCard({ scanResult }: Props) {
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Profil: <span className="font-medium">{profile}</span>
           </p>
+          <button
+            type="button"
+            onClick={handleComparisonToggle}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition ${
+              isInComparison
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-800"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800"
+            }`}
+          >
+            <Columns className="w-4 h-4" />
+            {isInComparison ? "Im Vergleich" : "Zum Vergleich hinzufügen"}
+          </button>
         </div>
       </div>
+
+      {metricInsights.length > 0 && (
+        <div className="modern-card p-4 space-y-4 border border-blue-100/60 dark:border-blue-900/40">
+          <div>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+              Warum {score?.toFixed(0) ?? "–"} Punkte?
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Gewichtete Faktoren für das gewählte Profil
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase text-emerald-600 dark:text-emerald-300">
+                Stärken
+              </p>
+              {positiveImpacts.length === 0 && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Keine ausgeprägten Pluspunkte.
+                </p>
+              )}
+              <div className="space-y-3">
+                {positiveImpacts.map((item) => (
+                  <div
+                    key={`positive-${item.metric}`}
+                    className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 dark:border-emerald-900/40 dark:bg-emerald-900/20"
+                  >
+                    <div className="flex items-center justify-between text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                      <span>{item.label}</span>
+                      <span>+{Math.round(item.impact)}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-emerald-900/80 dark:text-emerald-100/80">
+                      {item.explanation}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase text-amber-600 dark:text-amber-300">
+                Potenzial
+              </p>
+              {negativeImpacts.length === 0 && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Aktuell keine auffälligen Schwächen.
+                </p>
+              )}
+              <div className="space-y-3">
+                {negativeImpacts.map((item) => (
+                  <div
+                    key={`negative-${item.metric}`}
+                    className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3 dark:border-amber-900/40 dark:bg-amber-900/20"
+                  >
+                    <div className="flex items-center justify-between text-sm font-semibold text-amber-700 dark:text-amber-200">
+                      <span>{item.label}</span>
+                      <span>-{Math.abs(Math.round(item.impact))}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-100/80">
+                      {item.explanation}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ScoreExplanation score={score ?? 0} textSummary={explanationSummary} factors={explanationFactors} />
 
       {/* Product Info */}
       {(productInfo || barcode) && (
@@ -184,31 +342,101 @@ export function WaterScoreCard({ scanResult }: Props) {
         </div>
       )}
 
+      {/* Derived Metrics */}
+      {(hardness !== undefined ||
+        caMgRatio !== undefined ||
+        bufferCapacity !== undefined ||
+        tasteBalance !== undefined ||
+        sodiumPotassiumRatio !== undefined) && (
+        <div className="modern-card p-4 space-y-3">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+            Abgeleitete Kennzahlen
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {hardness !== undefined && (
+              <VisualMetricBar
+                label="Wasserhärte"
+                value={hardness}
+                min={0}
+                max={24}
+                idealMin={4}
+                idealMax={12}
+                unit="°dH"
+              />
+            )}
+            {caMgRatio !== undefined && (
+              <VisualMetricBar
+                label="Ca:Mg Verhältnis"
+                value={caMgRatio}
+                min={0}
+                max={5}
+                idealMin={1.6}
+                idealMax={2.4}
+                unit=""
+              />
+            )}
+            {sodiumPotassiumRatio !== undefined && (
+              <VisualMetricBar
+                label="Na:K Verhältnis"
+                value={sodiumPotassiumRatio}
+                min={0}
+                max={10}
+                idealMin={1}
+                idealMax={4}
+                unit=""
+              />
+            )}
+            {bufferCapacity !== undefined && (
+              <VisualMetricBar
+                label="Pufferkapazität"
+                value={bufferCapacity}
+                min={0}
+                max={30}
+                idealMin={10}
+                idealMax={25}
+                unit="mVal/L"
+              />
+            )}
+            {tasteBalance !== undefined && (
+              <VisualMetricBar
+                label="Geschmacksprofil HCO₃/(SO₄+Cl)"
+                value={tasteBalance}
+                min={0}
+                max={3}
+                idealMin={1}
+                idealMax={2}
+                unit=""
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Metric Chips - Horizontal Scroll */}
       <div className="space-y-3">
         <h3 className="font-semibold text-slate-900 dark:text-slate-100 px-1">
           Mineralwerte
         </h3>
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory hide-scrollbar">
-          {Object.keys(METRIC_LABELS).map((key) => {
-            const metric = key as keyof WaterAnalysisValues;
+          {WATER_METRIC_FIELDS.map((field) => {
+            const metric = field.key;
             const value = mergedValues[metric];
             if (value == null) return null;
-            const unit = metric === "ph" ? "" : " mg/L";
+            const unit = field.unit ?? (metric === "ph" ? "" : " mg/L");
             const metricScore = metricScores?.[metric];
             const chipColor = metricScore !== undefined && metricScore >= 80 ? "emerald" :
                              metricScore !== undefined && metricScore >= 50 ? "amber" : "red";
 
             return (
               <div
-                key={key}
+                key={field.key}
                 className="snap-start flex-shrink-0 modern-card p-3 min-w-[140px] border-l-4"
                 style={{
                   borderLeftColor: `var(--${chipColor})`,
                 }}
               >
                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                  {METRIC_LABELS[metric]}
+                  {WATER_METRIC_LABELS[metric]}
                 </p>
                 <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
                   {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}{unit}

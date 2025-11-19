@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/private/'],
       },
     ],
-    sitemap: 'https://trinkwasser-check.de/sitemap.xml',
+    sitemap: 'https://wasserscan.de/sitemap.xml',
   }
 }

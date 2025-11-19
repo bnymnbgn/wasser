@@ -1,4 +1,4 @@
-package de.trinkwasser.check;
+package de.wasserscan;
 
 import com.getcapacitor.BridgeActivity;
 

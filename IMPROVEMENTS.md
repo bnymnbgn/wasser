@@ -1,4 +1,4 @@
-# 🚀 Trinkwasser-Check - Improvement Roadmap
+# 🚀 Wasserscan - Improvement Roadmap
 
 Dieses Dokument listet alle geplanten und teilweise umgesetzten Verbesserungen auf.
 
@@ -857,8 +857,8 @@ Folge dem Wizard, er konfiguriert alles automatisch.
 1. **Manifest erstellen:** `public/manifest.json`
    ```json
    {
-     "name": "Trinkwasser-Check",
-     "short_name": "Wasser-Check",
+     "name": "Wasserscan",
+     "short_name": "Wasserscan",
      "description": "Analysiere dein Trinkwasser",
      "start_url": "/",
      "display": "standalone",

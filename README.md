@@ -1,4 +1,4 @@
-# Trinkwasser-Check (Web-App)
+# Wasserscan (Web-App)
 
 Eine Next.js-Webanwendung zur Bewertung von Trinkwasser-Qualität auf Basis von Etikett-Daten und Barcodes.
 Die App erlaubt:
@@ -203,8 +203,8 @@ Die Onboarding-Seite (`/onboarding`) und der `ProfileSelector` nutzen dieses Che
 
 ### 1. Repository klonen
 ```bash
-git clone <DEIN-REPO-URL> trinkwasser-app
-cd trinkwasser-app
+git clone <DEIN-REPO-URL> wasserscan-app
+cd wasserscan-app
 ```
 
 ### 2. Abhängigkeiten installieren
@@ -409,7 +409,7 @@ Für die native OCR auf Android benötigst du eine `google-services.json` Datei:
 1. Gehe zu [Firebase Console](https://console.firebase.google.com/)
 2. Erstelle ein neues Projekt oder wähle ein bestehendes
 3. Klicke auf "Android-App hinzufügen"
-4. Package Name: `de.trinkwasser.check` (muss mit `android/app/AndroidManifest.xml` übereinstimmen)
+4. Package Name: `de.wasserscan` (muss mit `android/app/AndroidManifest.xml` übereinstimmen)
 5. Lade die `google-services.json` herunter
 6. Speichere sie in `android/app/google-services.json`
 7. Führe `npx cap sync android` aus

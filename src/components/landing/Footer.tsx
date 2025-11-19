@@ -52,7 +52,7 @@ export function Footer() {
                   <Droplet className="w-7 h-7 text-white" />
                 </motion.div>
                 <span className="text-2xl font-bold text-white">
-                  Trinkwasser Check
+                  Wasserscan
                 </span>
               </Link>
             </motion.div>
@@ -145,7 +145,7 @@ export function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             {/* Copyright */}
             <p className="text-slate-500 text-sm">
-              © {currentYear} Trinkwasser Check. Alle Rechte vorbehalten.
+              © {currentYear} Wasserscan. Alle Rechte vorbehalten.
             </p>
 
             {/* Made with love */}

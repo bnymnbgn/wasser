@@ -7,7 +7,7 @@ import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacito
 import { Capacitor } from '@capacitor/core';
 
 // Database configuration
-const DB_NAME = 'trinkwassercheck.db';
+const DB_NAME = 'wasserscan.db';
 const DB_VERSION = 1;
 
 // Type definitions matching our schema

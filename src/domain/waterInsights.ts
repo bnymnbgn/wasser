@@ -1,4 +1,12 @@
 import type { ProfileType, WaterAnalysisValues } from "./types";
+import {
+  computeWaterHardness,
+  computeCalciumMagnesiumRatio,
+  computeSodiumPotassiumRatio,
+  computeTasteBalance,
+  computeBufferCapacity,
+  computeDataQualityScore,
+} from "@/src/lib/waterMath";
 
 type MetricKey = keyof WaterAnalysisValues;
 
@@ -26,6 +34,11 @@ export interface WaterInsights {
   synergies: SynergyInsight[];
   profileFit: Record<ProfileType, ProfileFit>;
   calciumMagnesiumRatio?: number;
+  hardness?: number;
+  sodiumPotassiumRatio?: number;
+  tastePalatability?: number;
+  bufferCapacity?: number;
+  dataQualityScore?: number;
 }
 
 interface ThresholdRule {
@@ -120,6 +133,16 @@ const REGULATORY_RULES: ThresholdRule[] = [
       "Kontext: Nicht empfohlen für Menschen mit Bluthochdruck oder Herzerkrankungen – diese sollten natriumarmes Wasser (<20 mg/L) wählen.",
     tone: "info",
     min: 200,
+  },
+  {
+    id: "water_soft",
+    metric: "hardness",
+    label: "Sehr weiches Wasser",
+    description:
+      "Unter 8 °dH – kaum Kalkablagerungen, ideal für Kaffee, Tee und empfindliche Haushaltsgeräte. " +
+      "Schonend für Haut und Geschmack, aber ggf. Calcium/Magnesium ergänzen.",
+    tone: "positive",
+    max: 8,
   },
 ];
 
@@ -350,7 +373,96 @@ function evaluateProfileFit(values: Partial<WaterAnalysisValues>): Record<Profil
 }
 
 export function deriveWaterInsights(values: Partial<WaterAnalysisValues>): WaterInsights {
-  const badges = evaluateRegulatoryBadges(values);
+  const hardness = computeWaterHardness(values);
+  const ratio = computeCalciumMagnesiumRatio(values.calcium, values.magnesium);
+  const sodiumPotassiumRatio = computeSodiumPotassiumRatio(values.sodium, values.potassium);
+  const tasteBalance = computeTasteBalance(values);
+  const bufferCapacity = computeBufferCapacity(values);
+  const dataQualityScore = computeDataQualityScore(values);
+  const enrichedValues: Partial<WaterAnalysisValues> = {
+    ...values,
+    ...(hardness !== null ? { hardness } : {}),
+    ...(ratio !== null ? { calciumMagnesiumRatio: ratio } : {}),
+    ...(sodiumPotassiumRatio !== null ? { sodiumPotassiumRatio } : {}),
+    ...(tasteBalance !== null ? { tastePalatability: tasteBalance } : {}),
+    ...(bufferCapacity !== null ? { bufferCapacity } : {}),
+    ...(dataQualityScore !== null ? { dataQualityScore } : {}),
+  };
+
+  const badges = evaluateRegulatoryBadges(enrichedValues);
+  if (sodiumPotassiumRatio !== null) {
+    if (sodiumPotassiumRatio <= 4) {
+      badges.push({
+        id: "sodium_potassium_balance",
+        label: "Kalium gleicht Natrium aus",
+        description:
+          "Günstiges Na:K-Verhältnis – unterstützt Herz-Kreislauf-System trotz Natriumgehalt.",
+        tone: "positive",
+      });
+    } else if (sodiumPotassiumRatio > 8) {
+      badges.push({
+        id: "sodium_potassium_warning",
+        label: "Kaliumarm",
+        description: "Sehr viel Natrium bei wenig Kalium – für Hypertoniker nicht ideal.",
+        tone: "warning",
+      });
+    }
+  }
+
+  if (tasteBalance !== null) {
+    if (tasteBalance >= 2) {
+      badges.push({
+        id: "taste_soft",
+        label: "Weicher Geschmack",
+        description: "Hydrogencarbonat dominiert Sulfat/Chlorid – schmeckt rund und mild.",
+        tone: "positive",
+      });
+    } else if (tasteBalance < 0.5 && (values.sulfate ?? 0) > 150) {
+      badges.push({
+        id: "taste_bitter",
+        label: "Kräftiger Geschmack",
+        description: "Hohe Sulfat-/Chloridwerte im Verhältnis zu Hydrogencarbonat – eher würzig/bitter.",
+        tone: "info",
+      });
+    }
+  }
+
+  if (bufferCapacity !== null && bufferCapacity >= 20) {
+    badges.push({
+      id: "buffer_high",
+      label: "Basische Pufferung",
+      description:
+        "Hohe Hydrogencarbonatkapazität – neutralisiert Magensäure und unterstützt Regeneration.",
+      tone: "positive",
+    });
+  }
+
+  if (dataQualityScore !== null) {
+    if (dataQualityScore >= 70) {
+      badges.push({
+        id: "data_transparent",
+        label: "Transparente Analyse",
+        description: "Mindestens 70% der Mineralienwerte sind angegeben – vertrauenswürdiges Etikett.",
+        tone: "positive",
+      });
+    } else if (dataQualityScore < 40) {
+      badges.push({
+        id: "data_sparse",
+        label: "Wenig Angaben",
+        description: "Nur wenige Mineralienwerte verfügbar – schwer vergleichbar.",
+        tone: "info",
+      });
+    }
+  }
+
+  if (values.nitrate == null) {
+    badges.push({
+      id: "nitrate_missing",
+      label: "Nitrat unbekannt",
+      description: "Nitratwert fehlt auf dem Etikett – für Babynahrung vorher prüfen.",
+      tone: "warning",
+    });
+  }
 
   const synergies: SynergyInsight[] = [];
   const caMgInsight = evaluateCalciumMagnesiumRatio(values.calcium, values.magnesium);
@@ -365,13 +477,17 @@ export function deriveWaterInsights(values: Partial<WaterAnalysisValues>): Water
   const electrolyte = evaluateElectrolytes(values);
   if (electrolyte) synergies.push(electrolyte);
 
-  const profileFit = evaluateProfileFit(values);
+  const profileFit = evaluateProfileFit(enrichedValues);
 
   return {
     badges,
     synergies,
     profileFit,
-    calciumMagnesiumRatio:
-      values.calcium && values.magnesium ? values.calcium / values.magnesium : undefined,
+    calciumMagnesiumRatio: ratio ?? enrichedValues.calciumMagnesiumRatio,
+    hardness: hardness ?? undefined,
+    sodiumPotassiumRatio: sodiumPotassiumRatio ?? undefined,
+    tastePalatability: tasteBalance ?? undefined,
+    bufferCapacity: bufferCapacity ?? undefined,
+    dataQualityScore: dataQualityScore ?? undefined,
   };
 }

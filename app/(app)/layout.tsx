@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from '@/src/components/ThemeProvider';
 import { DatabaseProvider } from '@/src/contexts/DatabaseContext';
 import BottomNav from '@/src/components/BottomNav';
+import { ComparisonProvider } from '@/src/contexts/ComparisonContext';
+import { ComparisonDrawer } from '@/src/components/ComparisonDrawer';
 
 // App-specific metadata (overrides root)
 export const metadata: Metadata = {
@@ -30,12 +32,15 @@ export default function AppLayout({
 }) {
   return (
     <ThemeProvider defaultTheme="system">
-      <DatabaseProvider>
-        <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
-          {children}
-        </div>
-        <BottomNav />
-      </DatabaseProvider>
+      <ComparisonProvider>
+        <DatabaseProvider>
+          <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
+            {children}
+          </div>
+          <ComparisonDrawer />
+          <BottomNav />
+        </DatabaseProvider>
+      </ComparisonProvider>
     </ThemeProvider>
   );
 }

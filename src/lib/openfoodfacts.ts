@@ -5,7 +5,7 @@ import waterOverrides from "@/src/config/waterOverrides.json";
  * OpenFoodFacts API configuration
  */
 const OFF_API_BASE = "https://world.openfoodfacts.org/api/v2";
-const OFF_USER_AGENT = "TrinkwasserCheck/1.0 (contact@trinkwasser-check.de)";
+const OFF_USER_AGENT = "Wasserscan/1.0 (contact@wasserscan.de)";
 const WATER_VALUE_OVERRIDES: Record<string, Partial<WaterAnalysisValues>> = waterOverrides;
 
 /**

@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PROFILE_CHEATSHEET, type ProfileId } from "@/src/domain/profileCheatsheet";
 import clsx from "clsx";
 import { hapticLight } from "@/lib/capacitor";
+import { ProfileWeightChart } from "@/src/components/onboarding/ProfileWeightChart";
+import { MetricLearningCard } from "@/src/components/ui/MetricLearningCard";
 
 const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure"];
 
@@ -125,14 +127,7 @@ export function ProfileOnboardingTabs() {
                     Bewertungsfokus
                   </div>
                 </div>
-                <ul className="space-y-1.5">
-                  {activeProfile.scoringFocus.map((item, idx) => (
-                    <li key={idx} className="flex gap-2 text-xs text-md-onSurface dark:text-md-dark-onSurface">
-                      <span className="mt-[5px] h-1.5 w-1.5 rounded-full bg-md-secondary dark:bg-md-dark-secondary flex-shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <ProfileWeightChart items={activeProfile.scoringFocus as any} />
               </div>
 
               {/* Warning */}
@@ -165,42 +160,7 @@ export function ProfileOnboardingTabs() {
 
             <div className="grid gap-3 md:grid-cols-2">
               {activeProfile.metrics.map((metric) => (
-                <div
-                  key={metric.metric}
-                  className="p-3 rounded-md-lg bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow border border-md-surface-containerHigh dark:border-md-dark-surface-containerHigh"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-md-onSurface dark:text-md-dark-onSurface">
-                        {metric.label}
-                      </div>
-                      <div className="text-[11px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant font-mono">
-                        {metric.metric}
-                      </div>
-                    </div>
-                    <span className={getImportanceBadgeClass(metric.importance)}>
-                      {getImportanceLabel(metric.importance)}
-                    </span>
-                  </div>
-
-                  <p className="text-xs leading-relaxed text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
-                    {metric.explanation}
-                  </p>
-
-                  {metric.hints && metric.hints.length > 0 && (
-                    <ul className="mt-2 space-y-1">
-                      {metric.hints.map((hint, idx) => (
-                        <li
-                          key={idx}
-                          className="flex gap-2 text-[11px] text-md-onSurface-variant dark:text-md-dark-onSurface-variant"
-                        >
-                          <span className="mt-[5px] h-1 w-1 rounded-full bg-md-onSurface-variant/50 dark:bg-md-dark-onSurface-variant/50 flex-shrink-0" />
-                          <span>{hint}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <MetricLearningCard key={metric.metric} metric={metric} />
               ))}
             </div>
           </div>
@@ -210,30 +170,4 @@ export function ProfileOnboardingTabs() {
   );
 }
 
-function getImportanceLabel(importance: string): string {
-  switch (importance) {
-    case "sehr hoch":
-      return "Sehr wichtig";
-    case "hoch":
-      return "Wichtig";
-    case "mittel":
-      return "Mittel";
-    default:
-      return "Gering";
-  }
-}
-
-function getImportanceBadgeClass(importance: string): string {
-  const baseClasses = "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide";
-
-  switch (importance) {
-    case "sehr hoch":
-      return `${baseClasses} bg-md-success-container dark:bg-md-dark-success-container text-md-onSuccess-container dark:text-md-dark-onSuccess-container`;
-    case "hoch":
-      return `${baseClasses} bg-md-primary-container dark:bg-md-dark-primary-container text-md-onPrimary-container dark:text-md-dark-onPrimary-container`;
-    case "mittel":
-      return `${baseClasses} bg-md-surface-containerHigh dark:bg-md-dark-surface-containerHigh text-md-onSurface dark:text-md-dark-onSurface`;
-    default:
-      return `${baseClasses} bg-md-surface-containerLow dark:bg-md-dark-surface-containerLow text-md-onSurface-variant dark:text-md-dark-onSurface-variant`;
-  }
-}
+ 

@@ -1,4 +1,12 @@
 import type { ProfileType, WaterAnalysisValues } from "./types";
+import {
+  computeWaterHardness,
+  computeCalciumMagnesiumRatio,
+  computeSodiumPotassiumRatio,
+  computeTasteBalance,
+  computeBufferCapacity,
+  computeDataQualityScore,
+} from "@/src/lib/waterMath";
 
 export interface MetricScore {
   metric: keyof WaterAnalysisValues;
@@ -145,11 +153,15 @@ function scoreSodium(na: number | undefined, profile: ProfileType): MetricScore 
 
 function scoreNitrate(no3: number | undefined, profile: ProfileType): MetricScore {
   if (no3 == null) {
+    const baseScore = profile === "baby" ? 40 : 50;
     return {
       metric: "nitrate",
-      score: 50,
+      score: baseScore,
       weight: profile === "baby" ? 2 : 1,
-      explanation: "Nitratgehalt unbekannt – neutral angenommen.",
+      explanation:
+        profile === "baby"
+          ? "Nitratgehalt fehlt auf dem Etikett – vorsichtshalber Abzug für Babys."
+          : "Nitratgehalt unbekannt – neutral angenommen.",
     };
   }
 
@@ -254,6 +266,86 @@ function scoreMagnesium(mg: number | undefined, profile: ProfileType): MetricSco
   };
 }
 
+function scoreSodiumPotassiumRatio(
+  sodium: number | undefined,
+  potassium: number | undefined,
+  profile: ProfileType
+): MetricScore {
+  if (sodium == null || potassium == null || potassium === 0) {
+    return {
+      metric: "sodiumPotassiumRatio",
+      score: 50,
+      weight: profile === "blood_pressure" ? 1 : 0.6,
+      explanation: "Natrium-Kalium-Verhältnis nicht angegeben.",
+    };
+  }
+
+  const ratio = sodium / potassium;
+  let score: number;
+  if (ratio <= 2) {
+    score = 100;
+  } else if (ratio <= 4) {
+    score = 85;
+  } else if (ratio <= 6) {
+    score = 70;
+  } else if (ratio <= 8) {
+    score = 50;
+  } else {
+    score = 30;
+  }
+
+  let explanation = `Na:K-Verhältnis von ${ratio.toFixed(1)}:1. `;
+  if (ratio <= 4) {
+    explanation += "Kalium gleicht Natrium sehr gut aus – ideal für Herz & Blutdruck.";
+  } else if (ratio <= 6) {
+    explanation += "Akzeptabel, aber mehr Kalium würde das Verhältnis verbessern.";
+  } else {
+    explanation += "Hoher Natriumanteil bei wenig Kalium – Blutdruck kann darunter leiden.";
+  }
+
+  return {
+    metric: "sodiumPotassiumRatio",
+    score,
+    weight: profile === "blood_pressure" ? 1.2 : 0.6,
+    explanation,
+  };
+}
+
+function scoreCalciumMagnesiumRatio(
+  calcium: number | undefined,
+  magnesium: number | undefined
+): MetricScore {
+  if (calcium == null || magnesium == null || magnesium === 0) {
+    return {
+      metric: "calciumMagnesiumRatio",
+      score: 50,
+      weight: 1.5,
+      explanation: "Ca:Mg-Verhältnis unbekannt – Balance nicht bewertbar.",
+    };
+  }
+
+  const ratio = calcium / magnesium;
+  const score = bellScore(ratio, 2, 0.7);
+  let explanation = `Ca:Mg-Verhältnis von ${ratio.toFixed(2)}:1. `;
+
+  if (score >= 80) {
+    explanation += "Liegt im idealen Bereich (ca. 1.6–2.4:1) für Mineralbalance.";
+  } else if (score >= 50) {
+    explanation += "Leicht unausgewogen, aber akzeptabel. Magnesium oder Calcium ergänzen.";
+  } else if (ratio < 1.6) {
+    explanation += "Magnesium dominiert – kann zu weichem Geschmack führen, Calcium ergänzen.";
+  } else {
+    explanation += "Calcium dominiert stark – Magnesium ergänzen für optimale Aufnahme.";
+  }
+
+  return {
+    metric: "calciumMagnesiumRatio",
+    score,
+    weight: 1.5,
+    explanation,
+  };
+}
+
 function scoreBicarbonate(hco3: number | undefined, profile: ProfileType): MetricScore {
   if (hco3 == null) {
     return {
@@ -289,6 +381,50 @@ function scoreBicarbonate(hco3: number | undefined, profile: ProfileType): Metri
     metric: "bicarbonate",
     score,
     weight: profile === "sport" ? 1.2 : 1,
+    explanation,
+  };
+}
+
+function scoreBufferCapacity(
+  hco3: number | undefined,
+  profile: ProfileType
+): MetricScore {
+  if (hco3 == null) {
+    return {
+      metric: "bufferCapacity",
+      score: 50,
+      weight: profile === "sport" ? 1 : 0.7,
+      explanation: "Pufferkapazität unbekannt – Hydrogencarbonat nicht angegeben.",
+    };
+  }
+
+  const capacity = hco3 / 61;
+  let score: number;
+  if (capacity >= 25) {
+    score = 100;
+  } else if (capacity >= 15) {
+    score = 85;
+  } else if (capacity >= 8) {
+    score = 65;
+  } else {
+    score = 45;
+  }
+
+  let explanation = `Neutralisiert etwa ${capacity.toFixed(1)} mVal Säure pro Liter. `;
+  if (capacity >= 25) {
+    explanation += "Wirkt wie ein leichter Säureblocker – perfekt bei Gastritis & Sport.";
+  } else if (capacity >= 15) {
+    explanation += "Gute Basenkapazität für Regeneration und Magenkomfort.";
+  } else if (capacity >= 8) {
+    explanation += "Moderate Pufferung, kombiniert mit Ernährung ausreichend.";
+  } else {
+    explanation += "Sehr geringe Basenlast – kaum Säurepuffer.";
+  }
+
+  return {
+    metric: "bufferCapacity",
+    score,
+    weight: profile === "sport" ? 1 : 0.7,
     explanation,
   };
 }
@@ -452,6 +588,94 @@ function scoreSulfate(so4: number | undefined, profile: ProfileType): MetricScor
   };
 }
 
+function scoreTastePalatability(
+  sulfate: number | undefined,
+  chloride: number | undefined,
+  bicarbonate: number | undefined
+): MetricScore {
+  if (sulfate == null && chloride == null && bicarbonate == null) {
+    return {
+      metric: "tastePalatability",
+      score: 50,
+      weight: 0.6,
+      explanation: "Geschmacks-Balance nicht bewertbar – Angaben fehlen.",
+    };
+  }
+
+  const bitterLoad = (sulfate ?? 0) + (chloride ?? 0);
+  const buffer = bicarbonate ?? 0;
+  const softness = buffer / (bitterLoad + 1);
+  let score: number;
+  if (softness >= 2) {
+    score = 95;
+  } else if (softness >= 1) {
+    score = 80;
+  } else if (softness >= 0.5) {
+    score = 60;
+  } else {
+    score = 40;
+  }
+
+  let explanation = `Hydrogencarbonat zu Sulfat/Chlorid Verhältnis: ${softness.toFixed(2)}. `;
+  if (softness >= 2) {
+    explanation += "Sehr weicher, runder Geschmack – ideal für Tee & Kaffee.";
+  } else if (softness >= 1) {
+    explanation += "Gut ausbalanciert – kaum bittere Noten.";
+  } else if (softness >= 0.5) {
+    explanation += "Leicht mineralisch/bitter. Mehr Hydrogencarbonat würde abrunden.";
+  } else {
+    explanation += "Hoher Sulfat/Chlorid-Anteil – schmeckt kräftig oder bitter.";
+  }
+
+  return {
+    metric: "tastePalatability",
+    score,
+    weight: 0.6,
+    explanation,
+  };
+}
+
+function scoreDataTransparency(values: Partial<WaterAnalysisValues>): MetricScore {
+  const trackedKeys: (keyof WaterAnalysisValues)[] = [
+    "ph",
+    "calcium",
+    "magnesium",
+    "sodium",
+    "potassium",
+    "chloride",
+    "sulfate",
+    "bicarbonate",
+    "nitrate",
+    "totalDissolvedSolids",
+  ];
+
+  const present = trackedKeys.reduce((count, key) => {
+    return values[key] != null ? count + 1 : count;
+  }, 0);
+  const completeness = (present / trackedKeys.length) * 100;
+
+  let score = completeness;
+  if (present === 0) {
+    score = 30;
+  }
+
+  let explanation = `${present} von ${trackedKeys.length} Mineralien angegeben. `;
+  if (completeness >= 70) {
+    explanation += "Sehr transparentes Etikett – volle Analyse.";
+  } else if (completeness >= 50) {
+    explanation += "Grunddaten vorhanden, aber mehr Angaben wären hilfreich.";
+  } else {
+    explanation += "Sehr wenige Werte angegeben – schwierig zu bewerten.";
+  }
+
+  return {
+    metric: "dataQualityScore",
+    score: clampScore(score),
+    weight: 0.4,
+    explanation,
+  };
+}
+
 // ---------------------------
 // Hauptfunktion
 // ---------------------------
@@ -460,6 +684,31 @@ export function calculateScores(
   values: Partial<WaterAnalysisValues>,
   profile: ProfileType
 ): ScoreResult {
+  const hardness = computeWaterHardness(values);
+  if (hardness !== null) {
+    values.hardness = hardness;
+  }
+  const caMgRatio = computeCalciumMagnesiumRatio(values.calcium, values.magnesium);
+  if (caMgRatio !== null) {
+    values.calciumMagnesiumRatio = caMgRatio;
+  }
+  const naKRatio = computeSodiumPotassiumRatio(values.sodium, values.potassium);
+  if (naKRatio !== null) {
+    values.sodiumPotassiumRatio = naKRatio;
+  }
+  const tasteBalance = computeTasteBalance(values);
+  if (tasteBalance !== null) {
+    values.tastePalatability = tasteBalance;
+  }
+  const bufferCapacity = computeBufferCapacity(values);
+  if (bufferCapacity !== null) {
+    values.bufferCapacity = bufferCapacity;
+  }
+  const dataQuality = computeDataQualityScore(values);
+  if (dataQuality !== null) {
+    values.dataQualityScore = dataQuality;
+  }
+
   const metrics: MetricScore[] = [];
 
   metrics.push(scorePh(values.ph));
@@ -467,11 +716,16 @@ export function calculateScores(
   metrics.push(scoreNitrate(values.nitrate, profile));
   metrics.push(scoreCalcium(values.calcium, profile));
   metrics.push(scoreMagnesium(values.magnesium, profile));
+  metrics.push(scoreSodiumPotassiumRatio(values.sodium, values.potassium, profile));
+  metrics.push(scoreCalciumMagnesiumRatio(values.calcium, values.magnesium));
   metrics.push(scorePotassium(values.potassium, profile));
   metrics.push(scoreChloride(values.chloride));
   metrics.push(scoreSulfate(values.sulfate, profile));
   metrics.push(scoreBicarbonate(values.bicarbonate, profile));
+  metrics.push(scoreBufferCapacity(values.bicarbonate, profile));
   metrics.push(scoreTds(values.totalDissolvedSolids));
+  metrics.push(scoreTastePalatability(values.sulfate, values.chloride, values.bicarbonate));
+  metrics.push(scoreDataTransparency(values));
 
   // nur Metriken berücksichtigen, die eine sinnvolle Weight > 0 haben
   const active = metrics.filter((m) => m.weight > 0);

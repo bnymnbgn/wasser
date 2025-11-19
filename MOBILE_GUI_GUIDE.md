@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Die Trinkwasser-Check App wurde komplett für mobile Geräte neu gestaltet mit Material Design 3 und ist vollständig für die Android-Migration vorbereitet.
+Die Wasserscan App wurde komplett für mobile Geräte neu gestaltet mit Material Design 3 und ist vollständig für die Android-Migration vorbereitet.
 
 ## Was wurde umgesetzt
 
@@ -73,7 +73,7 @@ Die Trinkwasser-Check App wurde komplett für mobile Geräte neu gestaltet mit M
 ```
 
 **Konfiguration:** `capacitor.config.ts`
-- App ID: `de.trinkwasser.check`
+- App ID: `de.wasserscan`
 - Optimierte Splash Screen & Status Bar Einstellungen
 - Android Build-Konfiguration
 
@@ -325,7 +325,7 @@ npm run cap:sync:android
 
 ## Lizenz & Credits
 
-Projekt: Trinkwasser-Check
+Projekt: Wasserscan
 Design System: Material Design 3 (Google)
 Icons: Heroicons (Tailwind Labs)
 Animation: Framer Motion

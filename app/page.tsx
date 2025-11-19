@@ -9,7 +9,7 @@ import { CapacitorRedirect } from "@/src/components/CapacitorRedirect";
 
 // SEO Metadata
 export const metadata: Metadata = {
-  title: "Trinkwasser Check - Intelligente Wasserqualität-Analyse | Kostenlose OCR App",
+  title: "Wasserscan - Intelligente Wasserqualität-Analyse | Kostenlose OCR App",
   description:
     "Scanne Wasserflaschenetiketten mit deinem Smartphone und erhalte sofort detaillierte Qualitätsbewertungen. KI-gestützte Analyse für Baby, Sport, Blutdruck & Standard. 100% kostenlos, offline-fähig & DSGVO-konform.",
   keywords: [
@@ -28,9 +28,9 @@ export const metadata: Metadata = {
     "kostenlose Wasser App",
     "offline Wasser Scanner",
   ],
-  authors: [{ name: "Trinkwasser Check Team" }],
-  creator: "Trinkwasser Check",
-  publisher: "Trinkwasser Check",
+  authors: [{ name: "Wasserscan Team" }],
+  creator: "Wasserscan",
+  publisher: "Wasserscan",
   robots: {
     index: true,
     follow: true,
@@ -43,46 +43,46 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://trinkwasser-check.de",
+    canonical: "https://wasserscan.de",
     languages: {
-      de: "https://trinkwasser-check.de",
-      en: "https://trinkwasser-check.de/en",
+      de: "https://wasserscan.de",
+      en: "https://wasserscan.de/en",
     },
   },
   openGraph: {
     type: "website",
     locale: "de_DE",
-    url: "https://trinkwasser-check.de",
-    title: "Trinkwasser Check - Intelligente Wasserqualität-Analyse",
+    url: "https://wasserscan.de",
+    title: "Wasserscan - Intelligente Wasserqualität-Analyse",
     description:
       "Scanne Wasserflaschenetiketten und erhalte sofort detaillierte Qualitätsbewertungen. KI-gestützt, kostenlos & offline-fähig.",
-    siteName: "Trinkwasser Check",
+    siteName: "Wasserscan",
     images: [
       {
-        url: "https://trinkwasser-check.de/og-image.png",
+        url: "https://wasserscan.de/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Trinkwasser Check App Preview",
+        alt: "Wasserscan App Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Trinkwasser Check - Intelligente Wasserqualität-Analyse",
+    title: "Wasserscan - Intelligente Wasserqualität-Analyse",
     description:
       "Scanne Wasserflaschenetiketten und erhalte sofort detaillierte Qualitätsbewertungen. KI-gestützt, kostenlos & offline-fähig.",
-    images: ["https://trinkwasser-check.de/twitter-image.png"],
-    creator: "@trinkwassercheck",
+    images: ["https://wasserscan.de/twitter-image.png"],
+    creator: "@wasserscan",
   },
   verification: {
     google: "your-google-verification-code",
     yandex: "your-yandex-verification-code",
   },
   category: "Health & Wellness",
-  applicationName: "Trinkwasser Check",
+  applicationName: "Wasserscan",
   appleWebApp: {
     capable: true,
-    title: "Trinkwasser Check",
+    title: "Wasserscan",
     statusBarStyle: "black-translucent",
   },
   formatDetection: {
@@ -101,10 +101,10 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: "Trinkwasser Check",
+  name: "Wasserscan",
   description:
     "Intelligente Wasserqualität-Analyse App mit OCR-Technologie für Wasserflaschenetiketten",
-  url: "https://trinkwasser-check.de",
+  url: "https://wasserscan.de",
   applicationCategory: "HealthApplication",
   operatingSystem: "Web, iOS, Android",
   offers: {
@@ -121,8 +121,8 @@ const jsonLd = {
   },
   author: {
     "@type": "Organization",
-    name: "Trinkwasser Check Team",
-    url: "https://trinkwasser-check.de",
+    name: "Wasserscan Team",
+    url: "https://wasserscan.de",
   },
   featureList: [
     "OCR-Texterkennung für Wasserflaschenetiketten",
@@ -132,7 +132,7 @@ const jsonLd = {
     "DSGVO-konform",
     "Kostenlos & Open Source",
   ],
-  screenshot: "https://trinkwasser-check.de/screenshots/app-preview.png",
+  screenshot: "https://wasserscan.de/screenshots/app-preview.png",
 };
 
 export default function LandingPage() {
