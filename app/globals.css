@@ -251,6 +251,12 @@ body {
     @apply border-slate-300/80 dark:border-slate-600/80;
   }
 
+  /* Glassmorphic card used for the Deep Ocean UI */
+  .glass-panel {
+    @apply rounded-[30px] border border-white/10 bg-white/5;
+    @apply shadow-glass backdrop-blur-2xl;
+  }
+
   /* Touch-friendly button */
   .btn-touch {
     @apply min-h-touch min-w-touch flex items-center justify-center;

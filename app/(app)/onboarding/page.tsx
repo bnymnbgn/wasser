@@ -8,8 +8,12 @@ import { PersonasCarousel } from "@/src/components/onboarding/PersonasCarousel";
 
 export default function OnboardingPage() {
   return (
-    <main className="min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">
-      <div className="mx-auto max-w-4xl px-4 py-6 safe-area-top space-y-8">
+    <main className="relative min-h-screen bg-ocean-dark text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 left-0 h-72 w-72 rounded-full bg-water-primary/15 blur-[140px]" />
+        <div className="absolute bottom-10 right-0 h-80 w-80 rounded-full bg-water-accent/10 blur-[160px]" />
+      </div>
+      <div className="relative z-10 mx-auto max-w-4xl px-4 py-8 safe-area-top space-y-8">
         <motion.header
           className="flex flex-col gap-6"
           initial={{ opacity: 0, y: -20 }}
@@ -17,21 +21,23 @@ export default function OnboardingPage() {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md-md bg-md-secondary-container dark:bg-md-dark-secondary-container text-md-onSecondary-container dark:text-md-dark-onSecondary-container text-xs font-semibold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.4em] text-white/80">
               Wasser Academy
             </span>
-            <h1 className="mt-3 text-3xl font-bold text-md-onSurface dark:text-md-dark-onSurface">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">
               Wissen, warum dein Wasser passt
             </h1>
-            <p className="mt-2 text-sm text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
+            <p className="mt-2 text-sm text-white/70">
               Praxisnahe Guides für Eltern, Sportler und Gesundheitsbewusste. Die Profile zeigen dir, welcher Mineralfokus wirklich zählt.
             </p>
           </div>
-          <PersonasCarousel />
+          <div className="glass-panel">
+            <PersonasCarousel />
+          </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/" onClick={() => hapticLight()}>
               <motion.button
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md-lg bg-white shadow-elevation-1 text-sm font-medium hover:-translate-y-0.5 transition"
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-white/40"
                 whileTap={{ scale: 0.95 }}
               >
                 ⬅ Zur Startseite
@@ -39,7 +45,7 @@ export default function OnboardingPage() {
             </Link>
             <Link href="/scan" onClick={() => hapticLight()}>
               <motion.button
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md-lg bg-md-primary text-white text-sm font-semibold shadow-elevation-2 hover:-translate-y-0.5 transition"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-water-primary to-water-accent px-5 py-2 text-sm font-semibold shadow-glow"
                 whileTap={{ scale: 0.95 }}
               >
                 🚀 Scan starten
@@ -47,7 +53,12 @@ export default function OnboardingPage() {
             </Link>
           </div>
         </motion.header>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass-panel p-4 sm:p-6"
+        >
           <ProfileOnboardingTabs />
         </motion.div>
       </div>

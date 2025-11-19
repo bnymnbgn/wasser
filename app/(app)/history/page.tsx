@@ -46,12 +46,19 @@ export default async function HistoryPage() {
   const scans = await loadScans();
 
   return (
-    <main className="relative min-h-screen bg-md-background dark:bg-md-dark-background text-md-onBackground dark:text-md-dark-onBackground">
-      <div className="absolute inset-0 bg-surface-gradient" />
-      <div className="absolute inset-0 grid-overlay" />
-      <div className="relative mx-auto max-w-2xl px-4 py-4 safe-area-top pb-[calc(var(--bottom-nav-height)+32px)]">
-        {/* History List */}
-        <HistoryList initialScans={scans} />
+    <main className="relative min-h-screen bg-ocean-dark text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-8 left-0 h-64 w-64 rounded-full bg-water-primary/10 blur-[120px]" />
+        <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-water-accent/15 blur-[140px]" />
+      </div>
+      <div className="relative z-10 mx-auto max-w-3xl px-4 py-6 safe-area-top pb-[calc(var(--bottom-nav-height)+40px)]">
+        <div className="mb-6">
+          <p className="text-[11px] uppercase tracking-[0.4em] text-slate-400">Historie</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Scan-Verlauf</h1>
+        </div>
+        <div className="glass-panel p-4 sm:p-6">
+          <HistoryList initialScans={scans} />
+        </div>
       </div>
     </main>
   );

@@ -191,21 +191,26 @@ function ScanPageContent() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-transparent to-purple-50 dark:from-blue-950/20 dark:via-transparent dark:to-purple-950/20 pointer-events-none" />
+    <main className="relative min-h-screen bg-ocean-dark text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-10 -left-16 h-72 w-72 rounded-full bg-water-primary/10 blur-[120px]" />
+        <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-water-accent/15 blur-[140px]" />
+      </div>
 
-      <div className="relative mx-auto max-w-2xl px-4 py-6 safe-area-top pb-[calc(var(--bottom-nav-height)+32px)]">
+      <div className="relative z-10 mx-auto max-w-2xl px-4 py-8 safe-area-top pb-[calc(var(--bottom-nav-height)+48px)]">
         {/* Header */}
         <motion.header
           className="mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-headline text-slate-900 dark:text-slate-100 mb-1">
-            Wasser scannen
-          </h1>
-          <p className="text-body text-slate-600 dark:text-slate-400">
-            Profil: <span className="font-medium text-blue-600 dark:text-blue-400">{profile}</span>
+          <p className="text-[11px] uppercase tracking-[0.4em] text-slate-400">
+            Analyse
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Wasser scannen</h1>
+          <p className="text-sm text-slate-400">
+            Profil&nbsp;
+            <span className="font-medium text-water-accent">{profile}</span>
           </p>
         </motion.header>
 
@@ -216,19 +221,19 @@ function ScanPageContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="modern-card p-2 flex gap-2">
+          <div className="glass-panel flex gap-2 p-2">
             <button
               type="button"
               onClick={() => handleModeChange("ocr")}
               className={clsx(
-                "flex-1 py-3 px-4 rounded-[20px] text-sm font-semibold transition-all touch-manipulation relative overflow-hidden",
+                "relative flex-1 overflow-hidden rounded-2xl py-3 text-sm font-semibold transition",
                 mode === "ocr"
-                  ? "bg-blue-500 dark:bg-blue-600 text-white shadow-lg"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-gradient-to-r from-water-primary to-water-accent text-white shadow-glow"
+                  : "text-slate-200 hover:bg-white/5"
               )}
             >
-              <div className="flex items-center justify-center gap-2 relative z-10">
-                <Camera className="w-5 h-5" />
+              <div className="relative z-10 flex items-center justify-center gap-2">
+                <Camera className="h-5 w-5" />
                 Etikett
               </div>
             </button>
@@ -236,14 +241,14 @@ function ScanPageContent() {
               type="button"
               onClick={() => handleModeChange("barcode")}
               className={clsx(
-                "flex-1 py-3 px-4 rounded-[20px] text-sm font-semibold transition-all touch-manipulation relative overflow-hidden",
+                "relative flex-1 overflow-hidden rounded-2xl py-3 text-sm font-semibold transition",
                 mode === "barcode"
-                  ? "bg-blue-500 dark:bg-blue-600 text-white shadow-lg"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-gradient-to-r from-water-primary to-water-accent text-white shadow-glow"
+                  : "text-slate-200 hover:bg-white/5"
               )}
             >
-              <div className="flex items-center justify-center gap-2 relative z-10">
-                <Scan className="w-5 h-5" />
+              <div className="relative z-10 flex items-center justify-center gap-2">
+                <Scan className="h-5 w-5" />
                 Barcode
               </div>
             </button>
@@ -268,14 +273,14 @@ function ScanPageContent() {
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="modern-card p-4 grid gap-3 sm:grid-cols-2"
+                  className="glass-panel grid gap-3 p-4 sm:grid-cols-2"
                 >
                   <label className="block">
-                    <span className="text-label text-slate-700 dark:text-slate-300 mb-2 block">
+                    <span className="mb-2 block text-[11px] uppercase tracking-[0.3em] text-slate-400">
                       Marke / Quelle
                     </span>
                     <input
-                      className="w-full rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 outline-none transition-all"
+                      className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/20"
                       value={brandName}
                       onChange={(e) => {
                         setBrandName(e.target.value);
@@ -285,11 +290,11 @@ function ScanPageContent() {
                     />
                   </label>
                   <label className="block">
-                    <span className="text-label text-slate-700 dark:text-slate-300 mb-2 block">
+                    <span className="mb-2 block text-[11px] uppercase tracking-[0.3em] text-slate-400">
                       Barcode (optional)
                     </span>
                     <input
-                      className="w-full rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 outline-none transition-all"
+                      className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/20"
                       value={barcode}
                       onChange={(e) => {
                         setBarcode(e.target.value);
@@ -305,16 +310,12 @@ function ScanPageContent() {
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="modern-card p-5"
+                  className="glass-panel p-5"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                        Mineralwerte
-                      </h3>
-                      <p className="text-caption">
-                        Erkannt aus OCR oder manuell anpassen
-                      </p>
+                      <h3 className="text-base font-medium text-white">Mineralwerte</h3>
+                      <p className="text-xs text-slate-300">Erkannt aus OCR oder manuell anpassen</p>
                     </div>
                     <button
                       type="button"
@@ -323,7 +324,7 @@ function ScanPageContent() {
                         setValueInputs(createEmptyValueState());
                         setResult(null);
                       }}
-                      className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors touch-manipulation"
+                      className="flex items-center gap-1 text-xs font-medium text-water-accent transition hover:text-white"
                     >
                       <RotateCcw className="w-3 h-3" />
                       Zurücksetzen
@@ -340,40 +341,43 @@ function ScanPageContent() {
                         <div
                           key={field.key}
                           className={clsx(
-                            "p-3 rounded-2xl border-2 transition-all",
+                            "rounded-2xl border-2 p-3 transition-all",
                             invalid
-                              ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20"
+                              ? "border-status-bad/60 bg-status-bad/10"
                               : warning
-                              ? "border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20"
-                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                              ? "border-status-warning/60 bg-status-warning/10"
+                              : "border-white/10 bg-white/5"
                           )}
                         >
-                          <label className="block">
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                          <label className="block space-y-2">
+                            <span className="block text-[10px] uppercase tracking-[0.3em] text-slate-400">
                               {field.label}
                             </span>
-                            <input
-                              className={clsx(
-                                "w-full bg-transparent border-none p-0 text-base font-semibold focus:ring-0 outline-none",
-                                invalid
-                                  ? "text-red-600 dark:text-red-400"
-                                  : "text-slate-900 dark:text-slate-100"
+                            <div className="relative">
+                              <input
+                                value={value}
+                                onChange={(e) => {
+                                  setValueInputs((prev) => ({
+                                    ...prev,
+                                    [field.key]: e.target.value,
+                                  }));
+                                  setResult(null);
+                                }}
+                                className={clsx(
+                                  "w-full rounded-2xl border border-white/15 bg-transparent px-3 py-2 text-base font-semibold text-white placeholder-white/30 outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/25",
+                                  invalid ? "text-status-bad" : ""
+                                )}
+                                placeholder={unit ? `0 ${unit}` : "0"}
+                                inputMode="decimal"
+                              />
+                              {unit && (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">
+                                  {unit}
+                                </span>
                               )}
-                              value={value}
-                              onChange={(e) => {
-                                setValueInputs((prev) => ({
-                                  ...prev,
-                                  [field.key]: e.target.value,
-                                }));
-                                setResult(null);
-                              }}
-                              placeholder={unit ? `0 ${unit}` : "0"}
-                              inputMode="decimal"
-                            />
-                            {unit && (
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                                {unit}
-                              </span>
+                            </div>
+                            {warning && (
+                              <span className="text-[10px] text-status-warning/80">{warning}</span>
                             )}
                           </label>
                         </div>
@@ -391,13 +395,13 @@ function ScanPageContent() {
                 className="space-y-4"
               >
                 {/* Manual Barcode Input */}
-                <div className="modern-card p-5">
-                  <label className="block">
-                    <span className="text-label text-slate-700 dark:text-slate-300 mb-3 block">
+                <div className="glass-panel p-5">
+                  <label className="block space-y-3">
+                    <span className="text-[11px] uppercase tracking-[0.3em] text-slate-400">
                       Barcode eingeben
                     </span>
                     <input
-                      className="block w-full rounded-2xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-5 py-4 text-base font-mono focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 outline-none transition-all"
+                      className="block w-full rounded-2xl border border-white/15 bg-white/10 px-5 py-4 text-base font-mono text-white placeholder-white/40 outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/25"
                       value={barcode}
                       onChange={(e) => setBarcode(e.target.value)}
                       placeholder="z. B. 4008501011009"
@@ -416,10 +420,8 @@ function ScanPageContent() {
                 />
 
                 {/* Example Barcodes */}
-                <div className="modern-card p-4">
-                  <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-3">
-                    Beispiel-Barcodes
-                  </h3>
+                <div className="glass-panel p-4">
+                  <h3 className="mb-3 text-sm font-medium text-white/90">Beispiel-Barcodes</h3>
                   <div className="space-y-2">
                     <button
                       type="button"
@@ -427,14 +429,12 @@ function ScanPageContent() {
                         await hapticLight();
                         setBarcode("4008501011009");
                       }}
-                      className="w-full text-left p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors touch-manipulation"
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-water-accent/40"
                     >
-                      <code className="text-sm font-mono text-blue-600 dark:text-blue-400 block">
+                      <code className="block text-sm font-mono text-water-accent">
                         4008501011009
                       </code>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Gerolsteiner Naturell
-                      </p>
+                      <p className="mt-1 text-xs text-slate-300">Gerolsteiner Naturell</p>
                     </button>
                   </div>
                 </div>
@@ -469,7 +469,7 @@ function ScanPageContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center md:justify-center p-4"
+              className="fixed inset-0 z-50 flex items-end p-4 md:items-center md:justify-center bg-black/70 backdrop-blur"
               onClick={() => setShowResults(false)}
             >
               <motion.div
@@ -477,24 +477,22 @@ function ScanPageContent() {
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-[32px] md:rounded-[32px] shadow-2xl"
+                className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-t-[32px] border border-white/10 bg-ocean-card/95 text-white shadow-glass md:rounded-[32px]"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 p-5 rounded-t-[32px] flex items-center justify-between">
-                  <h2 className="text-title text-slate-900 dark:text-slate-100">
-                    Analyse-Ergebnis
-                  </h2>
+                <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-[32px] border-b border-white/10 bg-ocean-card/95 p-5">
+                  <h2 className="text-xl font-semibold text-white">Analyse-Ergebnis</h2>
                   <button
                     onClick={() => setShowResults(false)}
-                    className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-white/30"
                   >
-                    <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                    <X className="h-5 w-5 text-white/70" />
                   </button>
                 </div>
 
                 {/* Modal Content */}
-                <div className="p-5 pb-safe-bottom">
+                <div className="p-5 pb-safe-bottom text-white">
                   <WaterScoreCard scanResult={result} />
                 </div>
               </motion.div>

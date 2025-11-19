@@ -37,6 +37,33 @@ const historyEntries = [
   { name: "Lauretana", time: "Gestern", score: 81 },
 ];
 
+const quickActions = [
+  {
+    id: "scan",
+    title: "Scannen",
+    description: "Etikett aufnehmen & analysieren",
+    href: "/scan",
+    accent: "from-water-primary/40 via-water-accent/20 to-transparent",
+    icon: Scan,
+  },
+  {
+    id: "history",
+    title: "Verlauf",
+    description: "Alle Analysen im Überblick",
+    href: "/history",
+    accent: "from-water-accent/20 via-white/5 to-transparent",
+    icon: History,
+  },
+  {
+    id: "learn",
+    title: "Lernen",
+    description: "Guides & Wissen zur Wasserwahl",
+    href: "/onboarding",
+    accent: "from-white/15 via-water-primary/10 to-transparent",
+    icon: BookOpen,
+  },
+];
+
 const CountUp = ({ value }: { value: number }) => {
   const [display, setDisplay] = useState(0);
 
@@ -199,40 +226,30 @@ export default function DashboardPage() {
           <p className="text-[12px] leading-relaxed text-slate-300">{PROFILE_TIPS[profile]}</p>
         </section>
 
-        <section className="mb-8 grid gap-3 md:grid-cols-2">
-          <Link
-            href="/history"
-            className="group rounded-3xl border border-white/10 bg-ocean-card/80 p-4 shadow-glass backdrop-blur-xl transition active:scale-95"
-            onClick={() => hapticLight()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-water-accent">
-                <History className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-base font-medium">Scan-Verlauf</p>
-                <p className="text-sm text-slate-400">Alle Analysen im Überblick</p>
-              </div>
-            </div>
-            <ChevronRight className="mt-3 h-4 w-4 text-slate-500 transition group-hover:translate-x-1" />
-          </Link>
-
-          <Link
-            href="/onboarding"
-            className="group rounded-3xl border border-white/10 bg-gradient-to-br from-water-primary/30 to-water-accent/10 p-4 shadow-glow backdrop-blur-xl transition active:scale-95"
-            onClick={() => hapticLight()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/10 p-3 text-white">
-                <BookOpen className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-base font-medium">Wissen & Guides</p>
-                <p className="text-sm text-slate-100/80">Tipps für bessere Wasserwahl</p>
-              </div>
-            </div>
-            <ChevronRight className="mt-3 h-4 w-4 text-white/70 transition group-hover:translate-x-1" />
-          </Link>
+        <section className="mb-8 grid gap-3 md:grid-cols-3">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.id}
+                href={action.href}
+                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-ocean-card/80 p-4 shadow-glass backdrop-blur-xl transition active:scale-95"
+                onClick={() => hapticLight()}
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${action.accent} opacity-70`} />
+                <div className="relative flex items-start gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-white/10 p-3 text-white shadow-inner">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-base font-medium">{action.title}</p>
+                    <p className="text-sm text-slate-200/80">{action.description}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-200 transition group-hover:translate-x-1" />
+                </div>
+              </Link>
+            );
+          })}
         </section>
 
         <section className="space-y-4 rounded-3xl border border-white/10 bg-ocean-card/90 p-5 shadow-glass backdrop-blur-2xl">

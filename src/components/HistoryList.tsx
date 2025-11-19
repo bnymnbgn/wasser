@@ -237,25 +237,25 @@ function StatsHeader({ stats }: { stats: ReturnType<typeof buildStats> }) {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <StatCard
-        icon={<LineChart className="w-5 h-5" />}
+        icon={<LineChart className="w-5 h-5 text-water-accent" />}
         label="Scans gesamt"
         value={stats.total.toString()}
         description={`${stats.thisWeek} diese Woche`}
       />
       <StatCard
-        icon={<Sparkles className="w-5 h-5" />}
+        icon={<Sparkles className="w-5 h-5 text-status-good" />}
         label="Durchschnitt"
         value={`${stats.avgScore ?? '–'}`}
         description={`Letzte 5: ${stats.lastScores.join(' · ') || '–'}`}
       />
       <StatCard
-        icon={<Target className="w-5 h-5" />}
+        icon={<Target className="w-5 h-5 text-water-primary" />}
         label="Lieblingsprofil"
         value={stats.topProfile ? PROFILE_LABELS[stats.topProfile] : '–'}
         description={`${stats.topCount} Scans`}
       />
       <StatCard
-        icon={<Flame className="w-5 h-5" />}
+        icon={<Flame className="w-5 h-5 text-status-warning" />}
         label="Streak"
         value={`${stats.streak} Tage`}
         description={stats.streak > 0 ? 'Dranbleiben!' : 'Heute starten'}
@@ -276,13 +276,13 @@ function StatCard({
   description: string;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/70 p-4 shadow-sm">
-      <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+    <div className="glass-panel p-4 text-white">
+      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
         {icon}
         {label}
       </div>
-      <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{value}</div>
-      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{description}</div>
+      <div className="text-2xl font-semibold text-white">{value}</div>
+      <div className="mt-1 text-xs text-white/60">{description}</div>
     </div>
   );
 }
@@ -311,8 +311,8 @@ function FilterToolbar({
   setSearchTerm: (value: string) => void;
 }) {
   return (
-    <div className="rounded-3xl bg-white/80 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800/60 p-4 space-y-4 shadow-sm">
-      <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+    <div className="glass-panel space-y-4 text-white">
+      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
         <FilterChip
           icon={<Filter className="w-3.5 h-3.5" />}
           label="Alle"
@@ -329,7 +329,7 @@ function FilterToolbar({
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
         <FilterChip
           label="Alle Zeiträume"
           active={dateFilter === 'all'}
@@ -347,7 +347,7 @@ function FilterToolbar({
         />
       </div>
 
-      <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
         <FilterChip label="Alle Scores" active={scoreFilter === 'all'} onClick={() => setScoreFilter('all')} />
         <FilterChip label="90+" active={scoreFilter === 'high'} onClick={() => setScoreFilter('high')} />
         <FilterChip label="70 – 89" active={scoreFilter === 'mid'} onClick={() => setScoreFilter('mid')} />
@@ -356,21 +356,21 @@ function FilterToolbar({
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
           <input
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Marke oder Produkt suchen"
-            className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm text-white placeholder-white/50 outline-none transition focus:border-water-accent/50 focus:ring-2 focus:ring-water-accent/30"
           />
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+        <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
           Sortierung:
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none"
+            className="rounded-2xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-water-primary/60"
           >
             <option value="newest">Neueste</option>
             <option value="best">Beste Scores</option>
@@ -399,10 +399,10 @@ function FilterChip({
       type="button"
       onClick={onClick}
       className={clsx(
-        'px-3 py-1 rounded-full border flex items-center gap-1 transition-colors',
+        'flex items-center gap-1 rounded-full px-3 py-1 text-[11px] tracking-[0.2em] transition',
         active
-          ? 'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300'
-          : 'border-slate-200 dark:border-slate-700'
+          ? 'border-water-accent/60 bg-gradient-to-r from-water-primary/40 to-water-accent/30 text-white shadow-glow'
+          : 'border-white/15 bg-white/5 text-white/70 hover:border-water-accent/40'
       )}
     >
       {icon}
@@ -423,38 +423,32 @@ function HistoryCard({
   isFavorite: boolean;
 }) {
   return (
-    <motion.div layout className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-white/90 dark:bg-slate-900/80 shadow-sm">
-      <button onClick={onToggleExpand} className="w-full p-4 text-left space-y-3">
+    <motion.div layout className="glass-panel text-white">
+      <button onClick={onToggleExpand} className="w-full space-y-3 p-4 text-left">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              {formatDate(new Date(scan.timestamp))}
-            </div>
-            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="text-xs text-white/60">{formatDate(new Date(scan.timestamp))}</div>
+            <div className="text-sm font-semibold text-white">
               {scan.productInfo?.brand ?? (scan.barcode ? 'Unbekannte Marke' : 'OCR Scan')}
               {scan.productInfo?.productName ? ` · ${scan.productInfo.productName}` : ''}
             </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-white/50">
               {scan.barcode ? `Barcode: ${scan.barcode}` : 'Etikett-Analyse'}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isFavorite && (
-              <Star className="w-4 h-4 text-amber-400 fill-amber-300 drop-shadow" />
-            )}
-            <div className={clsx('px-3 py-1 rounded-full text-xs font-semibold', scoreColor(scan.score))}>
+            {isFavorite && <Star className="h-4 w-4 text-status-warning drop-shadow" />}
+            <div className={clsx('rounded-full px-3 py-1 text-xs font-semibold', scoreColor(scan.score))}>
               {scan.score?.toFixed(0) ?? '–'}
             </div>
             <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
-              <ChevronDown className="w-4 h-4 text-slate-400" />
+              <ChevronDown className="h-4 w-4 text-white/50" />
             </motion.div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">{scan.profile}</span>
-          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
-            {scoreLabel(scan.score)}
-          </span>
+        <div className="flex flex-wrap gap-2 text-[11px] text-white/70">
+          <span className="rounded-full bg-white/10 px-2 py-0.5">{scan.profile}</span>
+          <span className="rounded-full bg-white/10 px-2 py-0.5">{scoreLabel(scan.score)}</span>
         </div>
       </button>
       <AnimatePresence>
@@ -463,7 +457,7 @@ function HistoryCard({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-slate-200 dark:border-slate-800"
+            className="border-t border-white/10"
           >
             <div className="p-4">
               <WaterScoreCard scanResult={scan} />
@@ -530,8 +524,8 @@ function SwipeableRow({
     <div className="relative touch-pan-y select-none">
       <div
         className={clsx(
-          'absolute inset-0 rounded-3xl flex items-center justify-between px-4 text-sm font-semibold text-white',
-          offset > 0 ? 'bg-amber-500/80' : 'bg-rose-500/80'
+          'absolute inset-0 flex items-center justify-between rounded-3xl px-4 text-sm font-semibold text-white',
+          offset > 0 ? 'bg-status-warning/80' : 'bg-status-bad/80'
         )}
       >
         <div className="flex items-center gap-2">
@@ -581,7 +575,7 @@ function ContextMenu({
   return (
     <div className="fixed inset-0 z-50" onClick={onClose}>
       <div
-        className="absolute bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-60 p-2"
+        className="absolute w-60 rounded-2xl border border-white/10 bg-ocean-card/95 p-2 text-white shadow-glass backdrop-blur-xl"
         style={{ top: context.y, left: context.x }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -595,13 +589,13 @@ function ContextMenu({
           Erneut scannen
         </ContextButton>
         <div className="px-3 py-2">
-          <div className="text-xs text-slate-500 mb-2">Mit anderem Profil bewerten</div>
+          <div className="mb-2 text-xs text-white/70">Mit anderem Profil bewerten</div>
           <div className="flex flex-wrap gap-2">
             {Object.keys(PROFILE_LABELS).map((key) => (
               <button
                 key={key}
                 onClick={() => onProfileSwitch(key as ProfileType)}
-                className="px-2 py-1 text-xs rounded-full bg-slate-100 dark:bg-slate-800"
+                className="rounded-full bg-white/10 px-2 py-1 text-xs text-white hover:bg-water-primary/30"
               >
                 {PROFILE_LABELS[key as ProfileType]}
               </button>
@@ -623,7 +617,7 @@ function ContextButton({ icon, children, onClick }: { icon: ReactNode; children:
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200"
+      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-white transition hover:bg-white/10"
     >
       {icon}
       {children}
@@ -633,15 +627,15 @@ function ContextButton({ icon, children, onClick }: { icon: ReactNode; children:
 
 function DetailDialog({ scan, onClose }: { scan: ScanResult; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur" onClick={onClose}>
+      <div className="glass-panel max-h-[90vh] w-full max-w-lg overflow-y-auto p-4 text-white" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Details bearbeiten</h3>
-            <p className="text-sm text-slate-500">Die Werte kannst du auf der Scan-Seite anpassen.</p>
+            <h3 className="text-lg font-semibold">Details bearbeiten</h3>
+            <p className="text-sm text-white/70">Die Werte kannst du auf der Scan-Seite anpassen.</p>
           </div>
-          <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" onClick={onClose}>
-            <ChevronDown className="w-5 h-5" />
+          <button className="rounded-full border border-white/10 p-2 hover:border-white/30" onClick={onClose}>
+            <ChevronDown className="h-5 w-5" />
           </button>
         </div>
         <div className="mb-4">
@@ -649,7 +643,7 @@ function DetailDialog({ scan, onClose }: { scan: ScanResult; onClose: () => void
         </div>
         <Link
           href={`/scan?profile=${scan.profile}${scan.barcode ? `&barcode=${scan.barcode}` : ''}`}
-          className="block text-center rounded-2xl bg-blue-600 text-white py-3 font-semibold"
+          className="block rounded-2xl bg-gradient-to-r from-water-primary to-water-accent py-3 text-center font-semibold text-white shadow-glow"
         >
           In Scan-Seite öffnen
         </Link>
@@ -660,7 +654,7 @@ function DetailDialog({ scan, onClose }: { scan: ScanResult; onClose: () => void
 
 function NoResults() {
   return (
-    <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-900/50 p-6 text-center text-sm text-slate-500">
+    <div className="glass-panel border border-dashed border-white/20 p-6 text-center text-sm text-white/70">
       Keine Treffer für diese Filter. Passe Suche oder Filter an.
     </div>
   );
@@ -668,13 +662,16 @@ function NoResults() {
 
 function EmptyState() {
   return (
-    <div className="text-center space-y-4 py-16">
+    <div className="space-y-4 py-16 text-center text-white">
       <div className="text-5xl">💧</div>
-      <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Noch keine Scans</h2>
-      <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+      <h2 className="text-xl font-semibold">Noch keine Scans</h2>
+      <p className="mx-auto max-w-sm text-sm text-white/70">
         Starte jetzt mit deinem ersten Scan und entdecke, wie dein Wasser abschneidet.
       </p>
-      <Link href="/scan" className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-6 py-3 rounded-full shadow-lg">
+      <Link
+        href="/scan"
+        className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-water-primary to-water-accent px-6 py-3 font-semibold text-white shadow-glow"
+      >
         Scan starten
       </Link>
     </div>
@@ -793,10 +790,10 @@ function scoreLabel(score: number | undefined) {
 }
 
 function scoreColor(score: number | undefined) {
-  if (score == null) return 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200';
-  if (score >= 80) return 'bg-emerald-100 text-emerald-700';
-  if (score >= 50) return 'bg-amber-100 text-amber-700';
-  return 'bg-rose-100 text-rose-700';
+  if (score == null) return 'bg-white/10 text-white/70';
+  if (score >= 80) return 'bg-status-good/15 text-status-good';
+  if (score >= 50) return 'bg-status-warning/15 text-status-warning';
+  return 'bg-status-bad/15 text-status-bad';
 }
 
 function formatDate(date: Date) {
