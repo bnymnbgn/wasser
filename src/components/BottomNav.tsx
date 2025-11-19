@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { Home, ScanLine, History, BookOpen } from "lucide-react";
 import { hapticLight } from "@/lib/capacitor";
 
@@ -48,80 +47,46 @@ export default function BottomNav() {
     router.push(path);
   };
 
+  const scanItem = navItems.find((item) => item.id === "scan");
+  const staticItems = navItems.filter((item) => item.id !== "scan");
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 pb-safe-bottom">
-      <div className="mx-auto w-full max-w-xl px-4 pb-2">
-        <div className="relative rounded-[32px] border border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl shadow-2xl shadow-slate-900/10 dark:shadow-black/40">
-          {/* Glassmorphic overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-white/50 to-white/0 dark:from-slate-900/50 dark:to-slate-900/0 rounded-[32px] pointer-events-none" />
+    <nav className="pointer-events-none fixed inset-x-0 bottom-4 z-40 pb-safe-bottom">
+      <div className="mx-auto w-full max-w-xl px-4">
+        <div className="pointer-events-auto relative flex items-center justify-between rounded-[32px] border border-white/15 bg-ocean-card/90 px-4 py-3 shadow-glass backdrop-blur-2xl">
+          {staticItems.map((item) => {
+            const isActive = pathname === item.path;
+            const Icon = item.icon;
 
-          <div className="relative grid grid-cols-4 gap-1 px-3 py-2">
-            {navItems.map((item) => {
-              const isActive = pathname === item.path;
-              const Icon = item.icon;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavigation(item.path)}
-                  className="relative flex flex-col items-center gap-1 rounded-[20px] py-2.5 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 dark:focus-visible:ring-blue-400/50 touch-manipulation overflow-hidden group"
-                  aria-label={item.label}
-                  aria-current={isActive ? "page" : undefined}
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavigation(item.path)}
+                className="flex flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs font-medium uppercase tracking-[0.2em] text-slate-400 transition hover:text-white active:scale-95"
+                aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 ${
+                    isActive ? "bg-white/10 text-water-accent shadow-glow" : "bg-white/5"
+                  }`}
                 >
-                  {/* Active Background */}
-                  {isActive && (
-                    <motion.span
-                      layoutId="navHighlight"
-                      className="absolute inset-0 rounded-[20px] bg-gradient-to-br from-blue-500/10 to-blue-600/15 dark:from-blue-400/15 dark:to-blue-500/20"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className={isActive ? "text-water-accent" : ""}>{item.label}</span>
+              </button>
+            );
+          })}
 
-                  {/* Ripple Effect on Press */}
-                  <motion.span
-                    className="absolute inset-0 bg-slate-200 dark:bg-slate-700 rounded-[20px]"
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileTap={{ opacity: 0.2, scale: 1.5 }}
-                    transition={{ duration: 0.3 }}
-                  />
-
-                  {/* Icon */}
-                  <motion.span
-                    className={`relative z-10 flex items-center justify-center ${
-                      isActive
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-slate-600 dark:text-slate-400"
-                    }`}
-                    animate={{ scale: isActive ? 1.1 : 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
-                  </motion.span>
-
-                  {/* Label */}
-                  <span
-                    className={`relative z-10 transition-all ${
-                      isActive
-                        ? "text-blue-600 dark:text-blue-400 font-semibold"
-                        : "text-slate-600 dark:text-slate-400 opacity-90"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-
-                  {/* Active Indicator Dot */}
-                  {isActive && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full z-10"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {scanItem && (
+            <button
+              onClick={() => handleNavigation(scanItem.path)}
+              className="absolute inset-x-0 -top-10 mx-auto flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-ocean-dark bg-gradient-to-br from-water-primary to-water-accent text-white shadow-[0_20px_40px_rgba(8,47,73,0.4)] transition active:scale-90"
+              aria-label={scanItem.label}
+            >
+              <scanItem.icon className="h-7 w-7" strokeWidth={2.4} />
+            </button>
+          )}
         </div>
       </div>
     </nav>

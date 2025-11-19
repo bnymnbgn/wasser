@@ -81,6 +81,13 @@ module.exports = {
         // Provide flattened tokens to match the utility classes used in the app
         ...materialLightColors,
         ...materialDarkColors,
+        'ocean-dark': '#0B1120',
+        'ocean-card': '#151F32',
+        'water-primary': '#0EA5E9',
+        'water-accent': '#38BDF8',
+        'status-good': '#10B981',
+        'status-warning': '#F59E0B',
+        'status-bad': '#EF4444',
         // Keep structured palettes for potential future theming logic
         md: {
           primary: {
@@ -242,6 +249,8 @@ module.exports = {
         'elevation-3': '0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3)',
         'elevation-4': '0px 6px 10px 4px rgba(0, 0, 0, 0.15), 0px 2px 3px rgba(0, 0, 0, 0.3)',
         'elevation-5': '0px 8px 12px 6px rgba(0, 0, 0, 0.15), 0px 4px 4px rgba(0, 0, 0, 0.3)',
+        'glow': '0 0 20px -5px rgba(14, 165, 233, 0.3)',
+        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
       },
       // Mobile-optimized border radius
       borderRadius: {
