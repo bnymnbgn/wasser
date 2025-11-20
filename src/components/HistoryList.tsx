@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Flame, LineChart, Star, Trash2, Share2, RefreshCw, Filter, Calendar, Search, ChevronDown, Edit3, Target, Sparkles } from 'lucide-react';
+import { Flame, LineChart, Star, Trash2, Share2, RefreshCw, Filter, Calendar, Search, ChevronDown, Edit3, Target, Sparkles, Check } from 'lucide-react';
 import { WaterScoreCard } from './WaterScoreCard';
 import type { ScanResult, ProfileType } from '@/src/domain/types';
 import { hapticLight } from '@/lib/capacitor';
@@ -202,9 +202,9 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
             exit={{ y: 50, opacity: 0 }}
             className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40"
           >
-            <div className="rounded-full bg-slate-900 text-white px-4 py-2 shadow-2xl flex items-center gap-3 text-sm">
+            <div className="rounded-full bg-slate-900 text-ocean-primary px-4 py-2 shadow-2xl flex items-center gap-3 text-sm">
               Scan entfernt
-              <button onClick={undoDelete} className="text-emerald-300 font-semibold">
+              <button onClick={undoDelete} className="ocean-success font-semibold">
                 Rückgängig
               </button>
             </div>
@@ -243,7 +243,7 @@ function StatsHeader({ stats }: { stats: ReturnType<typeof buildStats> }) {
         description={`${stats.thisWeek} diese Woche`}
       />
       <StatCard
-        icon={<Sparkles className="w-5 h-5 text-status-good" />}
+        icon={<Sparkles className="w-5 h-5 ocean-success" />}
         label="Durchschnitt"
         value={`${stats.avgScore ?? '–'}`}
         description={`Letzte 5: ${stats.lastScores.join(' · ') || '–'}`}
@@ -255,7 +255,7 @@ function StatsHeader({ stats }: { stats: ReturnType<typeof buildStats> }) {
         description={`${stats.topCount} Scans`}
       />
       <StatCard
-        icon={<Flame className="w-5 h-5 text-status-warning" />}
+        icon={<Flame className="w-5 h-5 ocean-warning" />}
         label="Streak"
         value={`${stats.streak} Tage`}
         description={stats.streak > 0 ? 'Dranbleiben!' : 'Heute starten'}
@@ -276,13 +276,13 @@ function StatCard({
   description: string;
 }) {
   return (
-    <div className="glass-panel p-4 text-white">
-      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+    <div className="ocean-card p-4 text-ocean-primary">
+      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-ocean-secondary">
         {icon}
         {label}
       </div>
-      <div className="text-2xl font-semibold text-white">{value}</div>
-      <div className="mt-1 text-xs text-white/60">{description}</div>
+      <div className="text-2xl font-semibold text-ocean-primary">{value}</div>
+      <div className="mt-1 text-xs text-ocean-tertiary">{description}</div>
     </div>
   );
 }
@@ -311,8 +311,8 @@ function FilterToolbar({
   setSearchTerm: (value: string) => void;
 }) {
   return (
-    <div className="glass-panel space-y-4 text-white">
-      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+    <div className="ocean-panel p-5 space-y-4 text-ocean-primary">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-ocean-secondary">
         <FilterChip
           icon={<Filter className="w-3.5 h-3.5" />}
           label="Alle"
@@ -329,7 +329,7 @@ function FilterToolbar({
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-ocean-secondary">
         <FilterChip
           label="Alle Zeiträume"
           active={dateFilter === 'all'}
@@ -347,7 +347,7 @@ function FilterToolbar({
         />
       </div>
 
-      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-ocean-secondary">
         <FilterChip label="Alle Scores" active={scoreFilter === 'all'} onClick={() => setScoreFilter('all')} />
         <FilterChip label="90+" active={scoreFilter === 'high'} onClick={() => setScoreFilter('high')} />
         <FilterChip label="70 – 89" active={scoreFilter === 'mid'} onClick={() => setScoreFilter('mid')} />
@@ -356,27 +356,20 @@ function FilterToolbar({
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-tertiary" />
           <input
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Marke oder Produkt suchen"
-            className="w-full rounded-2xl border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm text-white placeholder-white/50 outline-none transition focus:border-water-accent/50 focus:ring-2 focus:ring-water-accent/30"
+            className="w-full rounded-2xl border border-ocean-border bg-ocean-surface py-2 pl-10 pr-4 text-sm text-ocean-primary placeholder-ocean-tertiary outline-none transition focus:border-water-accent/50 focus:ring-2 focus:ring-water-accent/30"
           />
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
-          Sortierung:
-          <select
+        <div className="md:ml-auto">
+          <CustomSortDropdown
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="rounded-2xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-water-primary/60"
-          >
-            <option value="newest">Neueste</option>
-            <option value="best">Beste Scores</option>
-            <option value="worst">Niedrigste Scores</option>
-            <option value="brand">Marke A–Z</option>
-          </select>
+            onChange={setSortBy}
+          />
         </div>
       </div>
     </div>
@@ -399,10 +392,10 @@ function FilterChip({
       type="button"
       onClick={onClick}
       className={clsx(
-        'flex items-center gap-1 rounded-full px-3 py-1 text-[11px] tracking-[0.2em] transition',
+        'flex items-center gap-1 rounded-full px-2 py-1 text-[10px] tracking-[0.1em] transition flex-shrink-0',
         active
-          ? 'border-water-accent/60 bg-gradient-to-r from-water-primary/40 to-water-accent/30 text-white shadow-glow'
-          : 'border-white/15 bg-white/5 text-white/70 hover:border-water-accent/40'
+          ? 'border-water-accent/60 bg-gradient-to-r from-water-primary/40 to-water-accent/30 text-ocean-primary shadow-glow'
+          : 'border-ocean-border bg-ocean-surface text-ocean-secondary hover:border-water-accent/40'
       )}
     >
       {icon}
@@ -423,32 +416,32 @@ function HistoryCard({
   isFavorite: boolean;
 }) {
   return (
-    <motion.div layout className="glass-panel text-white">
+    <motion.div layout className="ocean-card text-ocean-primary">
       <button onClick={onToggleExpand} className="w-full space-y-3 p-4 text-left">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-xs text-white/60">{formatDate(new Date(scan.timestamp))}</div>
-            <div className="text-sm font-semibold text-white">
+            <div className="text-xs text-ocean-tertiary">{formatDate(new Date(scan.timestamp))}</div>
+            <div className="text-sm font-semibold text-ocean-primary">
               {scan.productInfo?.brand ?? (scan.barcode ? 'Unbekannte Marke' : 'OCR Scan')}
               {scan.productInfo?.productName ? ` · ${scan.productInfo.productName}` : ''}
             </div>
-            <div className="text-xs text-white/50">
+            <div className="text-xs text-ocean-tertiary">
               {scan.barcode ? `Barcode: ${scan.barcode}` : 'Etikett-Analyse'}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isFavorite && <Star className="h-4 w-4 text-status-warning drop-shadow" />}
+            {isFavorite && <Star className="h-4 w-4 ocean-warning drop-shadow" />}
             <div className={clsx('rounded-full px-3 py-1 text-xs font-semibold', scoreColor(scan.score))}>
               {scan.score?.toFixed(0) ?? '–'}
             </div>
             <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
-              <ChevronDown className="h-4 w-4 text-white/50" />
+              <ChevronDown className="h-4 w-4 text-ocean-tertiary" />
             </motion.div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 text-[11px] text-white/70">
-          <span className="rounded-full bg-white/10 px-2 py-0.5">{scan.profile}</span>
-          <span className="rounded-full bg-white/10 px-2 py-0.5">{scoreLabel(scan.score)}</span>
+        <div className="flex flex-wrap gap-2 text-[11px] text-ocean-secondary">
+          <span className="rounded-full bg-ocean-surface-elevated px-2 py-0.5">{scan.profile}</span>
+          <span className="rounded-full bg-ocean-surface-elevated px-2 py-0.5">{scoreLabel(scan.score)}</span>
         </div>
       </button>
       <AnimatePresence>
@@ -457,7 +450,7 @@ function HistoryCard({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-white/10"
+            className="border-t border-ocean-border"
           >
             <div className="p-4">
               <WaterScoreCard scanResult={scan} />
@@ -524,8 +517,8 @@ function SwipeableRow({
     <div className="relative touch-pan-y select-none">
       <div
         className={clsx(
-          'absolute inset-0 flex items-center justify-between rounded-3xl px-4 text-sm font-semibold text-white',
-          offset > 0 ? 'bg-status-warning/80' : 'bg-status-bad/80'
+          'absolute inset-0 flex items-center justify-between rounded-3xl px-4 text-sm font-semibold text-ocean-primary',
+          offset > 0 ? 'ocean-warning-bg' : 'ocean-error-bg'
         )}
       >
         <div className="flex items-center gap-2">
@@ -575,7 +568,7 @@ function ContextMenu({
   return (
     <div className="fixed inset-0 z-50" onClick={onClose}>
       <div
-        className="absolute w-60 rounded-2xl border border-white/10 bg-ocean-card/95 p-2 text-white shadow-glass backdrop-blur-xl"
+        className="absolute w-60 rounded-2xl border border-ocean-border bg-ocean-card/95 p-2 text-ocean-primary shadow-glass backdrop-blur-xl"
         style={{ top: context.y, left: context.x }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -589,13 +582,13 @@ function ContextMenu({
           Erneut scannen
         </ContextButton>
         <div className="px-3 py-2">
-          <div className="mb-2 text-xs text-white/70">Mit anderem Profil bewerten</div>
+          <div className="mb-2 text-xs text-ocean-secondary">Mit anderem Profil bewerten</div>
           <div className="flex flex-wrap gap-2">
             {Object.keys(PROFILE_LABELS).map((key) => (
               <button
                 key={key}
                 onClick={() => onProfileSwitch(key as ProfileType)}
-                className="rounded-full bg-white/10 px-2 py-1 text-xs text-white hover:bg-water-primary/30"
+                className="rounded-full bg-ocean-surface-elevated px-2 py-1 text-xs text-ocean-primary hover:bg-water-primary/30"
               >
                 {PROFILE_LABELS[key as ProfileType]}
               </button>
@@ -617,7 +610,7 @@ function ContextButton({ icon, children, onClick }: { icon: ReactNode; children:
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-white transition hover:bg-white/10"
+      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-ocean-primary transition hover:bg-ocean-surface-elevated"
     >
       {icon}
       {children}
@@ -628,14 +621,14 @@ function ContextButton({ icon, children, onClick }: { icon: ReactNode; children:
 function DetailDialog({ scan, onClose }: { scan: ScanResult; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur" onClick={onClose}>
-      <div className="glass-panel max-h-[90vh] w-full max-w-lg overflow-y-auto p-4 text-white" onClick={(e) => e.stopPropagation()}>
+      <div className="ocean-panel-strong max-h-[90vh] w-full max-w-lg overflow-y-auto p-4 text-ocean-primary" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold">Details bearbeiten</h3>
-            <p className="text-sm text-white/70">Die Werte kannst du auf der Scan-Seite anpassen.</p>
+            <h3 className="text-lg font-semibold text-ocean-primary">Details bearbeiten</h3>
+            <p className="text-sm text-ocean-secondary">Die Werte kannst du auf der Scan-Seite anpassen.</p>
           </div>
-          <button className="rounded-full border border-white/10 p-2 hover:border-white/30" onClick={onClose}>
-            <ChevronDown className="h-5 w-5" />
+          <button className="rounded-full border border-ocean-border p-2 hover:border-ocean-border-focus" onClick={onClose}>
+            <ChevronDown className="h-5 w-5 text-ocean-primary" />
           </button>
         </div>
         <div className="mb-4">
@@ -654,7 +647,7 @@ function DetailDialog({ scan, onClose }: { scan: ScanResult; onClose: () => void
 
 function NoResults() {
   return (
-    <div className="glass-panel border border-dashed border-white/20 p-6 text-center text-sm text-white/70">
+    <div className="ocean-card border-ocean-border border-dashed p-6 text-center text-sm text-ocean-secondary">
       Keine Treffer für diese Filter. Passe Suche oder Filter an.
     </div>
   );
@@ -662,15 +655,15 @@ function NoResults() {
 
 function EmptyState() {
   return (
-    <div className="space-y-4 py-16 text-center text-white">
+    <div className="space-y-4 py-16 text-center text-ocean-primary">
       <div className="text-5xl">💧</div>
-      <h2 className="text-xl font-semibold">Noch keine Scans</h2>
-      <p className="mx-auto max-w-sm text-sm text-white/70">
+      <h2 className="text-xl font-semibold text-ocean-primary">Noch keine Scans</h2>
+      <p className="mx-auto max-w-sm text-sm text-ocean-secondary">
         Starte jetzt mit deinem ersten Scan und entdecke, wie dein Wasser abschneidet.
       </p>
       <Link
         href="/scan"
-        className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-water-primary to-water-accent px-6 py-3 font-semibold text-white shadow-glow"
+        className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-water-primary to-water-accent px-6 py-3 font-semibold text-ocean-primary shadow-glow"
       >
         Scan starten
       </Link>
@@ -790,10 +783,89 @@ function scoreLabel(score: number | undefined) {
 }
 
 function scoreColor(score: number | undefined) {
-  if (score == null) return 'bg-white/10 text-white/70';
-  if (score >= 80) return 'bg-status-good/15 text-status-good';
-  if (score >= 50) return 'bg-status-warning/15 text-status-warning';
-  return 'bg-status-bad/15 text-status-bad';
+  if (score == null) return 'ocean-surface-elevated text-ocean-tertiary';
+  if (score >= 80) return 'ocean-success-bg ocean-success';
+  if (score >= 50) return 'ocean-warning-bg ocean-warning';
+  return 'ocean-error-bg ocean-error';
+}
+
+function CustomSortDropdown({
+  value,
+  onChange,
+}: {
+  value: SortOption;
+  onChange: (value: SortOption) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const sortOptions = [
+    { value: 'newest', label: 'Neueste', icon: Calendar },
+    { value: 'best', label: 'Beste Scores', icon: Sparkles },
+    { value: 'worst', label: 'Niedrigste Scores', icon: Target },
+    { value: 'brand', label: 'Marke A–Z', icon: Search },
+  ];
+
+  const currentOption = sortOptions.find(option => option.value === value);
+
+  return (
+    <div className="flex items-center justify-center gap-2 text-xs font-semibold text-ocean-secondary">
+      <span>Sortierung:</span>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-2 rounded-2xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-primary outline-none transition hover:border-ocean-border-strong focus:border-ocean-primary/60"
+        >
+          {currentOption && <currentOption.icon className="w-4 h-4" />}
+          <span>{currentOption?.label}</span>
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-4 h-4 text-ocean-tertiary" />
+          </motion.div>
+        </button>
+
+        {isOpen && (
+          <div className="fixed top-0 left-0 w-full h-full z-[1000]" onClick={() => setIsOpen(false)}>
+            <div
+              className="absolute mt-2 w-48 overflow-hidden rounded-2xl border border-ocean-border ocean-panel-strong ocean-shadow-4"
+              style={{ right: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="py-2">
+                {sortOptions.map((option) => {
+                  const Icon = option.icon;
+                  const isActive = option.value === value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(option.value);
+                        setIsOpen(false);
+                      }}
+                      className={clsx(
+                        'flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition',
+                        isActive
+                          ? 'bg-ocean-primary/20 text-ocean-primary'
+                          : 'text-ocean-secondary hover:bg-ocean-surface-elevated hover:text-ocean-primary'
+                      )}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="flex-1">{option.label}</span>
+                      {isActive && <Check className="w-4 h-4 text-ocean-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function formatDate(date: Date) {

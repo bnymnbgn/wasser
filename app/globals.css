@@ -2,31 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Root CSS Variables for Material Design 3 */
+/* Ocean Dark Glassmorphism Design System */
 :root {
-  /* Light theme colors */
-  --md-primary: #006494;
-  --md-primary-light: #4A9FD4;
-  --md-primary-container: #C2E7FF;
-  --md-on-primary: #FFFFFF;
-  --md-on-primary-container: #001E2E;
+  /* Ocean Dark Theme - Primary Colors */
+  --ocean-primary: #0EA5E9;
+  --ocean-primary-light: #38BDF8;
+  --ocean-primary-dark: #0284C7;
+  --ocean-accent: #38BDF8;
+  --ocean-accent-light: #7DD3FC;
 
-  --md-secondary: #10B981;
-  --md-secondary-container: #D1FAE5;
-  --md-on-secondary: #FFFFFF;
-  --md-on-secondary-container: #022C22;
+  /* Ocean Surfaces */
+  --ocean-background: #0B1120;
+  --ocean-surface: #151F32;
+  --ocean-surface-elevated: #1E2A3D;
+  --ocean-surface-hover: #1A2840;
+  --ocean-glass: rgba(21, 31, 50, 0.6);
+  --ocean-glass-strong: rgba(21, 31, 50, 0.9);
 
-  --md-surface: #F8FAFC;
-  --md-surface-container: #EFF6FF;
-  --md-on-surface: #1E293B;
-  --md-on-surface-variant: #475569;
+  /* Text Colors */
+  --ocean-text-primary: #FFFFFF;
+  --ocean-text-secondary: #CBD5E1;
+  --ocean-text-tertiary: #94A3B8;
+  --ocean-text-muted: #64748B;
 
-  --md-background: #FFFFFF;
-  --md-on-background: #1E293B;
+  /* Status Colors */
+  --ocean-success: #10B981;
+  --ocean-success-bg: rgba(16, 185, 129, 0.1);
+  --ocean-warning: #F59E0B;
+  --ocean-warning-bg: rgba(245, 158, 11, 0.1);
+  --ocean-error: #EF4444;
+  --ocean-error-bg: rgba(239, 68, 68, 0.1);
+  --ocean-info: #3B82F6;
+  --ocean-info-bg: rgba(59, 130, 246, 0.1);
 
-  --md-error: #EF4444;
-  --md-error-container: #FEE2E2;
-  --md-on-error: #FFFFFF;
+  /* Border & Effects */
+  --ocean-border: rgba(255, 255, 255, 0.1);
+  --ocean-border-strong: rgba(255, 255, 255, 0.2);
+  --ocean-glow: rgba(14, 165, 233, 0.3);
+  --ocean-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --ocean-shadow-strong: 0 16px 64px 0 rgba(31, 38, 135, 0.5);
 
   /* Safe area insets */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
@@ -38,36 +52,40 @@
   --bottom-nav-height: 64px;
   --top-bar-height: 56px;
   --page-max-width: 672px;
+
+  /* Border Radius */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
 }
 
-/* Dark theme colors */
-.dark {
-  --md-primary: #80CAFF;
-  --md-primary-container: #004A77;
-  --md-on-primary: #003551;
-  --md-on-primary-container: #C2E7FF;
+/* Light theme support (optional) */
+.light {
+  /* Light theme variants for ocean colors */
+  --ocean-background: #F8FAFC;
+  --ocean-surface: #FFFFFF;
+  --ocean-surface-elevated: #F1F5F9;
+  --ocean-surface-hover: #EFF6FF;
+  --ocean-glass: rgba(255, 255, 255, 0.8);
+  --ocean-glass-strong: rgba(255, 255, 255, 0.95);
 
-  --md-secondary: #6EE7B7;
-  --md-secondary-container: #047857;
-  --md-on-secondary: #065F46;
-  --md-on-secondary-container: #D1FAE5;
+  --ocean-text-primary: #1E293B;
+  --ocean-text-secondary: #475569;
+  --ocean-text-tertiary: #64748B;
+  --ocean-text-muted: #94A3B8;
 
-  --md-surface: #0F172A;
-  --md-surface-container: #1E293B;
-  --md-on-surface: #E2E8F0;
-  --md-on-surface-variant: #94A3B8;
-
-  --md-background: #0F172A;
-  --md-on-background: #E2E8F0;
-
-  --md-error: #F87171;
-  --md-error-container: #7F1D1D;
-  --md-on-error: #450A0A;
+  --ocean-border: rgba(0, 0, 0, 0.1);
+  --ocean-border-strong: rgba(0, 0, 0, 0.2);
+  --ocean-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  --ocean-shadow-strong: 0 16px 64px 0 rgba(0, 0, 0, 0.15);
 }
 
 /* Base styles */
 html, body {
-  @apply bg-md-background text-md-onBackground dark:bg-md-dark-background dark:text-md-dark-onBackground;
+  background-color: var(--ocean-background);
+  color: var(--ocean-text-primary);
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -76,12 +94,12 @@ html, body {
 
 body {
   font-family: 'Inter', 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--md-background);
+  background: var(--ocean-background);
 }
 
 ::selection {
-  background: rgba(16, 185, 129, 0.25);
-  color: var(--md-on-background);
+  background: var(--ocean-primary);
+  color: var(--ocean-text-primary);
 }
 
 /* Mobile optimizations */
@@ -129,43 +147,120 @@ body {
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Material Design elevation */
-  .elevation-1 {
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  /* Ocean Dark Glassmorphism Components */
+  .ocean-panel {
+    background: var(--ocean-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--ocean-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--ocean-shadow);
   }
 
-  .elevation-2 {
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  .ocean-panel-strong {
+    background: var(--ocean-glass-strong);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--ocean-border-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--ocean-shadow-strong);
   }
 
-  .elevation-3 {
-    box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3);
+  .ocean-card {
+    background: var(--ocean-surface);
+    border: 1px solid var(--ocean-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--ocean-shadow);
   }
 
-  /* Scrollbar styling */
+  .ocean-card-elevated {
+    background: var(--ocean-surface-elevated);
+    border: 1px solid var(--ocean-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--ocean-shadow-strong);
+  }
+
+  .ocean-button {
+    background: var(--ocean-primary);
+    color: var(--ocean-text-primary);
+    border: 1px solid var(--ocean-primary);
+    border-radius: var(--radius-full);
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+  }
+
+  .ocean-button:hover {
+    background: var(--ocean-primary-light);
+    box-shadow: 0 0 30px rgba(14, 165, 233, 0.5);
+  }
+
+  .ocean-button-ghost {
+    background: transparent;
+    color: var(--ocean-text-secondary);
+    border: 1px solid var(--ocean-border);
+    border-radius: var(--radius-full);
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .ocean-button-ghost:hover {
+    background: var(--ocean-surface-hover);
+    color: var(--ocean-text-primary);
+    border-color: var(--ocean-border-strong);
+  }
+
+  /* Ocean elevation system */
+  .ocean-elevation-1 {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .ocean-elevation-2 {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .ocean-elevation-3 {
+    box-shadow: var(--ocean-shadow);
+  }
+
+  .ocean-elevation-4 {
+    box-shadow: var(--ocean-shadow-strong);
+  }
+
+  /* Ocean Scrollbar styling */
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-md-surface dark:bg-md-dark-surface;
+    background: var(--ocean-surface);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-md-primary/30 dark:bg-md-dark-primary/30 rounded-full;
+    background: var(--ocean-primary);
+    opacity: 0.3;
+    border-radius: var(--radius-full);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-md-primary/50 dark:bg-md-dark-primary/50;
+    background: var(--ocean-primary);
+    opacity: 0.5;
   }
 
-  .bg-surface-gradient {
-    background-image: radial-gradient(circle at 25% 25%, rgba(16, 185, 129, 0.12), transparent 45%), radial-gradient(circle at 80% 0%, rgba(0, 100, 148, 0.15), transparent 40%);
+  /* Ocean background gradients */
+  .ocean-surface-gradient {
+    background-image:
+      radial-gradient(circle at 25% 25%, var(--ocean-primary) 0%, transparent 45%),
+      radial-gradient(circle at 80% 0%, var(--ocean-accent) 0%, transparent 40%);
   }
 
-  .grid-overlay {
-    background-image: linear-gradient(transparent 94%, rgba(15, 23, 42, 0.08) 95%), linear-gradient(90deg, transparent 94%, rgba(15, 23, 42, 0.08) 95%);
+  .ocean-grid-overlay {
+    background-image:
+      linear-gradient(transparent 94%, var(--ocean-border) 95%),
+      linear-gradient(90deg, transparent 94%, var(--ocean-border) 95%);
     background-size: 40px 40px;
     opacity: 0.12;
   }
@@ -173,6 +268,22 @@ body {
   .safe-area-bottom-pad {
     padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
   }
+
+  /* Ocean text colors */
+  .text-ocean-primary { color: var(--ocean-text-primary); }
+  .text-ocean-secondary { color: var(--ocean-text-secondary); }
+  .text-ocean-tertiary { color: var(--ocean-text-tertiary); }
+  .text-ocean-muted { color: var(--ocean-text-muted); }
+
+  /* Ocean status utilities */
+  .ocean-success { color: var(--ocean-success); }
+  .ocean-success-bg { background: var(--ocean-success-bg); }
+  .ocean-warning { color: var(--ocean-warning); }
+  .ocean-warning-bg { background: var(--ocean-warning-bg); }
+  .ocean-error { color: var(--ocean-error); }
+  .ocean-error-bg { background: var(--ocean-error-bg); }
+  .ocean-info { color: var(--ocean-info); }
+  .ocean-info-bg { background: var(--ocean-info-bg); }
 }
 
 /* Typography system */
@@ -181,80 +292,92 @@ body {
   .text-display {
     @apply text-5xl md:text-6xl font-bold leading-tight tracking-tight;
     letter-spacing: -0.02em;
+    color: var(--ocean-text-primary);
   }
 
   /* Headline - Section headers */
   .text-headline {
     @apply text-3xl md:text-4xl font-semibold leading-tight;
+    color: var(--ocean-text-primary);
   }
 
   /* Title - Card headers */
   .text-title {
     @apply text-2xl font-semibold leading-snug;
+    color: var(--ocean-text-primary);
   }
 
   /* Body Large - Emphasized content */
   .text-body-large {
     @apply text-lg font-normal leading-relaxed;
+    color: var(--ocean-text-secondary);
   }
 
   /* Body - Default text */
   .text-body {
     @apply text-base font-normal leading-relaxed;
+    color: var(--ocean-text-secondary);
   }
 
   /* Label - Buttons and form labels */
   .text-label {
     @apply text-sm font-medium leading-tight tracking-wide uppercase;
+    color: var(--ocean-text-tertiary);
   }
 
   /* Caption - Secondary info */
   .text-caption {
     @apply text-xs font-normal leading-tight;
-    color: var(--md-onSurface-variant);
+    color: var(--ocean-text-muted);
   }
 
-  /* FAB (Floating Action Button) */
+  /* Ocean FAB (Floating Action Button) */
   .fab {
-    @apply fixed z-50 w-16 h-16 rounded-full shadow-elevation-3 flex items-center justify-center;
-    @apply bg-md-primary text-md-onPrimary dark:bg-md-dark-primary dark:text-white;
-    @apply transition-all active:scale-95 hover:shadow-elevation-4;
+    @apply fixed z-50 w-16 h-16 rounded-full flex items-center justify-center;
+    background: var(--ocean-primary);
+    color: var(--ocean-text-primary);
+    border: 1px solid var(--ocean-primary);
+    box-shadow: 0 0 30px var(--ocean-glow);
+    transition: all 0.2s ease;
     bottom: calc(var(--bottom-nav-height) + 24px);
     right: 24px;
   }
 
-  /* Bottom sheet */
+  .fab:hover {
+    background: var(--ocean-primary-light);
+    box-shadow: 0 0 40px var(--ocean-glow);
+    transform: scale(1.05);
+  }
+
+  .fab:active {
+    transform: scale(0.95);
+  }
+
+  /* Ocean Bottom sheet */
   .bottom-sheet {
-    @apply fixed inset-x-0 bottom-0 z-50 rounded-t-[32px];
-    @apply bg-md-surface dark:bg-md-dark-surface;
-    @apply shadow-elevation-5;
+    @apply fixed inset-x-0 bottom-0 z-50;
+    background: var(--ocean-glass-strong);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--ocean-border-strong);
+    border-top-left-radius: var(--radius-xl);
+    border-top-right-radius: var(--radius-xl);
+    box-shadow: var(--ocean-shadow-strong);
     max-height: 90vh;
   }
 
-  /* Card with Material Design elevation */
-  .md-card {
-    @apply rounded-3xl bg-md-surface-container dark:bg-md-dark-surface-container;
-    @apply border border-md-surface-containerHigh/20 dark:border-md-dark-surface-containerHigh/20;
-    @apply shadow-elevation-1;
-  }
-
-  /* Modern card with better styling */
-  .modern-card {
-    @apply rounded-[28px] bg-white dark:bg-slate-900;
-    @apply border border-slate-200/60 dark:border-slate-700/60;
-    @apply shadow-lg shadow-slate-900/5 dark:shadow-slate-950/20;
-    @apply transition-all duration-200;
-  }
-
-  .modern-card:hover {
-    @apply shadow-xl shadow-slate-900/10 dark:shadow-slate-950/30;
-    @apply border-slate-300/80 dark:border-slate-600/80;
-  }
-
-  /* Glassmorphic card used for the Deep Ocean UI */
+  /* Legacy classes - mapped to ocean system */
   .glass-panel {
-    @apply rounded-[30px] border border-white/10 bg-white/5;
-    @apply shadow-glass backdrop-blur-2xl;
+    @apply ocean-panel;
+  }
+
+  .md-card, .modern-card {
+    @apply ocean-card;
+  }
+
+  .md-card:hover, .modern-card:hover {
+    @apply ocean-card-elevated;
+    border-color: var(--ocean-border-strong);
   }
 
   /* Touch-friendly button */

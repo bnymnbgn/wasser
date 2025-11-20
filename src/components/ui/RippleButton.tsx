@@ -51,9 +51,9 @@ export function RippleButton({
   };
 
   const variantClasses = {
-    primary: "bg-md-primary dark:bg-md-dark-primary text-white shadow-elevation-2 active:shadow-elevation-1",
-    secondary: "bg-md-surface-container dark:bg-md-dark-surface-container text-md-primary dark:text-md-dark-primary border border-md-primary/20 dark:border-md-dark-primary/20",
-    ghost: "bg-transparent text-md-primary dark:text-md-dark-primary hover:bg-md-primary/10 dark:hover:bg-md-dark-primary/10",
+    primary: "ocean-button text-ocean-primary shadow-ocean-glow active:shadow-ocean-1",
+    secondary: "ocean-card text-ocean-primary border border-ocean-border hover:ocean-card-elevated",
+    ghost: "bg-transparent text-ocean-primary hover:ocean-surface-hover border border-ocean-border",
   };
 
   const sizeClasses = {
@@ -82,7 +82,7 @@ export function RippleButton({
         {ripples.map((ripple) => (
           <motion.span
             key={ripple.id}
-            className="absolute w-1 h-1 bg-white/30 rounded-full pointer-events-none"
+            className="absolute w-1 h-1 bg-ocean-text-primary/20 rounded-full pointer-events-none"
             style={{
               left: ripple.x,
               top: ripple.y,

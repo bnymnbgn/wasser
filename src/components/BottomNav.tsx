@@ -53,7 +53,7 @@ export default function BottomNav() {
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-4 z-40 pb-safe-bottom">
       <div className="mx-auto w-full max-w-xl px-4">
-        <div className="pointer-events-auto relative flex items-center justify-between rounded-[32px] border border-white/15 bg-ocean-card/90 px-4 py-3 shadow-glass backdrop-blur-2xl">
+        <div className="pointer-events-auto relative flex items-center justify-between rounded-ocean-xl border border-ocean-border ocean-panel-strong px-4 py-3 ocean-shadow-4">
           {staticItems.map((item) => {
             const isActive = pathname === item.path;
             const Icon = item.icon;
@@ -62,18 +62,18 @@ export default function BottomNav() {
               <button
                 key={item.id}
                 onClick={() => handleNavigation(item.path)}
-                className="flex flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs font-medium uppercase tracking-[0.2em] text-slate-400 transition hover:text-white active:scale-95"
+                className="flex flex-col items-center gap-1 rounded-ocean-lg px-3 py-2 text-xs font-medium uppercase tracking-[0.2em] text-ocean-tertiary transition hover:text-ocean-primary active:scale-95"
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
               >
                 <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 ${
-                    isActive ? "bg-white/10 text-water-accent shadow-glow" : "bg-white/5"
+                  className={`flex h-10 w-10 items-center justify-center rounded-ocean-lg border border-ocean-border ${
+                    isActive ? "ocean-surface-elevated text-ocean-accent ocean-glow" : "ocean-surface"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
                 </span>
-                <span className={isActive ? "text-water-accent" : ""}>{item.label}</span>
+                <span className={isActive ? "text-ocean-accent" : ""}>{item.label}</span>
               </button>
             );
           })}
@@ -81,7 +81,7 @@ export default function BottomNav() {
           {scanItem && (
             <button
               onClick={() => handleNavigation(scanItem.path)}
-              className="absolute inset-x-0 -top-10 mx-auto flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-ocean-dark bg-gradient-to-br from-water-primary to-water-accent text-white shadow-[0_20px_40px_rgba(8,47,73,0.4)] transition active:scale-90"
+              className="absolute inset-x-0 -top-10 mx-auto flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-ocean-dark bg-gradient-to-br from-ocean-primary to-ocean-accent text-white shadow-ocean-glow transition active:scale-90"
               aria-label={scanItem.label}
             >
               <scanItem.icon className="h-7 w-7" strokeWidth={2.4} />

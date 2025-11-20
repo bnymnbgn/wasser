@@ -175,7 +175,7 @@ export function WaterScoreCard({ scanResult }: Props) {
   return (
     <div className="space-y-6">
       {/* Hero Score Section */}
-      <div className="flex flex-col items-center py-6 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-950 rounded-[32px] border border-slate-200/60 dark:border-slate-700/60">
+      <div className="flex flex-col items-center py-6 ocean-panel-strong rounded-ocean-xl">
         <CircularProgress
           value={score ?? 0}
           size={180}
@@ -186,23 +186,23 @@ export function WaterScoreCard({ scanResult }: Props) {
         />
 
         <div className="text-center space-y-2">
-          <div className={`badge ${
-            scoreColor === "success" ? "badge-success" :
-            scoreColor === "warning" ? "badge-warning" :
-            "badge-error"
+          <div className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ocean-success-bg ocean-success ${
+            scoreColor === "success" ? "" :
+            scoreColor === "warning" ? "ocean-warning-bg ocean-warning" :
+            "ocean-error-bg ocean-error"
           }`}>
             {scoreLabel(score)}
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Profil: <span className="font-medium">{profile}</span>
+          <p className="text-sm text-ocean-secondary">
+            Profil: <span className="font-medium text-ocean-primary">{profile}</span>
           </p>
           <button
             type="button"
             onClick={handleComparisonToggle}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition ${
               isInComparison
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-800"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800"
+                ? "ocean-success-bg ocean-success border border-ocean-success/50"
+                : "ocean-card text-ocean-secondary border border-ocean-border hover:ocean-card-elevated"
             }`}
           >
             <Columns className="w-4 h-4" />
@@ -212,22 +212,22 @@ export function WaterScoreCard({ scanResult }: Props) {
       </div>
 
       {metricInsights.length > 0 && (
-        <div className="modern-card p-4 space-y-4 border border-blue-100/60 dark:border-blue-900/40">
+        <div className="ocean-card p-4 space-y-4 border border-ocean-primary/30">
           <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+            <p className="text-sm font-semibold text-ocean-primary">
               Warum {score?.toFixed(0) ?? "–"} Punkte?
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-ocean-tertiary">
               Gewichtete Faktoren für das gewählte Profil
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase text-emerald-600 dark:text-emerald-300">
+              <p className="mb-2 text-xs font-semibold uppercase ocean-success">
                 Stärken
               </p>
               {positiveImpacts.length === 0 && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-ocean-tertiary">
                   Keine ausgeprägten Pluspunkte.
                 </p>
               )}
@@ -235,13 +235,13 @@ export function WaterScoreCard({ scanResult }: Props) {
                 {positiveImpacts.map((item) => (
                   <div
                     key={`positive-${item.metric}`}
-                    className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 dark:border-emerald-900/40 dark:bg-emerald-900/20"
+                    className="rounded-ocean-lg border border-ocean-success/50 ocean-success-bg p-3"
                   >
-                    <div className="flex items-center justify-between text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                    <div className="flex items-center justify-between text-sm font-semibold ocean-success">
                       <span>{item.label}</span>
                       <span>+{Math.round(item.impact)}</span>
                     </div>
-                    <p className="mt-1 text-xs text-emerald-900/80 dark:text-emerald-100/80">
+                    <p className="mt-1 text-xs text-ocean-secondary/90">
                       {item.explanation}
                     </p>
                   </div>
@@ -249,11 +249,11 @@ export function WaterScoreCard({ scanResult }: Props) {
               </div>
             </div>
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase text-amber-600 dark:text-amber-300">
+              <p className="mb-2 text-xs font-semibold uppercase ocean-warning">
                 Potenzial
               </p>
               {negativeImpacts.length === 0 && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-ocean-tertiary">
                   Aktuell keine auffälligen Schwächen.
                 </p>
               )}
@@ -261,13 +261,13 @@ export function WaterScoreCard({ scanResult }: Props) {
                 {negativeImpacts.map((item) => (
                   <div
                     key={`negative-${item.metric}`}
-                    className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3 dark:border-amber-900/40 dark:bg-amber-900/20"
+                    className="rounded-ocean-lg border border-ocean-warning/50 ocean-warning-bg p-3"
                   >
-                    <div className="flex items-center justify-between text-sm font-semibold text-amber-700 dark:text-amber-200">
+                    <div className="flex items-center justify-between text-sm font-semibold ocean-warning">
                       <span>{item.label}</span>
                       <span>-{Math.abs(Math.round(item.impact))}</span>
                     </div>
-                    <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-100/80">
+                    <p className="mt-1 text-xs text-ocean-secondary/90">
                       {item.explanation}
                     </p>
                   </div>
@@ -282,26 +282,26 @@ export function WaterScoreCard({ scanResult }: Props) {
 
       {/* Product Info */}
       {(productInfo || barcode) && (
-        <div className="modern-card p-4 space-y-2">
+        <div className="ocean-card p-4 space-y-2">
           <div className="flex items-center gap-2 mb-2">
-            <Droplet className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Produkt</h3>
+            <Droplet className="w-5 h-5 text-ocean-primary" />
+            <h3 className="font-semibold text-ocean-primary">Produkt</h3>
           </div>
           {productInfo && (
             <>
-              <p className="font-medium text-slate-900 dark:text-slate-100">
+              <p className="font-medium text-ocean-primary">
                 {productInfo.brand ?? "Unbekannte Marke"}
                 {productInfo.productName ? ` · ${productInfo.productName}` : ""}
               </p>
               {productInfo.origin && (
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-ocean-secondary">
                   Herkunft: {productInfo.origin}
                 </p>
               )}
             </>
           )}
           {barcode && (
-            <p className="text-xs font-mono text-slate-500 dark:text-slate-500">
+            <p className="text-xs font-mono text-ocean-muted">
               {barcode}
             </p>
           )}
@@ -310,28 +310,28 @@ export function WaterScoreCard({ scanResult }: Props) {
 
       {/* Profile Fit */}
       {activeProfileFit && (
-        <div className={`modern-card p-4 border-2 ${
-          activeProfileFit.status === "ideal" ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30" :
-          activeProfileFit.status === "ok" ? "border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30" :
-          "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/30"
+        <div className={`ocean-card p-4 border-2 ${
+          activeProfileFit.status === "ideal" ? "border-ocean-success/50 ocean-success-bg" :
+          activeProfileFit.status === "ok" ? "border-ocean-warning/50 ocean-warning-bg" :
+          "border-ocean-error/50 ocean-error-bg"
         }`}>
           <div className="flex items-start gap-3">
             {activeProfileFit.status === "ideal" ? (
-              <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+              <CheckCircle className="w-6 h-6 ocean-success flex-shrink-0" />
             ) : activeProfileFit.status === "avoid" ? (
-              <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0" />
+              <AlertCircle className="w-6 h-6 ocean-error flex-shrink-0" />
             ) : (
-              <Info className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <Info className="w-6 h-6 ocean-warning flex-shrink-0" />
             )}
             <div className="flex-1">
-              <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              <p className="font-semibold text-ocean-primary mb-1">
                 {activeProfileFit.status === "ideal" ? "Ideal" : activeProfileFit.status === "ok" ? "Geeignet" : "Nicht empfohlen"} für {profile}
               </p>
               {activeProfileFit.reasons.length > 0 && (
-                <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                <ul className="space-y-1 text-sm text-ocean-secondary">
                   {activeProfileFit.reasons.map((reason, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <span className="text-slate-400 dark:text-slate-600">•</span>
+                      <span className="text-ocean-tertiary">•</span>
                       <span>{reason}</span>
                     </li>
                   ))}
@@ -348,8 +348,8 @@ export function WaterScoreCard({ scanResult }: Props) {
         bufferCapacity !== undefined ||
         tasteBalance !== undefined ||
         sodiumPotassiumRatio !== undefined) && (
-        <div className="modern-card p-4 space-y-3">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+        <div className="ocean-card p-4 space-y-3">
+          <h3 className="font-semibold text-ocean-primary">
             Abgeleitete Kennzahlen
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -414,7 +414,7 @@ export function WaterScoreCard({ scanResult }: Props) {
 
       {/* Metric Chips - Horizontal Scroll */}
       <div className="space-y-3">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100 px-1">
+        <h3 className="font-semibold text-ocean-primary px-1">
           Mineralwerte
         </h3>
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory hide-scrollbar">
@@ -424,29 +424,27 @@ export function WaterScoreCard({ scanResult }: Props) {
             if (value == null) return null;
             const unit = field.unit ?? (metric === "ph" ? "" : " mg/L");
             const metricScore = metricScores?.[metric];
-            const chipColor = metricScore !== undefined && metricScore >= 80 ? "emerald" :
-                             metricScore !== undefined && metricScore >= 50 ? "amber" : "red";
+            const chipColor = metricScore !== undefined && metricScore >= 80 ? "ocean-success" :
+                             metricScore !== undefined && metricScore >= 50 ? "ocean-warning" : "ocean-error";
 
             return (
               <div
                 key={field.key}
-                className="snap-start flex-shrink-0 modern-card p-3 min-w-[140px] border-l-4"
+                className="snap-start flex-shrink-0 ocean-card p-3 min-w-[140px] border-l-4"
                 style={{
-                  borderLeftColor: `var(--${chipColor})`,
+                  borderLeftColor: chipColor.includes('success') ? 'var(--ocean-success)' :
+                                   chipColor.includes('warning') ? 'var(--ocean-warning)' :
+                                   'var(--ocean-error)',
                 }}
               >
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+                <p className="text-xs text-ocean-secondary mb-1">
                   {WATER_METRIC_LABELS[metric]}
                 </p>
-                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <p className="text-lg font-bold text-ocean-primary">
                   {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}{unit}
                 </p>
                 {metricScore !== undefined && (
-                  <p className={`text-xs font-medium ${
-                    chipColor === "emerald" ? "text-emerald-600 dark:text-emerald-400" :
-                    chipColor === "amber" ? "text-amber-600 dark:text-amber-400" :
-                    "text-red-600 dark:text-red-400"
-                  }`}>
+                  <p className={`text-xs font-medium ${chipColor}`}>
                     Score: {metricScore.toFixed(0)}/100
                   </p>
                 )}
@@ -458,8 +456,8 @@ export function WaterScoreCard({ scanResult }: Props) {
 
       {/* Badges */}
       {insights?.badges && insights.badges.length > 0 && (
-        <div className="modern-card p-4 space-y-3">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+        <div className="ocean-card p-4 space-y-3">
+          <h3 className="font-semibold text-ocean-primary">
             Kennzeichnungen
           </h3>
           <div className="space-y-3">
@@ -467,23 +465,23 @@ export function WaterScoreCard({ scanResult }: Props) {
               <div
                 key={badge.id}
                 className={`p-3 rounded-2xl border ${
-                  badge.tone === "positive" ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/50" :
-                  badge.tone === "warning" ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-800/50" :
-                  "bg-blue-50 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-800/50"
+                  badge.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
+                  badge.tone === "warning" ? "ocean-warning-bg border-ocean-warning/50" :
+                  "ocean-info-bg border-ocean-info/50"
                 }`}
               >
                 <div className="flex items-start gap-2 mb-2">
                   <span
                     className={`flex-shrink-0 px-2 py-1 rounded-md text-xs font-semibold ${
-                      badge.tone === "positive" ? "bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100" :
-                      badge.tone === "warning" ? "bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100" :
-                      "bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100"
+                      badge.tone === "positive" ? "ocean-success-bg ocean-success text-ocean-primary" :
+                      badge.tone === "warning" ? "ocean-warning-bg ocean-warning text-ocean-primary" :
+                      "ocean-info-bg ocean-info text-ocean-primary"
                     }`}
                   >
                     {badge.label}
                   </span>
                 </div>
-                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                <p className="text-sm text-ocean-secondary leading-relaxed">
                   <GlossaryText text={badge.description} />
                 </p>
               </div>
@@ -494,8 +492,8 @@ export function WaterScoreCard({ scanResult }: Props) {
 
       {/* Synergies */}
       {insights?.synergies && insights.synergies.length > 0 && (
-        <div className="modern-card p-4 space-y-3">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+        <div className="ocean-card p-4 space-y-3">
+          <h3 className="font-semibold text-ocean-primary">
             Gesundheitliche Hinweise
           </h3>
           <div className="space-y-2">
@@ -503,15 +501,15 @@ export function WaterScoreCard({ scanResult }: Props) {
               <div
                 key={item.id}
                 className={`p-3 rounded-2xl border ${
-                  item.tone === "positive" ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/50" :
-                  item.tone === "warning" ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-800/50" :
-                  "bg-blue-50 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-800/50"
+                  item.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
+                  item.tone === "warning" ? "ocean-warning-bg border-ocean-warning/50" :
+                  "ocean-info-bg border-ocean-info/50"
                 }`}
               >
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                <p className="text-sm font-semibold text-ocean-primary">
                   {item.title}
                 </p>
-                <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">
+                <p className="text-sm text-ocean-secondary mt-1">
                   <GlossaryText text={item.description} />
                 </p>
               </div>
@@ -522,14 +520,14 @@ export function WaterScoreCard({ scanResult }: Props) {
 
       {/* Warnings */}
       {warnings && warnings.length > 0 && (
-        <div className="modern-card p-4 border-2 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30">
+        <div className="ocean-card p-4 border-2 border-ocean-warning/50 ocean-warning-bg">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 ocean-warning flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+              <h3 className="font-semibold ocean-warning mb-2">
                 Warnungen
               </h3>
-              <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-200">
+              <ul className="space-y-1 text-sm text-ocean-secondary">
                 {warnings.map((warning, idx) => (
                   <li key={idx}>{warning}</li>
                 ))}
@@ -541,36 +539,36 @@ export function WaterScoreCard({ scanResult }: Props) {
 
       {/* Expandable Scoring Details */}
       {metricDetails && metricDetails.length > 0 && (
-        <div className="modern-card overflow-hidden">
+        <div className="ocean-card overflow-hidden">
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"
+            className="w-full p-4 flex items-center justify-between hover:ocean-card-elevated transition-colors"
           >
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-semibold text-ocean-primary">
               Bewertungs-Details
             </h3>
             {showDetails ? (
-              <ChevronUp className="w-5 h-5 text-slate-400" />
+              <ChevronUp className="w-5 h-5 text-ocean-tertiary" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-slate-400" />
+              <ChevronDown className="w-5 h-5 text-ocean-tertiary" />
             )}
           </button>
 
           {showDetails && (
-            <div className="px-4 pb-4 space-y-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+            <div className="px-4 pb-4 space-y-3 border-t border-ocean-border pt-4">
               {metricDetails
                 .filter((m) => m.score !== 50)
                 .map((metric) => (
-                  <div key={metric.metric} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
+                  <div key={metric.metric} className="p-3 rounded-2xl ocean-card">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-slate-900 dark:text-slate-100 capitalize">
+                      <span className="font-medium text-ocean-primary capitalize">
                         {metric.metric}
                       </span>
-                      <span className="text-sm font-mono text-slate-600 dark:text-slate-400">
+                      <span className="text-sm font-mono text-ocean-secondary">
                         {metric.score.toFixed(0)}/100
                       </span>
                     </div>
-                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                    <p className="text-sm text-ocean-secondary leading-relaxed">
                       {metric.explanation}
                     </p>
                   </div>
@@ -629,15 +627,15 @@ function GlossaryHint({ display }: { display: string }) {
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-300 underline decoration-dotted decoration-2"
+        className="inline-flex items-center gap-1 ocean-info underline decoration-dotted decoration-2"
       >
         {display}
         <Info className="w-3.5 h-3.5" />
       </button>
       {open && (
-        <span className="absolute left-0 top-full mt-2 w-64 rounded-2xl bg-slate-900 text-white text-xs shadow-2xl p-3 z-20">
+        <span className="absolute left-0 top-full mt-2 w-64 rounded-2xl ocean-panel-strong text-ocean-primary text-xs shadow-2xl p-3 z-20">
           <p className="font-semibold text-sm mb-1">{entry.term}</p>
-          <p className="text-slate-100/80">{entry.description}</p>
+          <p className="text-ocean-secondary/80">{entry.description}</p>
         </span>
       )}
     </span>

@@ -109,10 +109,10 @@ export default function DashboardPage() {
   );
 
   return (
-    <main className="min-h-screen bg-ocean-dark text-white selection:bg-water-primary/30">
+    <main className="min-h-screen bg-ocean-background text-ocean-primary selection:bg-ocean-primary/30">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-10 -left-20 h-72 w-72 rounded-full bg-water-primary/15 blur-[120px]" />
-        <div className="absolute bottom-10 -right-16 h-64 w-64 rounded-full bg-water-accent/20 blur-[140px]" />
+        <div className="absolute -top-10 -left-20 h-72 w-72 rounded-full ocean-primary/15 blur-[120px]" />
+        <div className="absolute bottom-10 -right-16 h-64 w-64 rounded-full ocean-accent/20 blur-[140px]" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-2xl px-5 pt-12 pb-32">
@@ -122,55 +122,55 @@ export default function DashboardPage() {
           }`}
         >
           <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Dashboard</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-ocean-tertiary">Dashboard</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">Dein Wasserstatus</h1>
-            <p className="mt-1 text-sm text-slate-400">KI-gestützte Analyse & Empfehlungen</p>
+            <p className="mt-1 text-sm text-ocean-secondary">KI-gestützte Analyse & Empfehlungen</p>
           </div>
           <ThemeToggle />
         </header>
 
         <section
-          className={`relative mb-8 overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-glass backdrop-blur-2xl transition duration-700 ${
+          className={`relative mb-8 overflow-hidden rounded-ocean-xl border border-ocean-border ocean-panel-strong p-6 ocean-shadow-4 transition duration-700 ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-water-primary/30 blur-3xl" />
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full ocean-primary/30 blur-3xl" />
           <div className="relative flex flex-col gap-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.5em] text-slate-300">Gesamtscore</p>
+                <p className="text-[11px] uppercase tracking-[0.5em] text-ocean-secondary">Gesamtscore</p>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-6xl font-semibold tracking-tight text-white drop-shadow-lg">
+                  <span className="text-6xl font-semibold tracking-tight text-ocean-primary ocean-glow">
                     <CountUp value={94} />
                   </span>
-                  <span className="text-lg text-slate-400">/ 100</span>
+                  <span className="text-lg text-ocean-tertiary">/ 100</span>
                 </div>
               </div>
               <button
                 type="button"
-                className="rounded-full border border-white/20 p-2 text-slate-300 transition hover:text-white"
+                className="rounded-full border border-ocean-border p-2 text-ocean-secondary transition hover:text-ocean-primary"
               >
                 <Info className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="relative h-3 w-full overflow-hidden rounded-full border border-white/10 bg-white/10">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-water-primary via-water-accent to-sky-600 shadow-glow">
-                <div className="h-full w-[94%] rounded-full bg-gradient-to-r from-water-primary via-water-accent to-indigo-500" />
+            <div className="relative h-3 w-full overflow-hidden rounded-full border border-ocean-border ocean-surface-elevated">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-ocean-primary via-ocean-accent ocean-glow">
+                <div className="h-full w-[94%] rounded-full bg-gradient-to-r from-ocean-primary via-ocean-accent" />
               </div>
             </div>
-            <p className="text-xs text-slate-200/80">
-              Dein Wasser ist <span className="text-water-accent">mineralreich</span> und unterstützt deine
+            <p className="text-xs text-ocean-secondary">
+              Dein Wasser ist <span className="text-ocean-accent">mineralreich</span> und unterstützt deine
               Regeneration optimal.
             </p>
 
             <Link
               href={{ pathname: "/scan", query: { profile } }}
               onClick={() => hapticMedium()}
-              className="group inline-flex items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-medium text-white transition active:scale-95"
+              className="group inline-flex items-center justify-between rounded-2xl border border-ocean-border ocean-panel px-4 py-3 text-sm font-medium text-ocean-primary transition active:scale-95"
             >
               <span>Jetzt Etikett scannen</span>
-              <Scan className="h-5 w-5 text-water-accent transition group-hover:scale-110" />
+              <Scan className="h-5 w-5 text-ocean-accent transition group-hover:scale-110" />
             </Link>
           </div>
         </section>
@@ -183,16 +183,16 @@ export default function DashboardPage() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-3xl border border-white/5 bg-white/5 p-4 backdrop-blur-xl shadow-glass"
+              className="ocean-card p-4 ocean-panel ocean-shadow-3"
             >
-              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400">{stat.label}</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight text-white">{stat.value}</p>
-              <p className="mt-1 text-[11px] text-slate-400">{stat.helper}</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-ocean-tertiary">{stat.label}</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-ocean-primary">{stat.value}</p>
+              <p className="mt-1 text-[11px] text-ocean-tertiary">{stat.helper}</p>
             </div>
           ))}
         </section>
 
-        <section className="mb-8 space-y-4 rounded-3xl border border-white/10 bg-ocean-card/80 p-5 shadow-glass backdrop-blur-xl">
+        <section className="mb-8 space-y-4 ocean-card ocean-panel ocean-shadow-3 p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium">Mineralien Fingerprint</h2>
             <button className="text-[11px] uppercase tracking-wider text-water-accent">Analyse</button>
@@ -201,8 +201,8 @@ export default function DashboardPage() {
             {mineralBars.map((bar) => (
               <div key={bar.label}>
                 <div className="mb-1 flex items-center justify-between text-[11px]">
-                  <span className="tracking-[0.3em] text-slate-400">{bar.label}</span>
-                  <span className="font-mono text-sm text-white">{bar.value} mg/L</span>
+                  <span className="tracking-[0.3em] text-ocean-tertiary">{bar.label}</span>
+                  <span className="font-mono text-sm text-ocean-primary">{bar.value} mg/L</span>
                 </div>
                 <div className="h-2 rounded-full bg-slate-800/80">
                   <div
@@ -215,15 +215,15 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="mb-8 space-y-4 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-glass backdrop-blur-xl">
+        <section className="mb-8 space-y-4 ocean-card ocean-panel ocean-shadow-3 p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium">Dein Profil</h2>
-            <span className="rounded-full border border-white/20 px-3 py-1 text-xs uppercase tracking-wider text-slate-300">
+            <span className="rounded-full border border-ocean-border px-3 py-1 text-xs uppercase tracking-wider text-ocean-secondary">
               {profile}
             </span>
           </div>
           <ProfileSelector value={profile} onChange={setProfile} />
-          <p className="text-[12px] leading-relaxed text-slate-300">{PROFILE_TIPS[profile]}</p>
+          <p className="text-[12px] leading-relaxed text-ocean-secondary">{PROFILE_TIPS[profile]}</p>
         </section>
 
         <section className="mb-8 grid gap-3 md:grid-cols-3">
@@ -233,26 +233,26 @@ export default function DashboardPage() {
               <Link
                 key={action.id}
                 href={action.href}
-                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-ocean-card/80 p-4 shadow-glass backdrop-blur-xl transition active:scale-95"
+                className="group relative overflow-hidden ocean-card ocean-panel ocean-shadow-3 p-4 transition active:scale-95"
                 onClick={() => hapticLight()}
               >
                 <div className={`absolute inset-0 bg-gradient-to-br ${action.accent} opacity-70`} />
                 <div className="relative flex items-start gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/10 p-3 text-white shadow-inner">
+                  <div className="rounded-2xl border border-ocean-border ocean-surface-elevated p-3 text-ocean-primary shadow-inner">
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1">
                     <p className="text-base font-medium">{action.title}</p>
-                    <p className="text-sm text-slate-200/80">{action.description}</p>
+                    <p className="text-sm text-ocean-secondary">{action.description}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-slate-200 transition group-hover:translate-x-1" />
+                  <ChevronRight className="h-4 w-4 text-ocean-secondary transition group-hover:translate-x-1" />
                 </div>
               </Link>
             );
           })}
         </section>
 
-        <section className="space-y-4 rounded-3xl border border-white/10 bg-ocean-card/90 p-5 shadow-glass backdrop-blur-2xl">
+        <section className="space-y-4 ocean-card ocean-panel ocean-shadow-3 p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-medium">Zuletzt getrunken</h2>
             <Sparkles className="h-4 w-4 text-water-accent" />
@@ -261,17 +261,17 @@ export default function DashboardPage() {
             {historyEntries.map((entry) => (
               <div
                 key={entry.name}
-                className="flex items-center rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-left shadow-glass transition hover:border-water-accent/40 active:scale-[0.98]"
+                className="flex items-center rounded-2xl ocean-surface-elevated border-ocean-border px-4 py-3 text-left ocean-shadow-3 transition hover:border-water-accent/40 active:scale-[0.98]"
               >
-                <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 text-slate-300">
+                <div className="rounded-2xl border border-ocean-border ocean-surface-elevated p-3 text-ocean-secondary">
                   <Droplet className="h-5 w-5" />
                 </div>
                 <div className="ml-3 flex-1">
                   <p className="text-sm font-medium">{entry.name}</p>
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">{entry.time}</p>
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-ocean-tertiary">{entry.time}</p>
                 </div>
-                <div className="font-mono text-lg text-status-good">{entry.score}</div>
-                <ChevronRight className="ml-2 h-4 w-4 text-slate-500" />
+                <div className="font-mono text-lg text-ocean-success">{entry.score}</div>
+                <ChevronRight className="ml-2 h-4 w-4 text-ocean-tertiary" />
               </div>
             ))}
           </div>

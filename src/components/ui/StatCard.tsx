@@ -24,23 +24,23 @@ export function StatCard({
   className,
 }: StatCardProps) {
   const variantClasses = {
-    default: "bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-700/60",
-    primary: "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border-blue-200/60 dark:border-blue-800/60",
-    success: "bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/50 dark:to-emerald-900/50 border-emerald-200/60 dark:border-emerald-800/60",
-    warning: "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/50 dark:to-amber-900/50 border-amber-200/60 dark:border-amber-800/60",
+    default: "ocean-card",
+    primary: "ocean-card border-ocean-primary/50",
+    success: "ocean-card border-ocean-success/50 ocean-success-bg",
+    warning: "ocean-card border-ocean-warning/50 ocean-warning-bg",
   };
 
   const iconColors = {
-    default: "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800",
-    primary: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50",
-    success: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50",
-    warning: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50",
+    default: "text-ocean-secondary bg-ocean-surface-elevated",
+    primary: "text-ocean-primary bg-ocean-primary/20",
+    success: "text-ocean-success bg-ocean-success/20",
+    warning: "text-ocean-warning bg-ocean-warning/20",
   };
 
   return (
     <motion.div
       className={clsx(
-        "stat-card rounded-[24px] p-4 border shadow-lg",
+        "stat-card rounded-ocean-lg p-4 border ocean-shadow-3",
         variantClasses[variant],
         className
       )}
@@ -48,16 +48,16 @@ export function StatCard({
       whileTap={{ scale: 0.98 }}
     >
       <div className="flex items-start justify-between mb-2">
-        <div className={clsx("rounded-2xl p-2.5", iconColors[variant])}>
+        <div className={clsx("rounded-ocean-md p-2.5", iconColors[variant])}>
           <Icon className="w-5 h-5" />
         </div>
         {trend && trendValue && (
           <span
             className={clsx(
               "text-xs font-medium flex items-center gap-1",
-              trend === "up" && "text-emerald-600 dark:text-emerald-400",
-              trend === "down" && "text-red-600 dark:text-red-400",
-              trend === "neutral" && "text-slate-600 dark:text-slate-400"
+              trend === "up" && "ocean-success",
+              trend === "down" && "ocean-error",
+              trend === "neutral" && "text-ocean-secondary"
             )}
           >
             {trend === "up" && "↗"}
@@ -67,10 +67,10 @@ export function StatCard({
         )}
       </div>
       <div className="space-y-1">
-        <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <div className="text-2xl font-bold text-ocean-primary">
           {value}
         </div>
-        <div className="text-sm text-slate-600 dark:text-slate-400">
+        <div className="text-sm text-ocean-secondary">
           {label}
         </div>
       </div>

@@ -48,18 +48,18 @@ export function HeroSection() {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-ocean-background"
     >
-      {/* Animated gradient background */}
+      {/* Animated ocean gradient background */}
       <div className="absolute inset-0">
         <motion.div
           className="absolute inset-0 opacity-30"
           animate={{
             background: [
-              "radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.5) 0%, transparent 50%)",
-              "radial-gradient(circle at 80% 50%, rgba(16, 185, 129, 0.5) 0%, transparent 50%)",
-              "radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.5) 0%, transparent 50%)",
-              "radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.5) 0%, transparent 50%)",
+              "radial-gradient(circle at 20% 50%, rgba(14, 165, 233, 0.5) 0%, transparent 50%)",
+              "radial-gradient(circle at 80% 50%, rgba(6, 182, 212, 0.5) 0%, transparent 50%)",
+              "radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.5) 0%, transparent 50%)",
+              "radial-gradient(circle at 20% 50%, rgba(14, 165, 233, 0.5) 0%, transparent 50%)",
             ],
           }}
           transition={{
@@ -70,15 +70,15 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />
+      {/* Ocean grid overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(14,165,233,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(14,165,233,.05)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(20)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-blue-400 rounded-full"
+            className="absolute w-2 h-2 bg-ocean-accent rounded-full"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
@@ -112,9 +112,9 @@ export function HeroSection() {
           className="relative w-full h-full"
           animate={floatingAnimation}
         >
-          {/* Glowing effect behind bottle */}
+          {/* Ocean glowing effect behind bottle */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-blue-400 to-emerald-400 rounded-[100px] blur-[100px] opacity-40"
+            className="absolute inset-0 bg-gradient-to-br from-ocean-primary to-ocean-accent rounded-[100px] blur-[100px] opacity-40"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.4, 0.6, 0.4],
@@ -129,13 +129,13 @@ export function HeroSection() {
           {/* Simplified 3D bottle representation */}
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.div
-              className="relative w-40 h-96 bg-gradient-to-b from-blue-400/30 to-blue-600/40 rounded-[60px] backdrop-blur-xl border-2 border-white/20 shadow-2xl overflow-hidden"
+              className="relative w-40 h-96 bg-gradient-to-b from-ocean-primary/30 to-ocean-primary/40 rounded-[60px] backdrop-blur-xl border-2 border-white/20 ocean-shadow-4 overflow-hidden"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              {/* Water inside bottle */}
+              {/* Ocean water inside bottle */}
               <motion.div
-                className="absolute bottom-0 left-0 right-0 h-[70%] bg-gradient-to-t from-blue-500/60 to-blue-300/40"
+                className="absolute bottom-0 left-0 right-0 h-[70%] bg-gradient-to-t from-ocean-primary/60 to-ocean-accent/40"
                 animate={{
                   height: ["70%", "75%", "70%"],
                 }}
@@ -169,8 +169,8 @@ export function HeroSection() {
                 />
               ))}
 
-              {/* Cap */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-t-xl border-2 border-white/20" />
+              {/* Ocean cap */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-8 bg-gradient-to-b from-ocean-primary to-ocean-secondary rounded-t-xl border-2 border-white/20" />
 
               {/* Light reflection */}
               <motion.div
@@ -200,10 +200,10 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/20 border border-blue-400/30 backdrop-blur-sm mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full ocean-info-bg border-ocean-info/50 backdrop-blur-sm mb-6"
           >
-            <Sparkles className="w-4 h-4 text-blue-300" />
-            <span className="text-sm font-medium text-blue-200">
+            <Sparkles className="w-4 h-4 text-ocean-accent" />
+            <span className="text-sm font-medium text-ocean-secondary">
               KI-gestützte Wasseranalyse
             </span>
           </motion.div>
@@ -215,12 +215,12 @@ export function HeroSection() {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="text-6xl md:text-7xl lg:text-8xl font-bold leading-none mb-6"
           >
-            <span className="block text-white">Dein Wasser.</span>
-            <span className="block bg-gradient-to-r from-blue-400 via-emerald-400 to-blue-500 bg-clip-text text-transparent">
+            <span className="block text-ocean-primary">Dein Wasser.</span>
+            <span className="block bg-gradient-to-r from-ocean-primary via-ocean-accent to-ocean-primary bg-clip-text text-transparent">
               Analysiert in
             </span>
             <motion.span
-              className="block bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent"
+              className="block bg-gradient-to-r from-ocean-accent via-ocean-primary to-ocean-secondary bg-clip-text text-transparent"
               animate={{
                 backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
               }}
@@ -242,7 +242,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="text-xl md:text-2xl text-slate-300 mb-8 leading-relaxed"
+            className="text-xl md:text-2xl text-ocean-secondary mb-8 leading-relaxed"
           >
             Scanne Wasserflaschenetiketten mit deinem Smartphone und erhalte
             sofort eine detaillierte Qualitätsbewertung – perfekt abgestimmt
@@ -263,11 +263,11 @@ export function HeroSection() {
             ].map((feature, i) => (
               <motion.div
                 key={i}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm"
+                className="flex items-center gap-2 px-4 py-2 rounded-full ocean-panel border border-white/10 backdrop-blur-sm"
                 whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
               >
-                <feature.icon className="w-5 h-5 text-emerald-400" />
-                <span className="text-sm font-medium text-white">
+                <feature.icon className="w-5 h-5 text-ocean-accent" />
+                <span className="text-sm font-medium text-ocean-primary">
                   {feature.text}
                 </span>
               </motion.div>
@@ -283,13 +283,13 @@ export function HeroSection() {
           >
             <Link href="/dashboard">
               <motion.button
-                className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full font-bold text-lg text-white shadow-2xl shadow-blue-500/50 overflow-hidden"
+                className="group relative px-8 py-4 ocean-button rounded-full font-bold text-lg text-ocean-primary ocean-shadow-4 overflow-hidden"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <span className="relative z-10">Jetzt kostenlos starten</span>
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-blue-500"
+                  className="absolute inset-0 bg-gradient-to-r from-ocean-accent to-ocean-primary"
                   initial={{ x: "100%" }}
                   whileHover={{ x: 0 }}
                   transition={{ duration: 0.3 }}
@@ -298,7 +298,7 @@ export function HeroSection() {
             </Link>
 
             <motion.button
-              className="px-8 py-4 bg-white/10 backdrop-blur-sm rounded-full font-bold text-lg text-white border-2 border-white/20 hover:bg-white/20 transition-colors"
+              className="px-8 py-4 ocean-panel rounded-full font-bold text-lg text-ocean-primary border-2 border-white/20 hover:bg-white/20 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
@@ -319,7 +319,7 @@ export function HeroSection() {
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        <ChevronDown className="w-8 h-8 text-white/50" />
+        <ChevronDown className="w-8 h-8 text-ocean-secondary/50" />
       </motion.div>
     </section>
   );
