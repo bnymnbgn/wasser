@@ -7,12 +7,12 @@ export interface ValidationResult {
 
 const VALUE_RANGES: Record<keyof WaterAnalysisValues, { min: number; max: number; typical: string }> = {
   ph: { min: 4, max: 10, typical: "6.5-8.5" },
-  calcium: { min: 0, max: 500, typical: "5-200 mg/L" },
+  calcium: { min: 0, max: 1500, typical: "5-600 mg/L" },
   magnesium: { min: 0, max: 200, typical: "1-100 mg/L" },
   sodium: { min: 0, max: 500, typical: "1-200 mg/L" },
   potassium: { min: 0, max: 100, typical: "1-20 mg/L" },
   chloride: { min: 0, max: 500, typical: "1-250 mg/L" },
-  sulfate: { min: 0, max: 500, typical: "1-250 mg/L" },
+  sulfate: { min: 0, max: 3000, typical: "1-1500 mg/L" },
   nitrate: { min: 0, max: 100, typical: "0-50 mg/L" },
   bicarbonate: { min: 0, max: 2000, typical: "50-600 mg/L" },
   totalDissolvedSolids: { min: 0, max: 3000, typical: "50-1500 mg/L" },

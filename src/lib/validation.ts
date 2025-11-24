@@ -26,12 +26,12 @@ export type BarcodeRequest = z.infer<typeof BarcodeRequestSchema>;
  */
 export const WaterAnalysisValuesSchema = z.object({
   ph: z.number().min(0).max(14).optional(),
-  calcium: z.number().min(0).max(1000).optional(),
+  calcium: z.number().min(0).max(1500).optional(),
   magnesium: z.number().min(0).max(500).optional(),
   sodium: z.number().min(0).max(1000).optional(),
   potassium: z.number().min(0).max(500).optional(),
   chloride: z.number().min(0).max(1000).optional(),
-  sulfate: z.number().min(0).max(1000).optional(),
+  sulfate: z.number().min(0).max(3000).optional(),
   bicarbonate: z.number().min(0).max(3000).optional(),
   nitrate: z.number().min(0).max(200).optional(),
   totalDissolvedSolids: z.number().min(0).max(5000).optional(),
@@ -51,6 +51,7 @@ export const OcrRequestSchema = z.object({
     .max(100, 'Confidence muss zwischen 0 und 100 liegen')
     .optional(),
   brand: z.string().trim().max(200).optional(),
+  productName: z.string().trim().max(200).optional(),
   barcode: z.string().trim().max(32).optional(),
 }).superRefine((data, ctx) => {
   const textLength = data.text?.length ?? 0;

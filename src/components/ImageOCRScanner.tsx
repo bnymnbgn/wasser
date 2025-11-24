@@ -11,7 +11,7 @@ import { ScanValidationModal } from "@/src/components/ScanValidationModal";
 import { BottleLoader } from "@/src/components/ui/BottleLoader";
 
 interface ImageOCRScannerProps {
-  onTextExtracted: (text: string, confidence?: number) => void;
+  onTextExtracted: (text: string, confidence?: number, info?: { brand?: string; productName?: string }) => void;
 }
 
 export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
@@ -387,9 +387,8 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
 
       {/* Camera Preview */}
       <div
-        className={`relative overflow-hidden rounded-md border border-slate-700 mb-3 ${
-          isCameraActive ? "" : "hidden"
-        }`}
+        className={`relative overflow-hidden rounded-md border border-slate-700 mb-3 ${isCameraActive ? "" : "hidden"
+          }`}
       >
         <video
           ref={videoRef}
@@ -472,7 +471,7 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
           <div className="text-[11px] text-slate-300 relative z-10">
             Halte das Foto ruhig – die OCR analysiert Zeile für Zeile.
           </div>
-              <style jsx>{`
+          <style jsx>{`
             @keyframes progress-bar {
               0% {
                 opacity: 0.6;
@@ -508,13 +507,12 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
       {/* Confidence Score Display */}
       {confidence !== null && !isProcessing && (
         <div
-          className={`rounded-md px-3 py-2 text-xs ${
-            confidence >= 80
+          className={`rounded-md px-3 py-2 text-xs ${confidence >= 80
               ? "bg-emerald-500/15 text-emerald-200"
               : confidence >= 60
-              ? "bg-amber-500/15 text-amber-200"
-              : "bg-rose-500/15 text-rose-200"
-          }`}
+                ? "bg-amber-500/15 text-amber-200"
+                : "bg-rose-500/15 text-rose-200"
+            }`}
         >
           {confidence >= 80 ? "✓" : "⚠️"} OCR-Qualität: {Math.round(confidence)}%
           {confidence < 80 && " – Bitte Werte überprüfen"}
@@ -528,14 +526,15 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
             setShowValidation(false);
             setPendingValues(null);
           }}
-          onConfirm={(values) => {
+          onConfirm={(values, info) => {
             setShowValidation(false);
             setPendingValues(null);
             onTextExtracted(
               Object.entries(values)
                 .map(([key, val]) => `${key}: ${val}`)
                 .join("\n"),
-              confidence ?? undefined
+              confidence ?? undefined,
+              info
             );
           }}
         />

@@ -12,6 +12,7 @@ import { WaterScoreCard } from "@/src/components/WaterScoreCard";
 import { BarcodeScanner } from "@/src/components/BarcodeScanner";
 import { ImageOCRScanner } from "@/src/components/ImageOCRScanner";
 import { RippleButton } from "@/src/components/ui/RippleButton";
+import { LiquidLoader } from "@/src/components/ui/LiquidLoader";
 import { SkeletonScoreCard } from "@/src/components/ui/SkeletonLoader";
 import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/capacitor";
@@ -48,6 +49,7 @@ function ScanPageContent() {
   const [ocrText, setOcrText] = useState("");
   const [barcode, setBarcode] = useState("");
   const [brandName, setBrandName] = useState("");
+  const [productName, setProductName] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -107,6 +109,7 @@ function ScanPageContent() {
             profile,
             numericValues,
             brandName || undefined,
+            productName || undefined,
             barcode || undefined
           );
         }
@@ -116,12 +119,13 @@ function ScanPageContent() {
         const body =
           mode === "ocr"
             ? {
-                text: ocrText,
-                profile,
-                values: numericValues,
-                brand: brandName || undefined,
-                barcode: barcode || undefined,
-              }
+              text: ocrText,
+              profile,
+              values: numericValues,
+              brand: brandName || undefined,
+              productName: productName || undefined,
+              barcode: barcode || undefined,
+            }
             : { barcode, profile };
 
         const res = await fetch(endpoint, {
@@ -162,6 +166,7 @@ function ScanPageContent() {
     if (nextMode === "barcode") {
       setValueInputs(createEmptyValueState());
       setBrandName("");
+      setProductName("");
       setOcrText("");
     }
     if (nextMode === "ocr") {
@@ -183,11 +188,13 @@ function ScanPageContent() {
     setValueInputs(nextValues);
   }
 
-  function handleTextExtracted(text: string) {
+  function handleTextExtracted(text: string, confidence?: number, info?: { brand?: string; productName?: string }) {
     setOcrText(text);
     setResult(null);
     setShowResults(false);
     applyTextParsing(text);
+    if (info?.brand) setBrandName(info.brand);
+    if (info?.productName) setProductName(info.productName);
   }
 
   return (
@@ -291,6 +298,20 @@ function ScanPageContent() {
                   </label>
                   <label className="block">
                     <span className="mb-2 block text-[11px] uppercase tracking-[0.3em] text-ocean-secondary">
+                      Produkt (Optional)
+                    </span>
+                    <input
+                      className="w-full rounded-2xl border border-ocean-border ocean-panel px-4 py-3 text-sm text-ocean-primary placeholder-ocean-tertiary outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/20"
+                      value={productName}
+                      onChange={(e) => {
+                        setProductName(e.target.value);
+                        setResult(null);
+                      }}
+                      placeholder="z. B. Naturell"
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-2 block text-[11px] uppercase tracking-[0.3em] text-ocean-secondary">
                       Barcode (optional)
                     </span>
                     <input
@@ -345,8 +366,8 @@ function ScanPageContent() {
                             invalid
                               ? "border-ocean-error/50 ocean-error-bg"
                               : warning
-                              ? "border-ocean-warning/50 ocean-warning-bg"
-                              : "border-ocean-border ocean-surface-elevated"
+                                ? "border-ocean-warning/50 ocean-warning-bg"
+                                : "border-ocean-border ocean-surface-elevated"
                           )}
                         >
                           <label className="block space-y-2">
@@ -453,7 +474,7 @@ function ScanPageContent() {
           >
             {loading ? (
               <div className="flex items-center justify-center gap-3">
-                <div className="w-5 h-5 border-2 border-ocean-tertiary/30 border-t-ocean-primary rounded-full animate-spin" />
+                <LiquidLoader className="w-6 h-6" color="bg-ocean-primary" />
                 Analysiere...
               </div>
             ) : (

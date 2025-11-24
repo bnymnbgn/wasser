@@ -158,37 +158,37 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
         setSearchTerm={setSearchTerm}
       />
 
-      {!hasResults && <NoResults /> }
+      {!hasResults && <NoResults />}
 
       {hasResults && (
         <div className="space-y-6">
           {groupedScans.map(({ label, items }) => (
             items ? (
-            <div key={label} className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-semibold text-md-onSurface dark:text-md-dark-onSurface px-1">
-                <Calendar className="w-4 h-4" />
-                {label}
-              </div>
-              <div className="space-y-3">
-                {items?.map((scan) => (
-                  <SwipeableRow
-                    key={scan.id}
-                    onFavorite={() => handleFavorite(scan)}
-                    onDelete={() => handleDelete(scan)}
-                    isFavorite={Boolean(favorites[scan.id])}
-                    onLongPress={handleLongPress}
-                    scan={scan}
-                  >
-                    <HistoryCard
-                      scan={scan}
-                      isExpanded={expandedId === scan.id}
-                      onToggleExpand={() => setExpandedId((prev) => (prev === scan.id ? null : scan.id))}
+              <div key={label} className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-md-onSurface dark:text-md-dark-onSurface px-1">
+                  <Calendar className="w-4 h-4" />
+                  {label}
+                </div>
+                <div className="space-y-3">
+                  {items?.map((scan) => (
+                    <SwipeableRow
+                      key={scan.id}
+                      onFavorite={() => handleFavorite(scan)}
+                      onDelete={() => handleDelete(scan)}
                       isFavorite={Boolean(favorites[scan.id])}
-                    />
-                  </SwipeableRow>
-                ))}
+                      onLongPress={handleLongPress}
+                      scan={scan}
+                    >
+                      <HistoryCard
+                        scan={scan}
+                        isExpanded={expandedId === scan.id}
+                        onToggleExpand={() => setExpandedId((prev) => (prev === scan.id ? null : scan.id))}
+                        isFavorite={Boolean(favorites[scan.id])}
+                      />
+                    </SwipeableRow>
+                  ))}
+                </div>
               </div>
-            </div>
             ) : null
           ))}
         </div>
@@ -419,14 +419,22 @@ function HistoryCard({
     <motion.div layout className="ocean-card text-ocean-primary">
       <button onClick={onToggleExpand} className="w-full space-y-3 p-4 text-left">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-xs text-ocean-tertiary">{formatDate(new Date(scan.timestamp))}</div>
-            <div className="text-sm font-semibold text-ocean-primary">
-              {scan.productInfo?.brand ?? (scan.barcode ? 'Unbekannte Marke' : 'OCR Scan')}
-              {scan.productInfo?.productName ? ` · ${scan.productInfo.productName}` : ''}
-            </div>
-            <div className="text-xs text-ocean-tertiary">
-              {scan.barcode ? `Barcode: ${scan.barcode}` : 'Etikett-Analyse'}
+          <div className="flex gap-3">
+            <motion.div
+              layoutId={`bottle-${scan.id}`}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-water-primary/10 text-water-primary"
+            >
+              <div className="text-xl">💧</div>
+            </motion.div>
+            <div>
+              <div className="text-xs text-ocean-tertiary">{formatDate(new Date(scan.timestamp))}</div>
+              <div className="text-sm font-semibold text-ocean-primary">
+                {scan.productInfo?.brand ?? (scan.barcode ? 'Unbekannte Marke' : 'OCR Scan')}
+                {scan.productInfo?.productName ? ` · ${scan.productInfo.productName}` : ''}
+              </div>
+              <div className="text-xs text-ocean-tertiary">
+                {scan.barcode ? `Barcode: ${scan.barcode}` : 'Etikett-Analyse'}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -481,10 +489,12 @@ function SwipeableRow({
   const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const wasPastThreshold = useRef(false);
 
   const reset = () => {
     setOffset(0);
     setIsDragging(false);
+    wasPastThreshold.current = false;
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -499,7 +509,15 @@ function SwipeableRow({
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
     const delta = e.clientX - startX.current;
-    setOffset(Math.max(-120, Math.min(120, delta)));
+    const newOffset = Math.max(-120, Math.min(120, delta));
+    setOffset(newOffset);
+
+    // Haptic feedback on threshold cross
+    const isPast = Math.abs(newOffset) > 90;
+    if (isPast !== wasPastThreshold.current) {
+      hapticLight();
+      wasPastThreshold.current = isPast;
+    }
   };
 
   const handlePointerUp = () => {
@@ -513,6 +531,8 @@ function SwipeableRow({
     reset();
   };
 
+  const iconScale = Math.min(1.5, Math.max(1, Math.abs(offset) / 60));
+
   return (
     <div className="relative touch-pan-y select-none">
       <div
@@ -521,11 +541,11 @@ function SwipeableRow({
           offset > 0 ? 'ocean-warning-bg' : 'ocean-error-bg'
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" style={{ transform: offset > 0 ? `scale(${iconScale})` : 'scale(1)', transition: 'transform 0.1s' }}>
           <Star className="w-4 h-4" />
           {isFavorite ? 'Favorit entfernen' : 'Favorisieren'}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" style={{ transform: offset < 0 ? `scale(${iconScale})` : 'scale(1)', transition: 'transform 0.1s' }}>
           <Trash2 className="w-4 h-4" />
           Entfernen
         </div>

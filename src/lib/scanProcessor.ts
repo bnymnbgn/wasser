@@ -92,6 +92,7 @@ export async function processOCRLocally(
   profile: ProfileType,
   parsedValues: Partial<WaterAnalysisValues>,
   brandName?: string,
+  productName?: string,
   barcode?: string
 ): Promise<ScanResult> {
   let waterSourceId: string | null = null;
@@ -115,7 +116,7 @@ export async function processOCRLocally(
   if (!waterSourceId && brandName) {
     const newSource = await sqliteService.createWaterSource({
       brand: brandName,
-      productName: brandName, // Use brand as product name if not specified
+      productName: productName || brandName, // Use provided product name or fallback to brand
       origin: null,
       barcode: barcode ?? null,
     });

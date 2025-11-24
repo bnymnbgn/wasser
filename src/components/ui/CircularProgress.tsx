@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { useEffect } from "react";
 
 interface CircularProgressProps {
   value: number; // 0-100
@@ -33,8 +34,16 @@ export function CircularProgress({
 
   const scoreColor =
     normalizedValue >= 80 ? "text-emerald-600 dark:text-emerald-400"
-    : normalizedValue >= 50 ? "text-amber-600 dark:text-amber-400"
-    : "text-red-600 dark:text-red-400";
+      : normalizedValue >= 50 ? "text-amber-600 dark:text-amber-400"
+        : "text-red-600 dark:text-red-400";
+
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, Math.round);
+
+  useEffect(() => {
+    const controls = animate(count, normalizedValue, { duration: 1, ease: "easeOut" });
+    return controls.stop;
+  }, [normalizedValue, count]);
 
   return (
     <div className={`circular-progress ${className}`} style={{ width: size, height: size }}>
@@ -74,9 +83,9 @@ export function CircularProgress({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <span className={`text-4xl font-bold ${scoreColor}`}>
-            {Math.round(normalizedValue)}
-          </span>
+          <motion.span className={`text-4xl font-bold ${scoreColor}`}>
+            {rounded}
+          </motion.span>
           <span className="text-sm text-slate-600 dark:text-slate-400">von 100</span>
         </motion.div>
       )}

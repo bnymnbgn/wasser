@@ -3,6 +3,7 @@
 import type { ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import type { ProfileFit } from "@/src/domain/waterInsights";
 import { CircularProgress } from "@/src/components/ui/CircularProgress";
+import { motion } from "framer-motion";
 import { Droplet, AlertCircle, CheckCircle, Info, ChevronDown, ChevronUp, Columns } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { useComparison } from "@/src/contexts/ComparisonContext";
@@ -92,27 +93,22 @@ export function WaterScoreCard({ scanResult }: Props) {
   };
   const hardness =
     insights?.hardness ??
-    mergedValues.hardness ??
     computeWaterHardness(mergedValues) ??
     undefined;
   const caMgRatio =
     insights?.calciumMagnesiumRatio ??
-    mergedValues.calciumMagnesiumRatio ??
     computeCalciumMagnesiumRatio(mergedValues.calcium, mergedValues.magnesium) ??
     undefined;
   const bufferCapacity =
     insights?.bufferCapacity ??
-    mergedValues.bufferCapacity ??
     computeBufferCapacity(mergedValues) ??
     undefined;
   const tasteBalance =
     insights?.tastePalatability ??
-    mergedValues.tastePalatability ??
     computeTasteBalance(mergedValues) ??
     undefined;
   const sodiumPotassiumRatio =
     insights?.sodiumPotassiumRatio ??
-    mergedValues.sodiumPotassiumRatio ??
     computeSodiumPotassiumRatio(mergedValues.sodium, mergedValues.potassium) ??
     undefined;
 
@@ -167,15 +163,21 @@ export function WaterScoreCard({ scanResult }: Props) {
   const explanationSummary =
     explanationFactors.length > 0
       ? `Besonders auffällig: ${explanationFactors
-          .slice(0, 2)
-          .map((f) => f.label)
-          .join(", ")}.`
+        .slice(0, 2)
+        .map((f) => f.label)
+        .join(", ")}.`
       : "Mineralprofile ausgeglichen – keine starken Ausreißer.";
 
   return (
     <div className="space-y-6">
       {/* Hero Score Section */}
       <div className="flex flex-col items-center py-6 ocean-panel-strong rounded-ocean-xl">
+        <motion.div
+          layoutId={`bottle-${scanResult.id}`}
+          className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-water-primary/10 text-water-primary"
+        >
+          <div className="text-4xl">💧</div>
+        </motion.div>
         <CircularProgress
           value={score ?? 0}
           size={180}
@@ -186,11 +188,10 @@ export function WaterScoreCard({ scanResult }: Props) {
         />
 
         <div className="text-center space-y-2">
-          <div className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ocean-success-bg ocean-success ${
-            scoreColor === "success" ? "" :
+          <div className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ocean-success-bg ocean-success ${scoreColor === "success" ? "" :
             scoreColor === "warning" ? "ocean-warning-bg ocean-warning" :
-            "ocean-error-bg ocean-error"
-          }`}>
+              "ocean-error-bg ocean-error"
+            }`}>
             {scoreLabel(score)}
           </div>
           <p className="text-sm text-ocean-secondary">
@@ -199,11 +200,10 @@ export function WaterScoreCard({ scanResult }: Props) {
           <button
             type="button"
             onClick={handleComparisonToggle}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition ${
-              isInComparison
-                ? "ocean-success-bg ocean-success border border-ocean-success/50"
-                : "ocean-card text-ocean-secondary border border-ocean-border hover:ocean-card-elevated"
-            }`}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition ${isInComparison
+              ? "ocean-success-bg ocean-success border border-ocean-success/50"
+              : "ocean-card text-ocean-secondary border border-ocean-border hover:ocean-card-elevated"
+              }`}
           >
             <Columns className="w-4 h-4" />
             {isInComparison ? "Im Vergleich" : "Zum Vergleich hinzufügen"}
@@ -310,11 +310,10 @@ export function WaterScoreCard({ scanResult }: Props) {
 
       {/* Profile Fit */}
       {activeProfileFit && (
-        <div className={`ocean-card p-4 border-2 ${
-          activeProfileFit.status === "ideal" ? "border-ocean-success/50 ocean-success-bg" :
+        <div className={`ocean-card p-4 border-2 ${activeProfileFit.status === "ideal" ? "border-ocean-success/50 ocean-success-bg" :
           activeProfileFit.status === "ok" ? "border-ocean-warning/50 ocean-warning-bg" :
-          "border-ocean-error/50 ocean-error-bg"
-        }`}>
+            "border-ocean-error/50 ocean-error-bg"
+          }`}>
           <div className="flex items-start gap-3">
             {activeProfileFit.status === "ideal" ? (
               <CheckCircle className="w-6 h-6 ocean-success flex-shrink-0" />
@@ -348,69 +347,69 @@ export function WaterScoreCard({ scanResult }: Props) {
         bufferCapacity !== undefined ||
         tasteBalance !== undefined ||
         sodiumPotassiumRatio !== undefined) && (
-        <div className="ocean-card p-4 space-y-3">
-          <h3 className="font-semibold text-ocean-primary">
-            Abgeleitete Kennzahlen
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {hardness !== undefined && (
-              <VisualMetricBar
-                label="Wasserhärte"
-                value={hardness}
-                min={0}
-                max={24}
-                idealMin={4}
-                idealMax={12}
-                unit="°dH"
-              />
-            )}
-            {caMgRatio !== undefined && (
-              <VisualMetricBar
-                label="Ca:Mg Verhältnis"
-                value={caMgRatio}
-                min={0}
-                max={5}
-                idealMin={1.6}
-                idealMax={2.4}
-                unit=""
-              />
-            )}
-            {sodiumPotassiumRatio !== undefined && (
-              <VisualMetricBar
-                label="Na:K Verhältnis"
-                value={sodiumPotassiumRatio}
-                min={0}
-                max={10}
-                idealMin={1}
-                idealMax={4}
-                unit=""
-              />
-            )}
-            {bufferCapacity !== undefined && (
-              <VisualMetricBar
-                label="Pufferkapazität"
-                value={bufferCapacity}
-                min={0}
-                max={30}
-                idealMin={10}
-                idealMax={25}
-                unit="mVal/L"
-              />
-            )}
-            {tasteBalance !== undefined && (
-              <VisualMetricBar
-                label="Geschmacksprofil HCO₃/(SO₄+Cl)"
-                value={tasteBalance}
-                min={0}
-                max={3}
-                idealMin={1}
-                idealMax={2}
-                unit=""
-              />
-            )}
+          <div className="ocean-card p-4 space-y-3">
+            <h3 className="font-semibold text-ocean-primary">
+              Abgeleitete Kennzahlen
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {hardness !== undefined && (
+                <VisualMetricBar
+                  label="Wasserhärte"
+                  value={hardness}
+                  min={0}
+                  max={24}
+                  idealMin={4}
+                  idealMax={12}
+                  unit="°dH"
+                />
+              )}
+              {caMgRatio !== undefined && (
+                <VisualMetricBar
+                  label="Ca:Mg Verhältnis"
+                  value={caMgRatio}
+                  min={0}
+                  max={5}
+                  idealMin={1.6}
+                  idealMax={2.4}
+                  unit=""
+                />
+              )}
+              {sodiumPotassiumRatio !== undefined && (
+                <VisualMetricBar
+                  label="Na:K Verhältnis"
+                  value={sodiumPotassiumRatio}
+                  min={0}
+                  max={10}
+                  idealMin={1}
+                  idealMax={4}
+                  unit=""
+                />
+              )}
+              {bufferCapacity !== undefined && (
+                <VisualMetricBar
+                  label="Pufferkapazität"
+                  value={bufferCapacity}
+                  min={0}
+                  max={30}
+                  idealMin={10}
+                  idealMax={25}
+                  unit="mVal/L"
+                />
+              )}
+              {tasteBalance !== undefined && (
+                <VisualMetricBar
+                  label="Geschmacksprofil HCO₃/(SO₄+Cl)"
+                  value={tasteBalance}
+                  min={0}
+                  max={3}
+                  idealMin={1}
+                  idealMax={2}
+                  unit=""
+                />
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Metric Chips - Horizontal Scroll */}
       <div className="space-y-3">
@@ -425,7 +424,7 @@ export function WaterScoreCard({ scanResult }: Props) {
             const unit = field.unit ?? (metric === "ph" ? "" : " mg/L");
             const metricScore = metricScores?.[metric];
             const chipColor = metricScore !== undefined && metricScore >= 80 ? "ocean-success" :
-                             metricScore !== undefined && metricScore >= 50 ? "ocean-warning" : "ocean-error";
+              metricScore !== undefined && metricScore >= 50 ? "ocean-warning" : "ocean-error";
 
             return (
               <div
@@ -433,8 +432,8 @@ export function WaterScoreCard({ scanResult }: Props) {
                 className="snap-start flex-shrink-0 ocean-card p-3 min-w-[140px] border-l-4"
                 style={{
                   borderLeftColor: chipColor.includes('success') ? 'var(--ocean-success)' :
-                                   chipColor.includes('warning') ? 'var(--ocean-warning)' :
-                                   'var(--ocean-error)',
+                    chipColor.includes('warning') ? 'var(--ocean-warning)' :
+                      'var(--ocean-error)',
                 }}
               >
                 <p className="text-xs text-ocean-secondary mb-1">
@@ -464,19 +463,17 @@ export function WaterScoreCard({ scanResult }: Props) {
             {insights.badges.map((badge) => (
               <div
                 key={badge.id}
-                className={`p-3 rounded-2xl border ${
-                  badge.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
+                className={`p-3 rounded-2xl border ${badge.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
                   badge.tone === "warning" ? "ocean-warning-bg border-ocean-warning/50" :
-                  "ocean-info-bg border-ocean-info/50"
-                }`}
+                    "ocean-info-bg border-ocean-info/50"
+                  }`}
               >
                 <div className="flex items-start gap-2 mb-2">
                   <span
-                    className={`flex-shrink-0 px-2 py-1 rounded-md text-xs font-semibold ${
-                      badge.tone === "positive" ? "ocean-success-bg ocean-success text-ocean-primary" :
+                    className={`flex-shrink-0 px-2 py-1 rounded-md text-xs font-semibold ${badge.tone === "positive" ? "ocean-success-bg ocean-success text-ocean-primary" :
                       badge.tone === "warning" ? "ocean-warning-bg ocean-warning text-ocean-primary" :
-                      "ocean-info-bg ocean-info text-ocean-primary"
-                    }`}
+                        "ocean-info-bg ocean-info text-ocean-primary"
+                      }`}
                   >
                     {badge.label}
                   </span>
@@ -500,11 +497,10 @@ export function WaterScoreCard({ scanResult }: Props) {
             {insights.synergies.map((item) => (
               <div
                 key={item.id}
-                className={`p-3 rounded-2xl border ${
-                  item.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
+                className={`p-3 rounded-2xl border ${item.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
                   item.tone === "warning" ? "ocean-warning-bg border-ocean-warning/50" :
-                  "ocean-info-bg border-ocean-info/50"
-                }`}
+                    "ocean-info-bg border-ocean-info/50"
+                  }`}
               >
                 <p className="text-sm font-semibold text-ocean-primary">
                   {item.title}

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { text, profile, values: providedValues } = parsed.data;
+  const { text, profile, values: providedValues, brand, productName, barcode } = parsed.data;
   const ocrText = text ?? "";
 
   const ocrValues = ocrText ? parseTextToAnalysis(ocrText) : {};
@@ -68,6 +68,54 @@ export async function POST(req: NextRequest) {
   const scoreResult = calculateScores(validatedValues, profile);
   const insights = deriveWaterInsights(validatedValues);
 
+  // 2.5) WaterSource und WaterAnalysis erstellen/finden
+  let waterSourceId: string | null = null;
+  let waterAnalysisId: string | null = null;
+
+  // Wenn Barcode vorhanden, versuche existierende Quelle zu finden
+  if (barcode) {
+    const existingSource = await prisma.waterSource.findUnique({
+      where: { barcode },
+    });
+    if (existingSource) {
+      waterSourceId = existingSource.id;
+    }
+  }
+
+  // Wenn keine Quelle gefunden (oder kein Barcode), aber Marke angegeben -> neue Quelle anlegen
+  if (!waterSourceId && brand) {
+    const newSource = await prisma.waterSource.create({
+      data: {
+        brand,
+        productName: productName || brand,
+        barcode: barcode || null,
+      },
+    });
+    waterSourceId = newSource.id;
+  }
+
+  // Wenn wir eine Quelle haben und Werte da sind -> Analyse anlegen
+  if (waterSourceId && Object.keys(validatedValues).length > 0) {
+    const newAnalysis = await prisma.waterAnalysis.create({
+      data: {
+        waterSourceId,
+        sourceType: "user",
+        reliabilityScore: 0.7,
+        ph: validatedValues.ph ?? null,
+        calcium: validatedValues.calcium ?? null,
+        magnesium: validatedValues.magnesium ?? null,
+        sodium: validatedValues.sodium ?? null,
+        potassium: validatedValues.potassium ?? null,
+        chloride: validatedValues.chloride ?? null,
+        sulfate: validatedValues.sulfate ?? null,
+        bicarbonate: validatedValues.bicarbonate ?? null,
+        nitrate: validatedValues.nitrate ?? null,
+        totalDissolvedSolids: validatedValues.totalDissolvedSolids ?? null,
+      },
+    });
+    waterAnalysisId = newAnalysis.id;
+  }
+
   // 3) ScanResult in DB schreiben
   const prismaScan = await prisma.scanResult.create({
     data: {
@@ -84,7 +132,9 @@ export async function POST(req: NextRequest) {
         },
         {}
       ),
-      // waterSourceId / waterAnalysisId bleiben im OCR-MVP leer
+      waterSourceId,
+      waterAnalysisId,
+      barcode: barcode || null,
     },
     include: {
       waterSource: true,

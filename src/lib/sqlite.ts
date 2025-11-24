@@ -297,7 +297,7 @@ class SQLiteService {
   /**
    * Get scan history (most recent first)
    */
-  async getScanHistory(limit = 50): Promise<(ScanResult & { waterSource?: WaterSource })[]> {
+  async getScanHistory(limit = 50): Promise<(ScanResult & { waterSource?: WaterSource; productInfo?: { brand: string; productName: string; origin?: string | null } })[]> {
     await this.ensureInitialized();
     if (!this.db) return [];
 
@@ -321,7 +321,7 @@ class SQLiteService {
       if (!result.values) return [];
 
       return result.values.map((row: any) => {
-        const scan: ScanResult & { waterSource?: WaterSource } = {
+        const scan: ScanResult & { waterSource?: WaterSource; productInfo?: { brand: string; productName: string; origin?: string | null } } = {
           id: row.id,
           timestamp: row.timestamp,
           barcode: row.barcode,
@@ -343,6 +343,12 @@ class SQLiteService {
             origin: row.ws_origin,
             barcode: row.ws_barcode,
             createdAt: row.ws_createdAt,
+          };
+
+          scan.productInfo = {
+            brand: row.ws_brand,
+            productName: row.ws_productName,
+            origin: row.ws_origin,
           };
         }
 
