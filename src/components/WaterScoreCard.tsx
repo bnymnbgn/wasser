@@ -2,7 +2,7 @@
 
 import type { ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import type { ProfileFit } from "@/src/domain/waterInsights";
-import { CircularProgress } from "@/src/components/ui/CircularProgress";
+import { WaterScoreCircle } from "@/src/components/ui/WaterScoreCircle";
 import { motion } from "framer-motion";
 import { Droplet, AlertCircle, CheckCircle, Info, ChevronDown, ChevronUp, Columns } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
@@ -178,11 +178,10 @@ export function WaterScoreCard({ scanResult }: Props) {
         >
           <div className="text-4xl">💧</div>
         </motion.div>
-        <CircularProgress
+        <WaterScoreCircle
           value={score ?? 0}
           size={180}
           strokeWidth={12}
-          color={scoreColor}
           showValue={true}
           className="mb-6"
         />
