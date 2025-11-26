@@ -4,6 +4,7 @@ import { DatabaseProvider } from '@/src/contexts/DatabaseContext';
 import BottomNav from '@/src/components/BottomNav';
 import { ComparisonProvider } from '@/src/contexts/ComparisonContext';
 import { ComparisonDrawer } from '@/src/components/ComparisonDrawer';
+import { LivingBackground } from '@/src/components/ui/LivingBackground';
 
 // App-specific metadata (overrides root)
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function AppLayout({
     <ThemeProvider defaultTheme="system">
       <ComparisonProvider>
         <DatabaseProvider>
+          <LivingBackground />
           <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
             {children}
           </div>

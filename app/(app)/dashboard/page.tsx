@@ -109,17 +109,13 @@ export default function DashboardPage() {
   );
 
   return (
-    <main className="min-h-screen bg-ocean-background text-ocean-primary selection:bg-ocean-primary/30">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-10 -left-20 h-72 w-72 rounded-full ocean-primary/15 blur-[120px]" />
-        <div className="absolute bottom-10 -right-16 h-64 w-64 rounded-full ocean-accent/20 blur-[140px]" />
-      </div>
+    <main className="min-h-screen text-ocean-primary selection:bg-ocean-primary/30">
+      {/* Background is now handled globally by LivingBackground */}
 
       <div className="relative z-10 mx-auto w-full max-w-2xl px-5 pt-12 pb-32">
         <header
-          className={`mb-10 flex items-start justify-between transition duration-700 ${
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
-          }`}
+          className={`mb-10 flex items-start justify-between transition duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+            }`}
         >
           <div>
             <p className="text-[10px] uppercase tracking-[0.3em] text-ocean-tertiary">Dashboard</p>
@@ -130,9 +126,8 @@ export default function DashboardPage() {
         </header>
 
         <section
-          className={`relative mb-8 overflow-hidden rounded-ocean-xl border border-ocean-border ocean-panel-strong p-6 ocean-shadow-4 transition duration-700 ${
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
+          className={`relative mb-8 overflow-hidden rounded-ocean-xl border border-ocean-border ocean-panel-strong p-6 ocean-shadow-4 transition duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
         >
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full ocean-primary/30 blur-3xl" />
           <div className="relative flex flex-col gap-6">
@@ -176,9 +171,8 @@ export default function DashboardPage() {
         </section>
 
         <section
-          className={`mb-8 grid grid-cols-2 gap-3 transition duration-700 ${
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
+          className={`mb-8 grid grid-cols-2 gap-3 transition duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
         >
           {stats.map((stat) => (
             <div

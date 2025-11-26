@@ -96,7 +96,8 @@ export async function processBarcodeLocally(
     score: scoreResult.totalScore,
     metricScores: JSON.stringify(scoreResult.metrics),
     ocrTextRaw: null,
-    ocrParsedValues: null,
+    // Persist the analysis values so History can render Mineralwerte
+    ocrParsedValues: JSON.stringify(analysisValues),
     userOverrides: null,
     waterSourceId: waterSource.id,
     waterAnalysisId: latestAnalysis.id,
@@ -116,7 +117,7 @@ export async function processBarcodeLocally(
       productName: waterSource.productName,
       origin: waterSource.origin ?? undefined,
     },
-    ocrParsedValues: undefined,
+    ocrParsedValues: analysisValues,
     userOverrides: undefined,
   };
 

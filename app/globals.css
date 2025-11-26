@@ -73,33 +73,6 @@
 
   --ocean-text-primary: #1E293B;
   --ocean-text-secondary: #475569;
-  --ocean-text-tertiary: #64748B;
-  --ocean-text-muted: #94A3B8;
-
-  --ocean-border: rgba(0, 0, 0, 0.1);
-  --ocean-border-strong: rgba(0, 0, 0, 0.2);
-  --ocean-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-  --ocean-shadow-strong: 0 16px 64px 0 rgba(0, 0, 0, 0.15);
-}
-
-/* Base styles */
-html, body {
-  background-color: var(--ocean-background);
-  color: var(--ocean-text-primary);
-  -webkit-tap-highlight-color: transparent;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  touch-action: manipulation;
-}
-
-body {
-  font-family: 'Inter', 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--ocean-background);
-}
-
-::selection {
-  background: var(--ocean-primary);
-  color: var(--ocean-text-primary);
 }
 
 /* Mobile optimizations */
@@ -270,24 +243,59 @@ body {
   }
 
   /* Ocean text colors */
-  .text-ocean-primary { color: var(--ocean-text-primary); }
-  .text-ocean-secondary { color: var(--ocean-text-secondary); }
-  .text-ocean-tertiary { color: var(--ocean-text-tertiary); }
-  .text-ocean-muted { color: var(--ocean-text-muted); }
+  .text-ocean-primary {
+    color: var(--ocean-text-primary);
+  }
+
+  .text-ocean-secondary {
+    color: var(--ocean-text-secondary);
+  }
+
+  .text-ocean-tertiary {
+    color: var(--ocean-text-tertiary);
+  }
+
+  .text-ocean-muted {
+    color: var(--ocean-text-muted);
+  }
 
   /* Ocean status utilities */
-  .ocean-success { color: var(--ocean-success); }
-  .ocean-success-bg { background: var(--ocean-success-bg); }
-  .ocean-warning { color: var(--ocean-warning); }
-  .ocean-warning-bg { background: var(--ocean-warning-bg); }
-  .ocean-error { color: var(--ocean-error); }
-  .ocean-error-bg { background: var(--ocean-error-bg); }
-  .ocean-info { color: var(--ocean-info); }
-  .ocean-info-bg { background: var(--ocean-info-bg); }
+  .ocean-success {
+    color: var(--ocean-success);
+  }
+
+  .ocean-success-bg {
+    background: var(--ocean-success-bg);
+  }
+
+  .ocean-warning {
+    color: var(--ocean-warning);
+  }
+
+  .ocean-warning-bg {
+    background: var(--ocean-warning-bg);
+  }
+
+  .ocean-error {
+    color: var(--ocean-error);
+  }
+
+  .ocean-error-bg {
+    background: var(--ocean-error-bg);
+  }
+
+  .ocean-info {
+    color: var(--ocean-info);
+  }
+
+  .ocean-info-bg {
+    background: var(--ocean-info-bg);
+  }
 }
 
 /* Typography system */
 @layer components {
+
   /* Display text - Large hero text */
   .text-display {
     @apply text-5xl md:text-6xl font-bold leading-tight tracking-tight;
@@ -371,11 +379,13 @@ body {
     @apply ocean-panel;
   }
 
-  .md-card, .modern-card {
+  .md-card,
+  .modern-card {
     @apply ocean-card;
   }
 
-  .md-card:hover, .modern-card:hover {
+  .md-card:hover,
+  .modern-card:hover {
     @apply ocean-card-elevated;
     border-color: var(--ocean-border-strong);
   }

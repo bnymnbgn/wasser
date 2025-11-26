@@ -170,70 +170,110 @@ export function WaterScoreCard({ scanResult }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Hero Score Section */}
-      <div className="flex flex-col items-center py-6 ocean-panel-strong rounded-ocean-xl relative overflow-hidden">
-        <motion.div
-          layoutId={`bottle-${scanResult.id}`}
-          className="mx-auto mb-6 flex h-20 w-20 items-center justify-center text-water-primary z-10"
-          animate={{
-            backgroundColor: "transparent",
-            scale: 0.8,
-            opacity: 0
-          }}
-          transition={{
-            delay: 0.6,
-            duration: 0.3
-          }}
-        >
+      {/* Score + Mineralwerte section (side by side on larger screens) */}
+      <div className="ocean-panel-strong rounded-ocean-xl relative overflow-hidden p-6 md:grid md:grid-cols-[240px,1fr] md:gap-6 items-start">
+        <div className="flex flex-col items-center gap-3">
           <motion.div
-            initial={{ y: 0, scale: 1 }}
+            layoutId={`bottle-${scanResult.id}`}
+            className="mx-auto flex h-16 w-16 items-center justify-center text-water-primary z-10"
             animate={{
-              y: 140, // Falls down into the circle
-              scale: 0, // Shrinks as it hits the "water"
+              backgroundColor: "transparent",
+              scale: 0.8,
+              opacity: 0
             }}
             transition={{
-              duration: 0.6,
-              ease: "easeIn",
-              delay: 0.2
+              delay: 0.6,
+              duration: 0.3
             }}
-            className="text-4xl"
           >
-            💧
+            <motion.div
+              initial={{ y: 0, scale: 1 }}
+              animate={{
+                y: 100,
+                scale: 0,
+              }}
+              transition={{
+                duration: 0.6,
+                ease: "easeIn",
+                delay: 0.2
+              }}
+              className="text-3xl"
+            >
+              💧
+            </motion.div>
           </motion.div>
-        </motion.div>
 
-        <div className="-mt-20">
           <WaterScoreCircle
             value={score ?? 0}
-            size={180}
+            size={170}
             strokeWidth={12}
             showValue={true}
-            className="mb-6"
-            delay={0.7} // Wait for drop to land
+            className="-mt-10"
+            delay={0.7}
           />
+
+          <div className="text-center space-y-2">
+            <div className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ocean-success-bg ocean-success ${scoreColor === "success" ? "" :
+              scoreColor === "warning" ? "ocean-warning-bg ocean-warning" :
+                "ocean-error-bg ocean-error"
+              }`}>
+              {scoreLabel(score)}
+            </div>
+            <p className="text-sm text-ocean-secondary">
+              Profil: <span className="font-medium text-ocean-primary">{profile}</span>
+            </p>
+            <button
+              type="button"
+              onClick={handleComparisonToggle}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition ${isInComparison
+                ? "ocean-success-bg ocean-success border border-ocean-success/50"
+                : "ocean-card text-ocean-secondary border border-ocean-border hover:ocean-card-elevated"
+                }`}
+            >
+              <Columns className="w-4 h-4" />
+              {isInComparison ? "Im Vergleich" : "Zum Vergleich hinzufügen"}
+            </button>
+          </div>
         </div>
 
-        <div className="text-center space-y-2">
-          <div className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ocean-success-bg ocean-success ${scoreColor === "success" ? "" :
-            scoreColor === "warning" ? "ocean-warning-bg ocean-warning" :
-              "ocean-error-bg ocean-error"
-            }`}>
-            {scoreLabel(score)}
+        <div className="mt-6 md:mt-0 space-y-3 w-full">
+          <h3 className="font-semibold text-ocean-primary px-1">Mineralwerte</h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {WATER_METRIC_FIELDS.map((field) => {
+              const metric = field.key;
+              const value = mergedValues[metric];
+              if (value == null) return null;
+              const unit = field.unit ?? (metric === "ph" ? "" : " mg/L");
+              const metricScore = metricScores?.[metric];
+              const chipColor =
+                metricScore !== undefined && metricScore >= 80
+                  ? "ocean-success"
+                  : metricScore !== undefined && metricScore >= 50
+                    ? "ocean-warning"
+                    : "ocean-error";
+
+              return (
+                <div key={field.key} className="ocean-card p-3 rounded-2xl border border-ocean-surface">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-medium text-ocean-secondary">
+                      {WATER_METRIC_LABELS[metric]}
+                    </p>
+                    {metricScore !== undefined && (
+                      <span
+                        className={`text-[10px] px-2 py-1 rounded-full font-semibold ${chipColor}-bg ${chipColor}`}
+                      >
+                        {metricScore.toFixed(0)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-lg font-bold text-ocean-primary">
+                    {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    {unit}
+                  </p>
+                </div>
+              );
+            })}
           </div>
-          <p className="text-sm text-ocean-secondary">
-            Profil: <span className="font-medium text-ocean-primary">{profile}</span>
-          </p>
-          <button
-            type="button"
-            onClick={handleComparisonToggle}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition ${isInComparison
-              ? "ocean-success-bg ocean-success border border-ocean-success/50"
-              : "ocean-card text-ocean-secondary border border-ocean-border hover:ocean-card-elevated"
-              }`}
-          >
-            <Columns className="w-4 h-4" />
-            {isInComparison ? "Im Vergleich" : "Zum Vergleich hinzufügen"}
-          </button>
         </div>
       </div>
 
@@ -436,48 +476,6 @@ export function WaterScoreCard({ scanResult }: Props) {
             </div>
           </div>
         )}
-
-      {/* Metric Chips - Horizontal Scroll */}
-      <div className="space-y-3">
-        <h3 className="font-semibold text-ocean-primary px-1">
-          Mineralwerte
-        </h3>
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory hide-scrollbar">
-          {WATER_METRIC_FIELDS.map((field) => {
-            const metric = field.key;
-            const value = mergedValues[metric];
-            if (value == null) return null;
-            const unit = field.unit ?? (metric === "ph" ? "" : " mg/L");
-            const metricScore = metricScores?.[metric];
-            const chipColor = metricScore !== undefined && metricScore >= 80 ? "ocean-success" :
-              metricScore !== undefined && metricScore >= 50 ? "ocean-warning" : "ocean-error";
-
-            return (
-              <div
-                key={field.key}
-                className="snap-start flex-shrink-0 ocean-card p-3 min-w-[140px] border-l-4"
-                style={{
-                  borderLeftColor: chipColor.includes('success') ? 'var(--ocean-success)' :
-                    chipColor.includes('warning') ? 'var(--ocean-warning)' :
-                      'var(--ocean-error)',
-                }}
-              >
-                <p className="text-xs text-ocean-secondary mb-1">
-                  {WATER_METRIC_LABELS[metric]}
-                </p>
-                <p className="text-lg font-bold text-ocean-primary">
-                  {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}{unit}
-                </p>
-                {metricScore !== undefined && (
-                  <p className={`text-xs font-medium ${chipColor}`}>
-                    Score: {metricScore.toFixed(0)}/100
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Badges */}
       {insights?.badges && insights.badges.length > 0 && (

@@ -28,6 +28,20 @@ const createEmptyValueState = (): ValueInputState =>
     return acc;
   }, {} as ValueInputState);
 
+const fillValuesFromAnalysis = (
+  analysis?: Partial<WaterAnalysisValues> | null
+): ValueInputState => {
+  const base = createEmptyValueState();
+  if (!analysis) return base;
+  for (const field of WATER_METRIC_FIELDS) {
+    const value = (analysis as any)?.[field.key];
+    if (value !== null && value !== undefined) {
+      base[field.key] = String(value);
+    }
+  }
+  return base;
+};
+
 type Mode = "ocr" | "barcode";
 
 export default function ScanPage() {
@@ -106,8 +120,33 @@ function ScanPageContent() {
           const info = await getBarcodeInfo(barcode);
 
           if (info && info.analysis) {
-            // We have full data, proceed with standard scan
-            scanResult = await processBarcodeLocally(barcode, profile);
+            // Check if analysis has missing metrics; if yes, switch to manual completion
+            const missingMetrics = WATER_METRIC_FIELDS.filter(
+              (field) =>
+                (info.analysis as any)?.[field.key] === null ||
+                (info.analysis as any)?.[field.key] === undefined
+            ).map((f) => f.label);
+
+            if (missingMetrics.length > 0) {
+              setLoading(false);
+              await hapticLight();
+
+              // Switch to manual mode and prefill known values
+              setMode("ocr");
+              setShowResults(false);
+              setResult(null);
+              setValueInputs(fillValuesFromAnalysis(info.analysis as any));
+              setBarcode(barcode);
+              setBrandName(info.source?.brand ?? "");
+              setProductName(info.source?.productName ?? "");
+              alert(
+                `Datenbank-Eintrag unvollständig (${missingMetrics.length} fehlend). Bitte fehlende Werte ergänzen.`
+              );
+              return;
+            } else {
+              // We have full data, proceed with standard scan
+              scanResult = await processBarcodeLocally(barcode, profile);
+            }
           } else {
             // Missing data (either no source or no analysis) -> Switch to Manual Mode
             setLoading(false);
@@ -121,6 +160,7 @@ function ScanPageContent() {
             if (info?.source) {
               setBrandName(info.source.brand);
               setProductName(info.source.productName);
+              setValueInputs(fillValuesFromAnalysis(info.analysis as any));
               // Show toast for missing values
               alert("Bitte fehlende Wasserwerte ergänzen");
             } else {

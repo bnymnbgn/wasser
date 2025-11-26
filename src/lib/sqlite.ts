@@ -57,6 +57,7 @@ class SQLiteService {
   private sqliteConnection: SQLiteConnection | null = null;
   private db: SQLiteDBConnection | null = null;
   private isInitialized = false;
+  private isInitializing = false;
 
   /**
    * Check if we're running in a Capacitor environment
@@ -69,10 +70,12 @@ class SQLiteService {
    * Initialize the database connection
    */
   async init(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized || this.isInitializing) return;
+    this.isInitializing = true;
 
     if (!this.isCapacitor()) {
       console.log('[SQLite] Not running in Capacitor, skipping initialization');
+      this.isInitializing = false;
       return;
     }
 
@@ -86,8 +89,17 @@ class SQLiteService {
       const hasConnection = await this.sqliteConnection.isConnection(DB_NAME);
 
       if (consistency.result && hasConnection.result) {
-        this.db = await this.sqliteConnection.retrieveConnection(DB_NAME);
-      } else {
+        try {
+          // Reuse existing connection if possible
+          this.db = await this.sqliteConnection.retrieveConnection(DB_NAME);
+        } catch (err) {
+          console.warn('[SQLite] Failed to retrieve existing connection, closing and recreating', err);
+          await this.sqliteConnection.closeConnection(DB_NAME, false);
+          this.db = null;
+        }
+      }
+
+      if (!this.db) {
         // Open or create the database
         this.db = await this.sqliteConnection.createConnection(
           DB_NAME,
@@ -111,6 +123,8 @@ class SQLiteService {
     } catch (error) {
       console.error('[SQLite] Initialization error:', error);
       throw error;
+    } finally {
+      this.isInitializing = false;
     }
   }
 
@@ -325,9 +339,20 @@ class SQLiteService {
           w.productName as ws_productName,
           w.origin as ws_origin,
           w.barcode as ws_barcode,
-          w.createdAt as ws_createdAt
+          w.createdAt as ws_createdAt,
+          wa.ph as wa_ph,
+          wa.calcium as wa_calcium,
+          wa.magnesium as wa_magnesium,
+          wa.sodium as wa_sodium,
+          wa.potassium as wa_potassium,
+          wa.chloride as wa_chloride,
+          wa.sulfate as wa_sulfate,
+          wa.bicarbonate as wa_bicarbonate,
+          wa.nitrate as wa_nitrate,
+          wa.totalDissolvedSolids as wa_tds
          FROM ScanResult s
          LEFT JOIN WaterSource w ON s.waterSourceId = w.id
+         LEFT JOIN WaterAnalysis wa ON s.waterAnalysisId = wa.id
          ORDER BY s.timestamp DESC
          LIMIT ?`,
         [limit]
@@ -349,6 +374,36 @@ class SQLiteService {
           waterSourceId: row.waterSourceId,
           waterAnalysisId: row.waterAnalysisId,
         };
+
+        // If no parsed values stored, fall back to linked analysis to render Mineralwerte
+        let hasParsed = false;
+        if (scan.ocrParsedValues) {
+          try {
+            const parsed = JSON.parse(scan.ocrParsedValues);
+            hasParsed = Object.keys(parsed || {}).length > 0;
+          } catch {
+            hasParsed = false;
+          }
+        }
+        if (!hasParsed) {
+          const fallbackValues: Partial<WaterAnalysis> = {
+            ph: row.wa_ph ?? undefined,
+            calcium: row.wa_calcium ?? undefined,
+            magnesium: row.wa_magnesium ?? undefined,
+            sodium: row.wa_sodium ?? undefined,
+            potassium: row.wa_potassium ?? undefined,
+            chloride: row.wa_chloride ?? undefined,
+            sulfate: row.wa_sulfate ?? undefined,
+            bicarbonate: row.wa_bicarbonate ?? undefined,
+            nitrate: row.wa_nitrate ?? undefined,
+            totalDissolvedSolids: row.wa_tds ?? undefined,
+          };
+
+          // Only set if at least one value exists
+          if (Object.values(fallbackValues).some((v) => v !== undefined && v !== null)) {
+            scan.ocrParsedValues = JSON.stringify(fallbackValues);
+          }
+        }
 
         if (row.ws_id) {
           scan.waterSource = {
