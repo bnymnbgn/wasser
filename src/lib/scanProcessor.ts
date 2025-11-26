@@ -31,7 +31,44 @@ export async function processBarcodeLocally(
   const latestAnalysis = analyses[0];
 
   if (!latestAnalysis) {
-    throw new Error('Keine Analysedaten für dieses Produkt verfügbar.');
+    console.log(`[ScanProcessor] No analysis found for ${waterSource.brand}, saving partial result`);
+
+    // Create scan result without analysis
+    const scanRecord = await sqliteService.createScanResult({
+      barcode,
+      profile,
+      score: null,
+      metricScores: null,
+      ocrTextRaw: null,
+      ocrParsedValues: null,
+      userOverrides: null,
+      waterSourceId: waterSource.id,
+      waterAnalysisId: null,
+    });
+
+    const result = {
+      id: scanRecord.id,
+      timestamp: new Date(scanRecord.timestamp).toISOString(),
+      barcode,
+      profile,
+      score: undefined,
+      metricDetails: undefined,
+      insights: undefined,
+      productInfo: {
+        brand: waterSource.brand,
+        productName: waterSource.productName,
+        origin: waterSource.origin ?? undefined,
+      },
+      ocrParsedValues: undefined,
+      userOverrides: undefined,
+    };
+
+    // Dispatch event to notify history page to refresh
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('scan-completed'));
+    }
+
+    return result;
   }
 
   // Build analysis values from database
@@ -66,7 +103,7 @@ export async function processBarcodeLocally(
   });
 
   // Return scan result in domain format
-  return {
+  const result = {
     id: scanRecord.id,
     timestamp: new Date(scanRecord.timestamp).toISOString(),
     barcode,
@@ -82,6 +119,13 @@ export async function processBarcodeLocally(
     ocrParsedValues: undefined,
     userOverrides: undefined,
   };
+
+  // Dispatch event to notify history page to refresh
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('scan-completed'));
+  }
+
+  return result;
 }
 
 /**
@@ -166,7 +210,7 @@ export async function processOCRLocally(
     waterAnalysisId,
   });
 
-  return {
+  const result = {
     id: scanRecord.id,
     timestamp: new Date(scanRecord.timestamp).toISOString(),
     barcode: barcode,
@@ -177,5 +221,32 @@ export async function processOCRLocally(
     productInfo,
     ocrParsedValues: parsedValues,
     userOverrides: undefined,
+  };
+
+  // Dispatch event to notify history page to refresh
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('scan-completed'));
+  }
+
+  return result;
+}
+
+/**
+ * Check if a barcode exists in the database and return its info
+ * Used to pre-fill the form if data is missing
+ */
+export async function getBarcodeInfo(barcode: string) {
+  const waterSourceWithAnalyses = await sqliteService.findWaterSourceByBarcode(barcode);
+
+  if (!waterSourceWithAnalyses) {
+    return null;
+  }
+
+  const { analyses, ...waterSource } = waterSourceWithAnalyses;
+  const latestAnalysis = analyses[0];
+
+  return {
+    source: waterSource,
+    analysis: latestAnalysis || null
   };
 }

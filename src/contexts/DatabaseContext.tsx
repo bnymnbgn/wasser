@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { sqliteService, WaterSource, WaterAnalysis } from '@/lib/sqlite';
+import { InitialLoadingScreen } from '@/src/components/ui/InitialLoadingScreen';
 // Import JSON data directly for reliability in Capacitor apps
 import waterSourcesData from '@/src/data/water-sources.json';
 import waterAnalysesData from '@/src/data/water-analyses.json';
@@ -31,6 +32,11 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const initDatabase = async () => {
@@ -73,6 +79,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
 
   return (
     <DatabaseContext.Provider value={{ isReady, isLoading, error }}>
+      {mounted && isLoading && Capacitor.isNativePlatform() && <InitialLoadingScreen />}
       {children}
     </DatabaseContext.Provider>
   );

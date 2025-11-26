@@ -5,7 +5,7 @@ export interface ValidationResult {
   warning?: string;
 }
 
-const VALUE_RANGES: Record<keyof WaterAnalysisValues, { min: number; max: number; typical: string }> = {
+const VALUE_RANGES: Partial<Record<keyof WaterAnalysisValues, { min: number; max: number; typical: string }>> = {
   ph: { min: 4, max: 10, typical: "6.5-8.5" },
   calcium: { min: 0, max: 1500, typical: "5-600 mg/L" },
   magnesium: { min: 0, max: 200, typical: "1-100 mg/L" },
@@ -18,7 +18,7 @@ const VALUE_RANGES: Record<keyof WaterAnalysisValues, { min: number; max: number
   totalDissolvedSolids: { min: 0, max: 3000, typical: "50-1500 mg/L" },
 };
 
-const MINERAL_LABELS: Record<keyof WaterAnalysisValues, string[]> = {
+const MINERAL_LABELS: Partial<Record<keyof WaterAnalysisValues, string[]>> = {
   ph: ["ph", "p-h", "potential"],
   calcium: ["calcium", "kalzium", "ca", "ca2+", "ca2"],
   magnesium: ["magnesium", "mg", "mg2+", "mg2"],
@@ -109,6 +109,7 @@ function findValueForMineral(
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (!line) continue;
     const normalizedLine = normalizeLine(line);
 
     const includesTerm = searchTerms.some((term) => normalizedLine.includes(term));
@@ -158,28 +159,28 @@ function getLevenshteinDistance(a: string, b: string): number {
   if (!a.length) return b.length;
   if (!b.length) return a.length;
 
-  const matrix: number[][] = [];
-
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
+  // Fully initialize matrix to avoid undefined checks
+  const matrix: number[][] = new Array(b.length + 1)
+    .fill(0)
+    .map((_, i) => new Array(a.length + 1).fill(0).map((__, j) => (i === 0 ? j : j === 0 ? i : 0)));
 
   for (let i = 1; i <= b.length; i++) {
     for (let j = 1; j <= a.length; j++) {
+      const prevRow = matrix[i - 1];
+      const currRow = matrix[i];
+      if (!prevRow || !currRow) continue;
+
       if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
+        currRow[j] = prevRow[j - 1] ?? 0;
       } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + 1
+        currRow[j] = Math.min(
+          (prevRow[j] ?? Number.MAX_SAFE_INTEGER) + 1,
+          (currRow[j - 1] ?? Number.MAX_SAFE_INTEGER) + 1,
+          (prevRow[j - 1] ?? Number.MAX_SAFE_INTEGER) + 1
         );
       }
     }
   }
 
-  return matrix[b.length][a.length];
+  return matrix[b.length]?.[a.length] ?? 0;
 }

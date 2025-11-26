@@ -171,20 +171,47 @@ export function WaterScoreCard({ scanResult }: Props) {
   return (
     <div className="space-y-6">
       {/* Hero Score Section */}
-      <div className="flex flex-col items-center py-6 ocean-panel-strong rounded-ocean-xl">
+      <div className="flex flex-col items-center py-6 ocean-panel-strong rounded-ocean-xl relative overflow-hidden">
         <motion.div
           layoutId={`bottle-${scanResult.id}`}
-          className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-water-primary/10 text-water-primary"
+          className="mx-auto mb-6 flex h-20 w-20 items-center justify-center text-water-primary z-10"
+          animate={{
+            backgroundColor: "transparent",
+            scale: 0.8,
+            opacity: 0
+          }}
+          transition={{
+            delay: 0.6,
+            duration: 0.3
+          }}
         >
-          <div className="text-4xl">💧</div>
+          <motion.div
+            initial={{ y: 0, scale: 1 }}
+            animate={{
+              y: 140, // Falls down into the circle
+              scale: 0, // Shrinks as it hits the "water"
+            }}
+            transition={{
+              duration: 0.6,
+              ease: "easeIn",
+              delay: 0.2
+            }}
+            className="text-4xl"
+          >
+            💧
+          </motion.div>
         </motion.div>
-        <WaterScoreCircle
-          value={score ?? 0}
-          size={180}
-          strokeWidth={12}
-          showValue={true}
-          className="mb-6"
-        />
+
+        <div className="-mt-20">
+          <WaterScoreCircle
+            value={score ?? 0}
+            size={180}
+            strokeWidth={12}
+            showValue={true}
+            className="mb-6"
+            delay={0.7} // Wait for drop to land
+          />
+        </div>
 
         <div className="text-center space-y-2">
           <div className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ocean-success-bg ocean-success ${scoreColor === "success" ? "" :

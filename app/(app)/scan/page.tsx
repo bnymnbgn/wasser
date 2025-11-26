@@ -16,7 +16,7 @@ import { LiquidLoader } from "@/src/components/ui/LiquidLoader";
 import { SkeletonScoreCard } from "@/src/components/ui/SkeletonLoader";
 import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/capacitor";
-import { processBarcodeLocally, processOCRLocally } from "@/src/lib/scanProcessor";
+import { processBarcodeLocally, processOCRLocally, getBarcodeInfo } from "@/src/lib/scanProcessor";
 import { WATER_METRIC_FIELDS } from "@/src/constants/waterMetrics";
 
 type MetricKey = (typeof WATER_METRIC_FIELDS)[number]["key"];
@@ -102,7 +102,33 @@ function ScanPageContent() {
       if (Capacitor.isNativePlatform()) {
         // Local processing for mobile app
         if (mode === "barcode") {
-          scanResult = await processBarcodeLocally(barcode, profile);
+          // Check if we have data for this barcode
+          const info = await getBarcodeInfo(barcode);
+
+          if (info && info.analysis) {
+            // We have full data, proceed with standard scan
+            scanResult = await processBarcodeLocally(barcode, profile);
+          } else {
+            // Missing data (either no source or no analysis) -> Switch to Manual Mode
+            setLoading(false);
+            await hapticLight();
+
+            // Switch to OCR/Manual mode
+            setMode("ocr");
+
+            // Pre-fill data
+            setBarcode(barcode);
+            if (info?.source) {
+              setBrandName(info.source.brand);
+              setProductName(info.source.productName);
+              // Show toast for missing values
+              alert("Bitte fehlende Wasserwerte ergänzen");
+            } else {
+              // Show toast for new product
+              alert("Produkt nicht gefunden. Bitte neu anlegen.");
+            }
+            return;
+          }
         } else {
           scanResult = await processOCRLocally(
             ocrText,

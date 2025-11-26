@@ -188,7 +188,10 @@ export function ImageOCRScanner({ onTextExtracted }: ImageOCRScannerProps) {
         saveToGallery: false,
       });
 
-      const photoUrl = photo.webPath ?? (photo.path ? Capacitor.convertFileSrc(photo.path) : null);
+      const convert = (Capacitor as any).convertFileSrc as ((path: string) => string) | undefined;
+      const photoUrl =
+        photo.webPath ??
+        (photo.path ? (convert ? convert(photo.path) : photo.path) : null);
       if (!photoUrl) {
         throw new Error("Konnte kein Foto aus der Kamera laden.");
       }

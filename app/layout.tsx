@@ -28,6 +28,22 @@ export default function RootLayout({
   return (
     <html lang="de" suppressHydrationWarning>
       <body className="font-sans overscroll-none antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var storageKey = 'wasserscan-theme';
+                  var stored = localStorage.getItem(storageKey);
+                  var isDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })()
+            `,
+          }}
+        />
         {children}
       </body>
     </html>

@@ -1,21 +1,27 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const useDevServer = process.env['CAPACITOR_DEV_SERVER'] === 'true';
+
 const config: CapacitorConfig = {
   appId: 'de.wasserscan',
   appName: 'Wasserscan',
   webDir: 'out',
 
   // Server configuration for development
-  server: {
-    androidScheme: 'http',
-    iosScheme: 'http',
-    url: 'http://192.168.178.49:3000',
-    cleartext: true,
-    allowNavigation: [
-      'http://192.168.178.49:3000',
-      'http://localhost:3000'
-    ],
-  },
+  ...(useDevServer
+    ? {
+        server: {
+          androidScheme: 'http',
+          iosScheme: 'http',
+          url: 'http://192.168.178.49:3000',
+          cleartext: true,
+          allowNavigation: [
+            'http://192.168.178.49:3000',
+            'http://localhost:3000',
+          ],
+        },
+      }
+    : {}),
 
   // Android specific configuration
   android: {

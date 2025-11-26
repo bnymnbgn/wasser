@@ -25,7 +25,13 @@ const shouldUseCapacitorStubs =
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Static export for Capacitor (comment out for dev with API routes)
-  // output: process.env.CAPACITOR_BUILD === 'true' ? 'export' : undefined,
+  output: process.env.CAPACITOR_BUILD === 'true' ? 'export' : undefined,
+
+  // Allow remote dev origin when testing on device
+  allowedDevOrigins:
+    process.env.CAPACITOR_DEV_SERVER === 'true'
+      ? ['http://192.168.178.49:3000']
+      : undefined,
 
   // Ignore ESLint errors during build (for now)
   eslint: {

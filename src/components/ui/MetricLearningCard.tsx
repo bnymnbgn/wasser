@@ -7,7 +7,7 @@ interface MetricLearningCardProps {
     label: string;
     importance: string;
     explanation: string;
-    hints?: string[];
+    hints?: readonly string[];
   };
 }
 
@@ -21,7 +21,9 @@ const IMPORTANCE_MAP: Record<string, { label: string; color: string }> = {
 
 export function MetricLearningCard({ metric }: MetricLearningCardProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const badge = IMPORTANCE_MAP[metric.importance] ?? IMPORTANCE_MAP.mittel;
+  const badge = IMPORTANCE_MAP[metric.importance] ?? IMPORTANCE_MAP["mittel"];
+  const badgeColor = badge?.color ?? "bg-slate-100 text-slate-600";
+  const badgeLabel = badge?.label ?? "Info";
 
   return (
     <div
@@ -42,8 +44,8 @@ export function MetricLearningCard({ metric }: MetricLearningCardProps) {
             <p className="text-xs font-mono text-slate-500 uppercase">{metric.metric}</p>
           </div>
         </div>
-        <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full ${badge.color}`}>
-          {badge.label}
+        <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full ${badgeColor}`}>
+          {badgeLabel}
         </span>
       </div>
 

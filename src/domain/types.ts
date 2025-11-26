@@ -22,6 +22,13 @@ export interface WaterAnalysisValues {
   bicarbonate?: number;
   nitrate?: number;
   totalDissolvedSolids?: number;
+  // Derived/auxiliary metrics (computed from the above)
+  hardness?: number;
+  calciumMagnesiumRatio?: number;
+  sodiumPotassiumRatio?: number;
+  tastePalatability?: number;
+  bufferCapacity?: number;
+  dataQualityScore?: number;
 }
 
 /** Entspricht grob dem Prisma-Model WaterSource */

@@ -77,18 +77,33 @@ class SQLiteService {
     }
 
     try {
-      this.sqliteConnection = new SQLiteConnection(CapacitorSQLite);
+      // Reuse an existing connection if one is already open (prevents "connection already exists")
+      if (!this.sqliteConnection) {
+        this.sqliteConnection = new SQLiteConnection(CapacitorSQLite);
+      }
 
-      // Open or create the database
-      this.db = await this.sqliteConnection.createConnection(
-        DB_NAME,
-        false, // encrypted
-        'no-encryption',
-        DB_VERSION,
-        false // readonly
-      );
+      const consistency = await this.sqliteConnection.checkConnectionsConsistency();
+      const hasConnection = await this.sqliteConnection.isConnection(DB_NAME);
 
-      await this.db.open();
+      if (consistency.result && hasConnection.result) {
+        this.db = await this.sqliteConnection.retrieveConnection(DB_NAME);
+      } else {
+        // Open or create the database
+        this.db = await this.sqliteConnection.createConnection(
+          DB_NAME,
+          false, // encrypted
+          'no-encryption',
+          DB_VERSION,
+          false // readonly
+        );
+      }
+
+      // Ensure DB is open
+      const isOpen = (await this.db.isDBOpen())?.result;
+      if (!isOpen) {
+        await this.db.open();
+      }
+
       await this.ensureSchema();
       this.isInitialized = true;
 
@@ -428,14 +443,18 @@ class SQLiteService {
       // Import water sources
       let importedSources = 0;
       for (const source of sources) {
-        const result = await this.db.run(
-          `INSERT OR IGNORE INTO WaterSource (id, brand, productName, origin, barcode, createdAt)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [source.id, source.brand, source.productName, source.origin, source.barcode, source.createdAt]
-        );
-        const changes = result.changes?.changes ?? 0;
-        if (changes > 0) {
-          importedSources++;
+        try {
+          const result = await this.db.run(
+            `INSERT OR IGNORE INTO WaterSource (id, brand, productName, origin, barcode, createdAt)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [source.id, source.brand, source.productName, source.origin, source.barcode, source.createdAt]
+          );
+          const changes = result.changes?.changes ?? 0;
+          if (changes > 0) {
+            importedSources++;
+          }
+        } catch (err) {
+          console.error(`[SQLite] Failed to import source ${source.id} (${source.brand}):`, err);
         }
 
         // Log progress every 10 sources
@@ -452,35 +471,40 @@ class SQLiteService {
       // Import analyses
       let importedAnalyses = 0;
       for (const analysis of analyses) {
-        const result = await this.db.run(
-          `INSERT OR IGNORE INTO WaterAnalysis (
-            id, waterSourceId, analysisDate, sourceType, reliabilityScore,
-            ph, calcium, magnesium, sodium, potassium, chloride, sulfate,
-            bicarbonate, nitrate, totalDissolvedSolids, createdAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            analysis.id,
-            analysis.waterSourceId,
-            analysis.analysisDate,
-            analysis.sourceType,
-            analysis.reliabilityScore,
-            analysis.ph,
-            analysis.calcium,
-            analysis.magnesium,
-            analysis.sodium,
-            analysis.potassium,
-            analysis.chloride,
-            analysis.sulfate,
-            analysis.bicarbonate,
-            analysis.nitrate,
-            analysis.totalDissolvedSolids,
-            analysis.createdAt
-          ]
-        );
-        const changes = result.changes?.changes ?? 0;
-        if (changes > 0) {
-          importedAnalyses++;
+        try {
+          const result = await this.db.run(
+            `INSERT OR IGNORE INTO WaterAnalysis (
+              id, waterSourceId, analysisDate, sourceType, reliabilityScore,
+              ph, calcium, magnesium, sodium, potassium, chloride, sulfate,
+              bicarbonate, nitrate, totalDissolvedSolids, createdAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              analysis.id,
+              analysis.waterSourceId,
+              analysis.analysisDate,
+              analysis.sourceType,
+              analysis.reliabilityScore,
+              analysis.ph,
+              analysis.calcium,
+              analysis.magnesium,
+              analysis.sodium,
+              analysis.potassium,
+              analysis.chloride,
+              analysis.sulfate,
+              analysis.bicarbonate,
+              analysis.nitrate,
+              analysis.totalDissolvedSolids,
+              analysis.createdAt
+            ]
+          );
+          const changes = result.changes?.changes ?? 0;
+          if (changes > 0) {
+            importedAnalyses++;
+          }
+        } catch (err) {
+          console.error(`[SQLite] Failed to import analysis ${analysis.id} (Source: ${analysis.waterSourceId}):`, err);
         }
+
 
         // Log progress every 10 analyses
         if (importedAnalyses > 0 && importedAnalyses % 10 === 0) {

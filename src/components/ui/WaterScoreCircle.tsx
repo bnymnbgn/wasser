@@ -1,352 +1,331 @@
-'use client';
+"use client";
 
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { motion, useAnimation } from "framer-motion";
+import { useEffect, useState } from "react";
 
-interface Bubble {
-  id: number;
-  x: number;
-  size: number;
-  duration: number;
-  delay: number;
-  wobble: number;
-}
+// --- KOMPONENTE START: WaterScoreCircle ---
 
 interface WaterScoreCircleProps {
-  value: number; // 0-100
+  value: number;
   size?: number;
   strokeWidth?: number;
   showValue?: boolean;
   className?: string;
+  delay?: number;
 }
+
+// Hilfskomponente für Spritzer-Partikel
+const SplashParticle = ({
+  cx,
+  cy,
+  delay,
+  color,
+}: {
+  cx: number;
+  cy: number;
+  delay: number;
+  color: string;
+}) => {
+  const angle = Math.random() * 360;
+  const distance = 40 + Math.random() * 60; // Wie weit sie fliegen
+  const size = 2 + Math.random() * 4;
+
+  return (
+    <motion.circle
+      cx={cx}
+      cy={cy}
+      r={size}
+      fill={color}
+      initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+      animate={{
+        opacity: [0, 1, 0],
+        scale: [0, 1, 0],
+        x: Math.cos(angle * (Math.PI / 180)) * distance,
+        y: Math.sin(angle * (Math.PI / 180)) * distance,
+      }}
+      transition={{
+        duration: 0.8 + Math.random() * 0.5,
+        delay: delay,
+        ease: "easeOut",
+      }}
+    />
+  );
+};
 
 export function WaterScoreCircle({
   value,
-  size = 180,
-  strokeWidth = 12,
+  size = 240,
+  strokeWidth = 4,
   showValue = true,
-  className = ''
+  className = "",
+  delay = 0,
 }: WaterScoreCircleProps) {
-  const normalizedValue = Math.min(Math.max(value, 0), 100);
-  const [bubbles, setBubbles] = useState<Bubble[]>([]);
-
-  // Bestimme Farbe basierend auf Score
-  const getWaterColors = (score: number) => {
-    if (score >= 80) {
-      // Grün - Exzellent
-      return {
-        gradient: ['#10b981', '#34d399', '#6ee7b7'], // emerald shades
-        text: 'text-emerald-600 dark:text-emerald-400',
-        glow: 'rgba(16, 185, 129, 0.3)'
-      };
-    } else if (score >= 50) {
-      // Gelb/Amber - Gut
-      return {
-        gradient: ['#f59e0b', '#fbbf24', '#fcd34d'], // amber shades
-        text: 'text-amber-600 dark:text-amber-400',
-        glow: 'rgba(245, 158, 11, 0.3)'
-      };
-    } else {
-      // Rot - Verbesserungsbedarf
-      return {
-        gradient: ['#ef4444', '#f87171', '#fca5a5'], // red shades
-        text: 'text-red-600 dark:text-red-400',
-        glow: 'rgba(239, 68, 68, 0.3)'
-      };
-    }
-  };
-
-  const colors = getWaterColors(normalizedValue);
-
-  // Generiere kontinuierlich Luftblasen (aber weniger als bei WaterFilledCircle)
-  useEffect(() => {
-    const generateBubbles = () => {
-      const newBubbles: Bubble[] = Array.from({ length: 10 }, (_, i) => ({
-        id: Date.now() + i,
-        x: 25 + Math.random() * 50, // Position zwischen 25% und 75% der Breite
-        size: 2 + Math.random() * 4, // Blasengröße zwischen 2 und 6
-        duration: 2.5 + Math.random() * 2, // Aufstiegsdauer 2.5-4.5s
-        delay: Math.random() * 3, // Zufälliger Start zwischen 0-3s
-        wobble: 4 + Math.random() * 8, // Seitliche Bewegung
-      }));
-      setBubbles(newBubbles);
-    };
-
-    generateBubbles();
-    const interval = setInterval(generateBubbles, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Animierter Counter für Score-Zahl
-  const count = useMotionValue(0);
-  const rounded = useTransform(count, Math.round);
-
-  useEffect(() => {
-    const controls = animate(count, normalizedValue, {
-      duration: 2,
-      ease: "easeOut"
-    });
-    return controls.stop;
-  }, [normalizedValue, count]);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const controls = useAnimation();
 
   const radius = size / 2;
-  const innerRadius = radius - strokeWidth;
+  const innerRadius = radius - strokeWidth - 8;
+  const normalizedValue = Math.min(Math.max(value, 0), 100);
+
+  // Wasserhöhe berechnen
+  const waterLevelY =
+    size - strokeWidth - (size - strokeWidth * 2) * (normalizedValue / 100);
+
+  // 1. Status Farben (Nur für Ring, Text, Glow)
+  const getStatusColors = (score: number) => {
+    if (score >= 80)
+      return {
+        text: "text-emerald-400",
+        glow: "#34d399",
+      };
+    if (score >= 50)
+      return {
+        text: "text-amber-400",
+        glow: "#fbbf24",
+      };
+    return {
+      text: "text-rose-400",
+      glow: "#f43f5e",
+    };
+  };
+
+  const statusColors = getStatusColors(normalizedValue);
+
+  // 2. Konstantes Wasser-Blau (Unabhängig vom Score)
+  const waterColors = {
+    gradientStart: "#38bdf8", // Sky-400 (Hellblau oben)
+    gradientEnd: "#0284c7", // Sky-600 (Dunkleres Blau unten)
+    deepWater: "#0369a1", // Sky-700 (Hintere Welle)
+    particle: "#bae6fd", // Sky-200 (Helle Spritzer)
+  };
+
+  // --- PROFESSIONELLE WELLE START ---
+  const waveLength = size;
+  const waveHeight = size * 0.05;
+
+  const wavePathD = `
+    M 0 0
+    Q ${waveLength * 0.25} ${waveHeight} ${waveLength * 0.5} 0
+    T ${waveLength} 0
+    T ${waveLength * 1.5} 0
+    T ${waveLength * 2} 0
+    T ${waveLength * 2.5} 0
+    T ${waveLength * 3} 0
+    T ${waveLength * 3.5} 0
+    T ${waveLength * 4} 0
+    V ${size * 2} 
+    H 0 
+    Z
+  `;
+  // --- WELLE ENDE ---
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAnimating(true);
+      controls.start("visible");
+    }, delay * 1000);
+    return () => clearTimeout(timer);
+  }, [delay, controls]);
 
   return (
-    <div className={`relative ${className}`} style={{ width: size, height: size }}>
+    <div
+      className={`relative flex items-center justify-center ${className}`}
+      style={{ width: size, height: size }}
+    >
+      {/* Äußerer Glow-Container (Farbe basierend auf Status) */}
+      <div
+        className="absolute inset-0 rounded-full blur-3xl transition-opacity duration-1000"
+        style={{
+          background: `radial-gradient(circle, ${statusColors.glow}40 0%, transparent 70%)`,
+          opacity: isAnimating ? 0.6 : 0,
+        }}
+      />
+
       <svg
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        className="transform -rotate-90"
+        className="overflow-visible z-10"
       >
-        {/* Definitionen für Gradienten und Effekte */}
         <defs>
-          {/* Wasser-Gradient basierend auf Score */}
-          <linearGradient id={`waterScoreGradient-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={colors.gradient[0]} stopOpacity="0.95" />
-            <stop offset="50%" stopColor={colors.gradient[1]} stopOpacity="0.85" />
-            <stop offset="100%" stopColor={colors.gradient[2]} stopOpacity="0.9" />
-          </linearGradient>
-
-          {/* Lichtreflex-Gradient */}
-          <radialGradient id={`scoreLight-${size}`} cx="35%" cy="35%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
-            <stop offset="40%" stopColor="#ffffff" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-          </radialGradient>
-
-          {/* Clip-Path für Kreis */}
-          <clipPath id={`scoreCircleClip-${size}`}>
+          <clipPath id={`circleClip-${size}`}>
             <circle cx={radius} cy={radius} r={innerRadius} />
           </clipPath>
 
-          {/* Welleneffekt */}
-          <filter id={`scoreWave-${size}`} x="-50%" y="-50%" width="200%" height="200%">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.015"
-              numOctaves="2"
-              result="turbulence"
-            >
-              <animate
-                attributeName="baseFrequency"
-                values="0.015;0.025;0.015"
-                dur="4s"
-                repeatCount="indefinite"
-              />
-            </feTurbulence>
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="turbulence"
-              scale="4"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
+          <linearGradient id={`waterGradient-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={waterColors.gradientStart} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={waterColors.gradientEnd} stopOpacity="0.95" />
+          </linearGradient>
 
-          {/* Äußerer Glow */}
-          <filter id={`scoreGlow-${size}`}>
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <linearGradient id="shineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="white" stopOpacity="0" />
+            <stop offset="50%" stopColor="white" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </linearGradient>
+
+          <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
             <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
 
-        {/* Hintergrund-Kreis (Rahmen) */}
+        {/* 1. Hintergrund-Track */}
         <circle
           cx={radius}
           cy={radius}
-          r={innerRadius}
+          r={radius - strokeWidth}
           fill="none"
-          stroke="currentColor"
+          stroke="#1e293b"
           strokeWidth={strokeWidth}
-          className="text-slate-200 dark:text-slate-700"
-          opacity="0.3"
+          className="opacity-50"
         />
 
-        {/* Wasser-Füll-Animation */}
+        {/* 2. Wasser-Gruppe */}
+        <g clipPath={`url(#circleClip-${size})`}>
+          <circle
+            cx={radius}
+            cy={radius}
+            r={innerRadius}
+            fill="#0c4a6e"
+            fillOpacity="0.3"
+          />
+
+          {/* Hintere Welle (Dunkleres Blau) */}
+          <motion.path
+            d={wavePathD}
+            fill={waterColors.deepWater}
+            initial={{ y: size, opacity: 0 }}
+            animate={{
+              y: isAnimating ? waterLevelY - 5 : size,
+              x: [-waveLength, 0],
+              opacity: 0.8,
+            }}
+            transition={{
+              y: { duration: 2, ease: "easeOut" },
+              x: { repeat: Infinity, duration: 4, ease: "linear" },
+            }}
+          />
+
+          {/* Vordere Welle (Haupt-Blau Gradient) */}
+          <motion.path
+            d={wavePathD}
+            fill={`url(#waterGradient-${size})`}
+            initial={{ y: size }}
+            animate={{
+              y: isAnimating ? waterLevelY : size,
+              x: [0, -waveLength],
+            }}
+            transition={{
+              y: { duration: 1.5, ease: "easeOut" },
+              x: { repeat: Infinity, duration: 2, ease: "linear" },
+            }}
+          />
+
+          {/* Bubbles */}
+          {isAnimating &&
+            [...Array(8)].map((_, i) => (
+              <motion.circle
+                key={`bubble-${i}`}
+                r={2 + Math.random() * 4}
+                fill="white"
+                initial={{
+                  cx: size * (0.2 + Math.random() * 0.6),
+                  cy: size,
+                  opacity: 0,
+                }}
+                animate={{
+                  cy: waterLevelY + 20,
+                  opacity: [0, 0.4, 0],
+                  x: (Math.random() - 0.5) * 20,
+                }}
+                transition={{
+                  duration: 2 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                  ease: "easeOut",
+                }}
+              />
+            ))}
+
+          {/* Swirl Shine */}
+          <motion.circle
+            cx={radius}
+            cy={radius}
+            r={innerRadius}
+            fill="url(#shineGradient)"
+            style={{ originX: "50%", originY: "50%" }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            className="mix-blend-overlay opacity-40"
+          />
+        </g>
+
+        {/* 3. Glas-Reflexion */}
+        <path
+          d={`M ${radius - innerRadius * 0.7} ${radius - innerRadius * 0.7} Q ${radius} ${
+            radius - innerRadius * 0.9
+          } ${radius + innerRadius * 0.7} ${radius - innerRadius * 0.7}`}
+          fill="none"
+          stroke="white"
+          strokeWidth="6"
+          strokeLinecap="round"
+          className="opacity-20 mix-blend-screen filter blur-sm"
+        />
+
+        {/* 4. Äußerer Ring Glow (Farbe = Status) - JETZT STATISCH */}
         <motion.circle
           cx={radius}
           cy={radius}
-          r={innerRadius - strokeWidth / 2}
-          fill={`url(#waterScoreGradient-${size})`}
-          initial={{
-            strokeDasharray: `0 ${2 * Math.PI * (innerRadius - strokeWidth / 2)}`
-          }}
-          animate={{
-            strokeDasharray: `${(normalizedValue / 100) * 2 * Math.PI * (innerRadius - strokeWidth / 2)} ${2 * Math.PI * (innerRadius - strokeWidth / 2)}`
-          }}
-          transition={{
-            duration: 2,
-            ease: "easeInOut",
-          }}
-          stroke={`url(#waterScoreGradient-${size})`}
-          strokeWidth={(innerRadius - strokeWidth / 2) * 2}
-          filter={`url(#scoreWave-${size})`}
-          style={{
-            filter: `drop-shadow(0 0 10px ${colors.glow})`
-          }}
+          r={radius - strokeWidth}
+          fill="none"
+          stroke={statusColors.glow}
+          strokeWidth={2}
+          strokeLinecap="round"
+          style={{ rotate: -90, originX: "50%", originY: "50%" }}
+          filter="url(#glowFilter)"
         />
 
-        {/* Lichtreflex-Effekt */}
-        <motion.ellipse
-          cx={radius * 0.65}
-          cy={radius * 0.65}
-          rx={radius * 0.45}
-          ry={radius * 0.35}
-          fill={`url(#scoreLight-${size})`}
-          clipPath={`url(#scoreCircleClip-${size})`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.7, 0.5] }}
-          transition={{
-            duration: 2.5,
-            times: [0, 0.5, 1],
-            repeat: Infinity,
-            repeatType: "reverse",
-          }}
-        />
-
-        {/* Luftblasen mit Wobble-Effekt */}
-        <g clipPath={`url(#scoreCircleClip-${size})`}>
-          {bubbles.map((bubble) => {
-            const startX = (bubble.x / 100) * size;
-            const wobbleAmount = bubble.wobble;
-            return (
-              <motion.g key={bubble.id}>
-                {/* Haupt-Blase */}
-                <motion.circle
-                  r={bubble.size}
-                  fill="#ffffff"
-                  fillOpacity="0.6"
-                  initial={{
-                    cx: startX,
-                    cy: size + 10,
-                    opacity: 0
-                  }}
-                  animate={{
-                    cx: [
-                      startX,
-                      startX + wobbleAmount,
-                      startX - wobbleAmount,
-                      startX + wobbleAmount * 0.5,
-                      startX
-                    ],
-                    cy: -10,
-                    opacity: [0, 0.6, 0.5, 0.3, 0],
-                  }}
-                  transition={{
-                    duration: bubble.duration,
-                    delay: bubble.delay,
-                    ease: "easeOut",
-                    times: [0, 0.25, 0.5, 0.75, 1],
-                  }}
-                />
-                {/* Glanz auf der Blase */}
-                <motion.circle
-                  r={bubble.size * 0.4}
-                  fill="#ffffff"
-                  fillOpacity="0.9"
-                  initial={{
-                    cx: startX - bubble.size * 0.3,
-                    cy: size + 10,
-                    opacity: 0
-                  }}
-                  animate={{
-                    cx: [
-                      startX - bubble.size * 0.3,
-                      startX + wobbleAmount - bubble.size * 0.3,
-                      startX - wobbleAmount - bubble.size * 0.3,
-                      startX + wobbleAmount * 0.5 - bubble.size * 0.3,
-                      startX - bubble.size * 0.3
-                    ],
-                    cy: -10 - bubble.size * 0.3,
-                    opacity: [0, 0.9, 0.7, 0.5, 0],
-                  }}
-                  transition={{
-                    duration: bubble.duration,
-                    delay: bubble.delay,
-                    ease: "easeOut",
-                    times: [0, 0.25, 0.5, 0.75, 1],
-                  }}
-                />
-              </motion.g>
-            );
-          })}
-        </g>
-
-        {/* Schaum-Effekt bei hohen Scores */}
-        {normalizedValue > 70 && (
-          <g clipPath={`url(#scoreCircleClip-${size})`}>
-            {Array.from({ length: 5 }, (_, i) => {
-              const angle = (i / 5) * Math.PI * 2;
-              const foamRadius = innerRadius * 0.65;
-              const x = radius + Math.cos(angle) * foamRadius;
-              const y = radius + Math.sin(angle) * foamRadius;
-              return (
-                <motion.circle
-                  key={`foam-${i}`}
-                  cx={x}
-                  cy={y}
-                  r={2.5 + Math.random() * 2}
-                  fill="#ffffff"
-                  fillOpacity="0.5"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{
-                    scale: [0, 1.3, 1],
-                    opacity: [0, 0.7, 0.5],
-                  }}
-                  transition={{
-                    duration: 1,
-                    delay: i * 0.15,
-                    repeat: Infinity,
-                    repeatDelay: 2.5,
-                  }}
-                />
-              );
-            })}
-          </g>
-        )}
+        {/* 5. Spritzer-Partikel (Farbe = Helles Wasserblau) */}
+        {isAnimating &&
+          [...Array(12)].map((_, i) => (
+            <SplashParticle
+              key={`splash-${i}`}
+              cx={radius}
+              cy={radius}
+              delay={delay + 0.5}
+              color={waterColors.particle}
+            />
+          ))}
       </svg>
 
-      {/* Score-Anzeige in der Mitte */}
+      {/* Score Text (Farbe = Status) */}
       {showValue && (
-        <motion.div
-          className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.6, type: "spring" }}
-        >
-          <motion.span
-            className={`text-5xl font-bold ${colors.text}`}
-            style={{
-              textShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{
+              opacity: isAnimating ? 1 : 0,
+              scale: isAnimating ? 1 : 0.8,
+              y: 0,
             }}
+            transition={{ delay: delay + 0.8, type: "spring", stiffness: 100 }}
+            className={`flex flex-col items-center drop-shadow-md ${statusColors.text}`}
           >
-            {rounded}
-          </motion.span>
-          <span className="text-sm text-slate-600 dark:text-slate-400 mt-1">von 100</span>
-        </motion.div>
+            <span
+              className="text-6xl font-black tracking-tighter"
+              style={{ textShadow: `0 0 30px ${statusColors.glow}60` }}
+            >
+              {Math.round(value)}
+            </span>
+            <span className="text-xs uppercase font-bold tracking-[0.3em] opacity-80 mt-1">
+              Punkte
+            </span>
+          </motion.div>
+        </div>
       )}
-
-      {/* Zusätzlicher Schimmer-Effekt */}
-      <motion.div
-        className="absolute inset-0 rounded-full pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at 35% 35%, ${colors.glow} 0%, transparent 50%)`,
-        }}
-        animate={{
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
     </div>
   );
 }
