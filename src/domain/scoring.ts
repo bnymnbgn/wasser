@@ -73,7 +73,41 @@ function stepBands(
 // Einzelmetriken
 // ---------------------------
 
-function scorePh(ph: number | undefined): MetricScore {
+function scoreHardness(hardness: number | undefined, profile: ProfileType): MetricScore {
+  if (hardness == null) {
+    return {
+      metric: "hardness",
+      score: 50,
+      weight: profile === "coffee" ? 2 : 0,
+      explanation: "Gesamthärte unbekannt.",
+    };
+  }
+
+  // Für Kaffee: Weich ist Pflicht (< 8 dH, ca < 1.5 mmol/l)
+  // 1 mmol/l CaCO3 = 100 mg/l CaCO3. 1 dH = 17.8 mg/l CaCO3.
+  // Wir nehmen an, hardness ist in mg/L CaCO3 (Standard in waterMath)
+  // Ideal: < 140 mg/L
+
+  let score = 50;
+  let explanation = `Gesamthärte: ${Math.round(hardness / 17.8)} °dH. `;
+
+  if (profile === "coffee") {
+    score = stepBands(hardness, [{ limit: 70, score: 100 }, { limit: 140, score: 80 }, { limit: 250, score: 40 }], true);
+    if (score >= 80) explanation += "Perfekt weiches Wasser für Kaffee-Aromen.";
+    else if (score >= 50) explanation += "Noch akzeptabel für Kaffee.";
+    else explanation += "Zu hart für optimalen Kaffeegenuss (Kalkgefahr).";
+
+    return { metric: "hardness", score, weight: 2.5, explanation };
+  }
+
+  // Standard: Mittelhart oft gut für Geschmack
+  score = bandScore(hardness, 100, 300);
+  explanation += "Mittlere Härte ist oft ein guter Kompromiss aus Geschmack und Mineralien.";
+
+  return { metric: "hardness", score, weight: 0.5, explanation };
+}
+
+function scorePh(ph: number | undefined, profile: ProfileType): MetricScore {
   if (ph == null) {
     return {
       metric: "ph",
@@ -85,6 +119,16 @@ function scorePh(ph: number | undefined): MetricScore {
 
   const score = bellScore(ph, 7.5, 2.0); // 5.5–9.5 → 0–100, ideal 7.5
   let explanation = "Optimal zwischen ca. 6,5 und 8,5. ";
+
+  if (profile === "coffee") {
+    // Kaffee: Ideal 7.0, Toleranz enger
+    const coffeeScore = bellScore(ph, 7.0, 1.0);
+    explanation = "Für Kaffee ist ein neutraler pH-Wert (ca. 7,0) ideal, um Säure zu balancieren. ";
+    if (coffeeScore >= 80) explanation += "Perfekter pH-Wert für Kaffee.";
+    else if (coffeeScore >= 50) explanation += "Akzeptabler pH-Wert.";
+    else explanation += "pH-Wert könnte den Kaffeegeschmack verfälschen.";
+    return { metric: "ph", score: coffeeScore, weight: 1.5, explanation };
+  }
 
   if (score >= 80) {
     explanation += "Dieser pH-Wert liegt in einem sehr guten Bereich.";
@@ -213,6 +257,18 @@ function scoreCalcium(ca: number | undefined, profile: ProfileType): MetricScore
       score: 50,
       weight: profile === "sport" ? 1.5 : 1,
       explanation: "Calciumgehalt unbekannt – neutral angenommen.",
+    };
+  }
+
+  if (profile === "coffee") {
+    // Kaffee: Weniger ist mehr (Weichheit)
+    // < 40 super, > 80 schlecht
+    const score = stepBands(ca, [{ limit: 20, score: 100 }, { limit: 40, score: 80 }, { limit: 80, score: 40 }], true);
+    return {
+      metric: "calcium",
+      score,
+      weight: 1.5,
+      explanation: "Für Kaffee ist weiches Wasser (wenig Calcium) entscheidend für das Aroma.",
     };
   }
 
@@ -353,6 +409,18 @@ function scoreBicarbonate(hco3: number | undefined, profile: ProfileType): Metri
       score: 50,
       weight: profile === "sport" ? 1.2 : 1,
       explanation: "Hydrogencarbonat unbekannt – neutral angenommen.",
+    };
+  }
+
+  if (profile === "coffee") {
+    // Kaffee: Puffer ist gut, aber nicht zu viel (Killt Säure)
+    // Ideal 2-4 °dH KH (~ 40-80 mg/L HCO3)
+    const score = bandScore(hco3, 40, 120);
+    return {
+      metric: "bicarbonate",
+      score,
+      weight: 1.2,
+      explanation: "Hydrogencarbonat puffert Säure. Für Kaffee ist eine moderate Menge ideal.",
     };
   }
 
@@ -711,7 +779,8 @@ export function calculateScores(
 
   const metrics: MetricScore[] = [];
 
-  metrics.push(scorePh(values.ph));
+  metrics.push(scoreHardness(values.hardness, profile));
+  metrics.push(scorePh(values.ph, profile));
   metrics.push(scoreSodium(values.sodium, profile));
   metrics.push(scoreNitrate(values.nitrate, profile));
   metrics.push(scoreCalcium(values.calcium, profile));

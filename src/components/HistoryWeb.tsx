@@ -17,7 +17,7 @@ export default function HistoryWeb({ initialScans }: HistoryWebProps) {
       <div className="relative z-10 mx-auto max-w-3xl px-4 py-6 safe-area-top pb-[calc(var(--bottom-nav-height)+40px)]">
         <div className="mb-6">
           <p className="text-[11px] uppercase tracking-[0.4em] text-ocean-tertiary">Historie</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ocean-primary">Scan-Verlauf</h1>
+          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-ocean-primary via-white to-ocean-accent">Scan-Verlauf</h1>
         </div>
         <div className="ocean-panel p-4 sm:p-6">
           <HistoryList initialScans={initialScans} />

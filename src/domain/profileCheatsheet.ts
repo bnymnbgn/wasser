@@ -458,6 +458,63 @@ export const PROFILE_CHEATSHEET = {
       },
     ],
   },
+  coffee: {
+    id: "coffee",
+    label: "Kaffee & Genuss",
+    shortDescription:
+      "Optimiertes Wasser für die Zubereitung von Kaffee und Tee – Fokus auf Weichheit und pH-Wert.",
+    whenToUse:
+      "Wenn du leidenschaftlicher Kaffeetrinker bist und das volle Aroma aus deinen Bohnen holen möchtest.",
+    scoringFocus: [
+      { metric: "hardness", label: "Härte", weight: 0.9, tone: "critical" },
+      { metric: "ph", label: "pH-Wert", weight: 0.8, tone: "critical" },
+      { metric: "bicarbonate", label: "Hydrogencarbonat", weight: 0.6, tone: "positive" },
+      { metric: "calcium", label: "Calcium", weight: 0.5, tone: "avoid" },
+    ],
+    metrics: [
+      {
+        metric: "hardness",
+        label: "Gesamthärte",
+        importance: "sehr hoch",
+        explanation:
+          "Weiches Wasser (< 8 °dH) ist entscheidend, damit sich Kaffeearomen optimal lösen können.",
+        hints: [
+          "Zu hartes Wasser neutralisiert Fruchtsäuren und macht Kaffee flach.",
+          "Idealbereich: 2–6 °dH.",
+        ],
+      },
+      {
+        metric: "ph",
+        label: "pH-Wert",
+        importance: "sehr hoch",
+        explanation:
+          "Ein neutraler pH-Wert (ca. 7,0) ist ideal. Zu saures Wasser macht Kaffee sauer, zu basisches Wasser macht ihn bitter.",
+        hints: [
+          "Idealbereich: 6,5 – 7,5.",
+        ],
+      },
+      {
+        metric: "bicarbonate",
+        label: "Hydrogencarbonat",
+        importance: "hoch",
+        explanation:
+          "Hydrogencarbonat puffert Säuren. Eine moderate Menge ist gut, zu viel 'killt' die feinen Säuren im Kaffee.",
+        hints: [
+          "Idealbereich: 40–80 mg/L (ca. 2–4 °dH Karbonathärte).",
+        ],
+      },
+      {
+        metric: "calcium",
+        label: "Calcium",
+        importance: "mittel",
+        explanation:
+          "Calcium ist ein Geschmacksträger, sollte aber für Kaffee nicht zu hoch sein, um Verkalkung und Geschmacksverfälschung zu vermeiden.",
+        hints: [
+          "Niedrige Werte bevorzugt.",
+        ],
+      },
+    ],
+  },
 } as const;
 
 export type ProfileId = keyof typeof PROFILE_CHEATSHEET;

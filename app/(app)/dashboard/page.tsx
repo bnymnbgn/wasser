@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Droplet,
   Scan,
@@ -17,12 +18,11 @@ import ThemeToggle from "@/src/components/ThemeToggle";
 import { hapticLight, hapticMedium } from "@/lib/capacitor";
 
 const PROFILE_TIPS: Record<ProfileType, string> = {
-  standard:
-    "Nutze dieses Profil als Basis und wechsle bei speziellen Anforderungen gezielt zu Baby, Sport oder Blutdruck.",
-  baby: "Achte auf natrium- und nitratarmes Wasser – wechsle nur zu Standard, wenn keine Babynahrung zubereitet wird.",
-  sport: "Achte auf ausreichend Magnesium & Natrium für optimale Regeneration.",
-  blood_pressure:
-    "Bevorzuge natriumarme Wässer (<20 mg/L) und wechsle nur kurzzeitig zu Sport, falls nötig.",
+  standard: "Achte auf eine ausgewogene Mineralisierung für den täglichen Bedarf.",
+  baby: "Wichtig: Niedriger Natrium- (<20mg) und Nitratgehalt (<10mg).",
+  sport: "Fokus auf Magnesium (>50mg) und Natrium für die Regeneration.",
+  blood_pressure: "Wähle natriumarmes Wasser (<20mg) zur Entlastung.",
+  coffee: "Weiches Wasser (<8°dH) und neutraler pH-Wert für bestes Aroma.",
 };
 
 const mineralBars = [
@@ -90,13 +90,32 @@ const CountUp = ({ value }: { value: number }) => {
 };
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<ProfileType>("standard");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // 1. Priority: URL param
+    const urlProfile = searchParams.get("profile") as ProfileType | null;
+    if (urlProfile && ["standard", "baby", "sport", "blood_pressure", "coffee"].includes(urlProfile)) {
+      setProfile(urlProfile);
+      localStorage.setItem("wasserscan-profile", urlProfile);
+    } else {
+      // 2. Priority: Local Storage
+      const savedProfile = localStorage.getItem("wasserscan-profile") as ProfileType | null;
+      if (savedProfile && ["standard", "baby", "sport", "blood_pressure", "coffee"].includes(savedProfile)) {
+        setProfile(savedProfile);
+      }
+    }
+
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
-  }, []);
+  }, [searchParams]);
+
+  const handleProfileChange = (newProfile: ProfileType) => {
+    setProfile(newProfile);
+    localStorage.setItem("wasserscan-profile", newProfile);
+  };
 
   const stats = useMemo(
     () => [
@@ -119,7 +138,7 @@ export default function DashboardPage() {
         >
           <div>
             <p className="text-[10px] uppercase tracking-[0.3em] text-ocean-tertiary">Dashboard</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">Dein Wasserstatus</h1>
+            <h1 className="mt-2 text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-ocean-primary via-white to-ocean-accent">Dein Wasserstatus</h1>
             <p className="mt-1 text-sm text-ocean-secondary">KI-gestützte Analyse & Empfehlungen</p>
           </div>
           <ThemeToggle />
@@ -216,8 +235,16 @@ export default function DashboardPage() {
               {profile}
             </span>
           </div>
-          <ProfileSelector value={profile} onChange={setProfile} />
-          <p className="text-[12px] leading-relaxed text-ocean-secondary">{PROFILE_TIPS[profile]}</p>
+          <ProfileSelector value={profile} onChange={handleProfileChange} />
+          <div className="flex justify-between items-start gap-4">
+            <p className="text-[12px] leading-relaxed text-ocean-secondary flex-1">{PROFILE_TIPS[profile]}</p>
+            <Link
+              href="/profile-setup"
+              className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-ocean-accent border border-ocean-accent/30 rounded-full px-3 py-1.5 hover:bg-ocean-accent/10 transition-colors"
+            >
+              Hilfe?
+            </Link>
+          </div>
         </section>
 
         <section className="mb-8 grid gap-3 md:grid-cols-3">

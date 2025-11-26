@@ -5,7 +5,7 @@ import type { WaterInsights } from "./waterInsights";
 export type SourceType = "manufacturer" | "authority" | "user" | "api";
 
 /** Bewertungsprofil – steuert die Score-Logik */
-export type ProfileType = "standard" | "baby" | "sport" | "blood_pressure";
+export type ProfileType = "standard" | "baby" | "sport" | "blood_pressure" | "coffee";
 
 /**
  * "Reine" Wasserwerte ohne DB-Felder – damit rechnet das Scoring.

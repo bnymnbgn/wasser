@@ -197,7 +197,7 @@ export default function HistoryPageCapacitor() {
         {/* Header Title */}
         <header className="mb-6 px-1 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-blue-400">
+            <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-ocean-primary via-white to-ocean-accent">
               Verlauf
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">

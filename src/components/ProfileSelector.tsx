@@ -5,9 +5,9 @@ import clsx from "clsx";
 import { PROFILE_CHEATSHEET, type ProfileId } from "@/src/domain/profileCheatsheet";
 import type { ProfileType } from "@/src/domain/types";
 import { hapticLight } from "@/lib/capacitor";
-import { User, Baby, Zap, Heart } from "lucide-react";
+import { User, Baby, Zap, Heart, Coffee } from "lucide-react";
 
-const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure"];
+const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure", "coffee"];
 
 const PROFILE_PRESENTATION: Record<
   ProfileId,
@@ -46,6 +46,13 @@ const PROFILE_PRESENTATION: Record<
     gradientTo: "#ec4899", // pink-500
     color: "bg-red-500",
     badge: "Natriumarm",
+  },
+  coffee: {
+    icon: <Coffee className="w-6 h-6" />,
+    gradientFrom: "#854d0e", // yellow-800/brownish
+    gradientTo: "#a16207", // yellow-700
+    color: "bg-yellow-800",
+    badge: "Genuss",
   },
 };
 

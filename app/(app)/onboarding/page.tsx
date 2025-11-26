@@ -8,11 +8,9 @@ import { PersonasCarousel } from "@/src/components/onboarding/PersonasCarousel";
 
 export default function OnboardingPage() {
   return (
-    <main className="relative min-h-screen bg-ocean-background text-ocean-primary">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 left-0 h-72 w-72 rounded-full ocean-primary/15 blur-[140px]" />
-        <div className="absolute bottom-10 right-0 h-80 w-80 rounded-full ocean-accent/10 blur-[160px]" />
-      </div>
+    <main className="relative min-h-screen text-ocean-primary">
+      {/* Background handled by LivingBackground globally */}
+
       <div className="relative z-10 mx-auto max-w-4xl px-4 py-8 safe-area-top space-y-8">
         <motion.header
           className="flex flex-col gap-6"
@@ -24,7 +22,7 @@ export default function OnboardingPage() {
             <span className="inline-flex items-center gap-1.5 rounded-full border border-ocean-border ocean-panel px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.4em] text-ocean-secondary">
               Wasser Academy
             </span>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ocean-primary">
+            <h1 className="mt-3 text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-ocean-primary via-white to-ocean-accent">
               Wissen, warum dein Wasser passt
             </h1>
             <p className="mt-2 text-sm text-ocean-secondary">
