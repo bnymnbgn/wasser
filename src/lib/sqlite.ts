@@ -86,12 +86,12 @@ class SQLiteService {
       }
 
       const consistency = await this.sqliteConnection.checkConnectionsConsistency();
-      const hasConnection = await this.sqliteConnection.isConnection(DB_NAME);
+      const hasConnection = await this.sqliteConnection.isConnection(DB_NAME, false);
 
       if (consistency.result && hasConnection.result) {
         try {
           // Reuse existing connection if possible
-          this.db = await this.sqliteConnection.retrieveConnection(DB_NAME);
+          this.db = await this.sqliteConnection.retrieveConnection(DB_NAME, false);
         } catch (err) {
           console.warn('[SQLite] Failed to retrieve existing connection, closing and recreating', err);
           await this.sqliteConnection.closeConnection(DB_NAME, false);
@@ -461,6 +461,45 @@ class SQLiteService {
     );
 
     return { id, timestamp, ...data };
+  }
+
+  /**
+   * Clear all scan history
+   */
+  async clearScanHistory(): Promise<void> {
+    await this.ensureInitialized();
+    if (!this.db) throw new Error('Database not initialized');
+
+    try {
+      await this.db.run('DELETE FROM ScanResult');
+      console.log('[SQLite] Scan history cleared');
+    } catch (error) {
+      console.error('[SQLite] Error clearing scan history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get storage statistics
+   */
+  async getScanStats(): Promise<{ count: number; sizeBytes: number }> {
+    await this.ensureInitialized();
+    if (!this.db) return { count: 0, sizeBytes: 0 };
+
+    try {
+      // Get count
+      const countResult = await this.db.query('SELECT COUNT(*) as count FROM ScanResult');
+      const count = countResult.values?.[0]?.count || 0;
+
+      // Estimate size (very rough estimate based on average row size)
+      // ScanResult row ~ 2KB (mostly JSON strings)
+      const sizeBytes = count * 2048;
+
+      return { count, sizeBytes };
+    } catch (error) {
+      console.error('[SQLite] Error getting scan stats:', error);
+      return { count: 0, sizeBytes: 0 };
+    }
   }
 
   // ==================== Utility Methods ====================

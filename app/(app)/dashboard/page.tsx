@@ -11,10 +11,9 @@ import {
   ChevronRight,
   Info,
   Sparkles,
+  Settings,
 } from "lucide-react";
 import type { ProfileType } from "@/src/domain/types";
-import { ProfileSelector } from "@/src/components/ProfileSelector";
-import ThemeToggle from "@/src/components/ThemeToggle";
 import { hapticLight, hapticMedium } from "@/lib/capacitor";
 
 const PROFILE_TIPS: Record<ProfileType, string> = {
@@ -112,10 +111,6 @@ export default function DashboardPage() {
     return () => clearTimeout(t);
   }, [searchParams]);
 
-  const handleProfileChange = (newProfile: ProfileType) => {
-    setProfile(newProfile);
-    localStorage.setItem("wasserscan-profile", newProfile);
-  };
 
   const stats = useMemo(
     () => [
@@ -141,7 +136,13 @@ export default function DashboardPage() {
             <h1 className="mt-2 text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-ocean-primary via-white to-ocean-accent">Dein Wasserstatus</h1>
             <p className="mt-1 text-sm text-ocean-secondary">KI-gestützte Analyse & Empfehlungen</p>
           </div>
-          <ThemeToggle />
+          <Link
+            href="/settings"
+            onClick={() => hapticLight()}
+            className="p-2 -mr-2 text-ocean-secondary hover:text-ocean-primary transition-colors"
+          >
+            <Settings className="w-6 h-6" />
+          </Link>
         </header>
 
         <section
@@ -228,24 +229,6 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="mb-8 space-y-4 ocean-card ocean-panel ocean-shadow-3 p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-medium">Dein Profil</h2>
-            <span className="rounded-full border border-ocean-border px-3 py-1 text-xs uppercase tracking-wider text-ocean-secondary">
-              {profile}
-            </span>
-          </div>
-          <ProfileSelector value={profile} onChange={handleProfileChange} />
-          <div className="flex justify-between items-start gap-4">
-            <p className="text-[12px] leading-relaxed text-ocean-secondary flex-1">{PROFILE_TIPS[profile]}</p>
-            <Link
-              href="/profile-setup"
-              className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-ocean-accent border border-ocean-accent/30 rounded-full px-3 py-1.5 hover:bg-ocean-accent/10 transition-colors"
-            >
-              Hilfe?
-            </Link>
-          </div>
-        </section>
 
         <section className="mb-8 grid gap-3 md:grid-cols-3">
           {quickActions.map((action) => {

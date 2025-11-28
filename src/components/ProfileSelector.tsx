@@ -91,7 +91,7 @@ export function ProfileSelector({ value, onChange }: Props) {
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition-all",
               isActive
                 ? "shadow-elevation-3 text-white focus-visible:ring-white/50"
-                : "bg-md-surface-container dark:bg-md-dark-surface-container focus-visible:ring-md-primary/50"
+                : "bg-ocean-surface-elevated hover:bg-ocean-surface-hover focus-visible:ring-ocean-primary/50"
             )}
             style={isActive ? {
               backgroundImage: `linear-gradient(135deg, ${presentation.gradientFrom} 0%, ${presentation.gradientTo} 100%)`,
@@ -116,7 +116,7 @@ export function ProfileSelector({ value, onChange }: Props) {
                   "text-sm font-semibold line-clamp-1",
                   isActive
                     ? "text-white"
-                    : "text-md-onSurface dark:text-md-dark-onSurface"
+                    : "text-ocean-primary"
                 )}
               >
                 {profile.label}
@@ -129,7 +129,7 @@ export function ProfileSelector({ value, onChange }: Props) {
                     "text-xs px-2 py-0.5 rounded-full font-medium",
                     isActive
                       ? "bg-white/20 text-white"
-                      : "bg-md-surface-containerHigh dark:bg-md-dark-surface-containerHigh text-md-onSurface-variant dark:text-md-dark-onSurface-variant"
+                      : "bg-ocean-surface-elevated text-ocean-secondary"
                   )}
                 >
                   {presentation.badge}
@@ -138,18 +138,6 @@ export function ProfileSelector({ value, onChange }: Props) {
             </div>
 
             {/* Active Indicator */}
-            {isActive && (
-              <motion.div
-                layoutId="activeProfileIndicator"
-                className="absolute inset-0 rounded-2xl ring-2 ring-white/30"
-                initial={false}
-                transition={{
-                  type: "spring",
-                  stiffness: 500,
-                  damping: 30,
-                }}
-              />
-            )}
           </motion.button>
         );
       })}

@@ -12,12 +12,16 @@ interface DatabaseContextType {
   isReady: boolean;
   isLoading: boolean;
   error: string | null;
+  clearHistory: () => Promise<void>;
+  getStorageStats: () => Promise<{ count: number; sizeBytes: number }>;
 }
 
 const DatabaseContext = createContext<DatabaseContextType>({
   isReady: false,
   isLoading: true,
   error: null,
+  clearHistory: async () => { },
+  getStorageStats: async () => ({ count: 0, sizeBytes: 0 }),
 });
 
 export function useDatabaseContext() {
@@ -77,8 +81,33 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     };
   }, []);
 
+  const clearHistory = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      console.log('[DatabaseProvider] clearHistory called (browser mock)');
+      return;
+    }
+    try {
+      await sqliteService.clearScanHistory();
+    } catch (err) {
+      console.error('[DatabaseProvider] Failed to clear history:', err);
+      // Optional: set error state or show toast
+    }
+  };
+
+  const getStorageStats = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      return { count: 12, sizeBytes: 24576 }; // Mock data
+    }
+    try {
+      return await sqliteService.getScanStats();
+    } catch (err) {
+      console.error('[DatabaseProvider] Failed to get storage stats:', err);
+      return { count: 0, sizeBytes: 0 };
+    }
+  };
+
   return (
-    <DatabaseContext.Provider value={{ isReady, isLoading, error }}>
+    <DatabaseContext.Provider value={{ isReady, isLoading, error, clearHistory, getStorageStats }}>
       {mounted && isLoading && Capacitor.isNativePlatform() && <InitialLoadingScreen />}
       {children}
     </DatabaseContext.Provider>
