@@ -14,8 +14,13 @@ import {
   computeBufferCapacity,
   computeTasteBalance,
   computeSodiumPotassiumRatio,
+  computePralValue,
+  RDA_VALUES,
+  computeRdaPercentage,
+  computeTasteProfile,
 } from "@/src/lib/waterMath";
 import { VisualMetricBar } from "@/src/components/ui/VisualMetricBar";
+import { TasteRadar } from "@/src/components/ui/TasteRadar";
 import { ScoreExplanation, type ImpactFactor } from "@/src/components/ScoreExplanation";
 
 function scoreToColor(score: number | undefined): "success" | "warning" | "error" {
@@ -111,6 +116,12 @@ export function WaterScoreCard({ scanResult }: Props) {
     insights?.sodiumPotassiumRatio ??
     computeSodiumPotassiumRatio(mergedValues.sodium, mergedValues.potassium) ??
     undefined;
+  const pral =
+    insights?.pral ??
+    computePralValue(mergedValues) ??
+    undefined;
+
+  const tasteProfile = computeTasteProfile(mergedValues);
 
   const activeProfileFit: ProfileFit | undefined = insights?.profileFit?.[profile];
 
@@ -412,7 +423,8 @@ export function WaterScoreCard({ scanResult }: Props) {
         caMgRatio !== undefined ||
         bufferCapacity !== undefined ||
         tasteBalance !== undefined ||
-        sodiumPotassiumRatio !== undefined) && (
+        sodiumPotassiumRatio !== undefined ||
+        pral !== undefined) && (
           <div className="ocean-card p-4 space-y-3">
             <h3 className="font-semibold text-ocean-primary">
               Abgeleitete Kennzahlen
@@ -473,131 +485,195 @@ export function WaterScoreCard({ scanResult }: Props) {
                   unit=""
                 />
               )}
+              {pral !== undefined && (
+                <VisualMetricBar
+                  label="PRAL-Wert (Säurelast)"
+                  value={pral}
+                  min={-15}
+                  max={2}
+                  idealMin={-20}
+                  idealMax={0}
+                  unit=" mEq/L"
+                />
+              )}
             </div>
           </div>
         )}
 
-      {/* Badges */}
-      {insights?.badges && insights.badges.length > 0 && (
-        <div className="ocean-card p-4 space-y-3">
-          <h3 className="font-semibold text-ocean-primary">
-            Kennzeichnungen
-          </h3>
-          <div className="space-y-3">
-            {insights.badges.map((badge) => (
-              <div
-                key={badge.id}
-                className={`p-3 rounded-2xl border ${badge.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
-                  badge.tone === "warning" ? "ocean-warning-bg border-ocean-warning/50" :
-                    "ocean-info-bg border-ocean-info/50"
-                  }`}
-              >
-                <div className="flex items-start gap-2 mb-2">
-                  <span
-                    className={`flex-shrink-0 px-2 py-1 rounded-md text-xs font-semibold ${badge.tone === "positive" ? "ocean-success-bg ocean-success text-ocean-primary" :
-                      badge.tone === "warning" ? "ocean-warning-bg ocean-warning text-ocean-primary" :
-                        "ocean-info-bg ocean-info text-ocean-primary"
-                      }`}
-                  >
-                    {badge.label}
+      {/* RDA Contribution */}
+      <div className="ocean-card p-4 space-y-3">
+        <h3 className="font-semibold text-ocean-primary">
+          Deckung des Tagesbedarfs (1 Liter)
+        </h3>
+        <div className="space-y-4">
+          {[
+            { label: "Calcium", value: mergedValues.calcium, rda: RDA_VALUES.calcium },
+            { label: "Magnesium", value: mergedValues.magnesium, rda: RDA_VALUES.magnesium },
+            { label: "Kalium", value: mergedValues.potassium, rda: RDA_VALUES.potassium },
+          ].map((item) => {
+            if (item.value == null) return null;
+            const percentage = computeRdaPercentage(item.value, item.rda);
+            return (
+              <div key={item.label} className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-ocean-secondary">{item.label}</span>
+                  <span className="font-medium text-ocean-primary">
+                    {percentage.toFixed(0)}% <span className="text-xs text-ocean-tertiary">({item.value.toFixed(0)} mg)</span>
                   </span>
                 </div>
-                <p className="text-sm text-ocean-secondary leading-relaxed">
-                  <GlossaryText text={badge.description} />
-                </p>
+                <div className="h-2 w-full rounded-full bg-ocean-surface overflow-hidden">
+                  <div
+                    className="h-full rounded-full ocean-info-bg"
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      )}
+      </div>
+
+
+      {/* Taste Radar */}
+      <div className="ocean-card p-4 space-y-3">
+        <h3 className="font-semibold text-ocean-primary">
+          Geschmacksprofil
+        </h3>
+        <p className="text-sm text-ocean-secondary">
+          Visuelle Darstellung der geschmacklichen Nuancen.
+        </p>
+        <TasteRadar profile={tasteProfile} />
+      </div>
+
+      {/* Badges */}
+      {
+        insights?.badges && insights.badges.length > 0 && (
+          <div className="ocean-card p-4 space-y-3">
+            <h3 className="font-semibold text-ocean-primary">
+              Kennzeichnungen
+            </h3>
+            <div className="space-y-3">
+              {insights.badges.map((badge) => (
+                <div
+                  key={badge.id}
+                  className={`p-3 rounded-2xl border ${badge.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
+                    badge.tone === "warning" ? "ocean-warning-bg border-ocean-warning/50" :
+                      "ocean-info-bg border-ocean-info/50"
+                    }`}
+                >
+                  <div className="flex items-start gap-2 mb-2">
+                    <span
+                      className={`flex-shrink-0 px-2 py-1 rounded-md text-xs font-semibold ${badge.tone === "positive" ? "ocean-success-bg ocean-success text-ocean-primary" :
+                        badge.tone === "warning" ? "ocean-warning-bg ocean-warning text-ocean-primary" :
+                          "ocean-info-bg ocean-info text-ocean-primary"
+                        }`}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+                  <p className="text-sm text-ocean-secondary leading-relaxed">
+                    <GlossaryText text={badge.description} />
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
 
       {/* Synergies */}
-      {insights?.synergies && insights.synergies.length > 0 && (
-        <div className="ocean-card p-4 space-y-3">
-          <h3 className="font-semibold text-ocean-primary">
-            Gesundheitliche Hinweise
-          </h3>
-          <div className="space-y-2">
-            {insights.synergies.map((item) => (
-              <div
-                key={item.id}
-                className={`p-3 rounded-2xl border ${item.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
-                  item.tone === "warning" ? "ocean-warning-bg border-ocean-warning/50" :
-                    "ocean-info-bg border-ocean-info/50"
-                  }`}
-              >
-                <p className="text-sm font-semibold text-ocean-primary">
-                  {item.title}
-                </p>
-                <p className="text-sm text-ocean-secondary mt-1">
-                  <GlossaryText text={item.description} />
-                </p>
-              </div>
-            ))}
+      {
+        insights?.synergies && insights.synergies.length > 0 && (
+          <div className="ocean-card p-4 space-y-3">
+            <h3 className="font-semibold text-ocean-primary">
+              Gesundheitliche Hinweise
+            </h3>
+            <div className="space-y-2">
+              {insights.synergies.map((item) => (
+                <div
+                  key={item.id}
+                  className={`p-3 rounded-2xl border ${item.tone === "positive" ? "ocean-success-bg border-ocean-success/50" :
+                    item.tone === "warning" ? "ocean-warning-bg border-ocean-warning/50" :
+                      "ocean-info-bg border-ocean-info/50"
+                    }`}
+                >
+                  <p className="text-sm font-semibold text-ocean-primary">
+                    {item.title}
+                  </p>
+                  <p className="text-sm text-ocean-secondary mt-1">
+                    <GlossaryText text={item.description} />
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Warnings */}
-      {warnings && warnings.length > 0 && (
-        <div className="ocean-card p-4 border-2 border-ocean-warning/50 ocean-warning-bg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 ocean-warning flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold ocean-warning mb-2">
-                Warnungen
-              </h3>
-              <ul className="space-y-1 text-sm text-ocean-secondary">
-                {warnings.map((warning, idx) => (
-                  <li key={idx}>{warning}</li>
-                ))}
-              </ul>
+      {
+        warnings && warnings.length > 0 && (
+          <div className="ocean-card p-4 border-2 border-ocean-warning/50 ocean-warning-bg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 ocean-warning flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold ocean-warning mb-2">
+                  Warnungen
+                </h3>
+                <ul className="space-y-1 text-sm text-ocean-secondary">
+                  {warnings.map((warning, idx) => (
+                    <li key={idx}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Expandable Scoring Details */}
-      {metricDetails && metricDetails.length > 0 && (
-        <div className="ocean-card overflow-hidden">
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="w-full p-4 flex items-center justify-between hover:ocean-card-elevated transition-colors"
-          >
-            <h3 className="font-semibold text-ocean-primary">
-              Bewertungs-Details
-            </h3>
-            {showDetails ? (
-              <ChevronUp className="w-5 h-5 text-ocean-tertiary" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-ocean-tertiary" />
-            )}
-          </button>
+      {
+        metricDetails && metricDetails.length > 0 && (
+          <div className="ocean-card overflow-hidden">
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="w-full p-4 flex items-center justify-between hover:ocean-card-elevated transition-colors"
+            >
+              <h3 className="font-semibold text-ocean-primary">
+                Bewertungs-Details
+              </h3>
+              {showDetails ? (
+                <ChevronUp className="w-5 h-5 text-ocean-tertiary" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-ocean-tertiary" />
+              )}
+            </button>
 
-          {showDetails && (
-            <div className="px-4 pb-4 space-y-3 border-t border-ocean-border pt-4">
-              {metricDetails
-                .filter((m) => m.score !== 50)
-                .map((metric) => (
-                  <div key={metric.metric} className="p-3 rounded-2xl ocean-card">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-ocean-primary capitalize">
-                        {metric.metric}
-                      </span>
-                      <span className="text-sm font-mono text-ocean-secondary">
-                        {metric.score.toFixed(0)}/100
-                      </span>
+            {showDetails && (
+              <div className="px-4 pb-4 space-y-3 border-t border-ocean-border pt-4">
+                {metricDetails
+                  .filter((m) => m.score !== 50)
+                  .map((metric) => (
+                    <div key={metric.metric} className="p-3 rounded-2xl ocean-card">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-ocean-primary capitalize">
+                          {metric.metric}
+                        </span>
+                        <span className="text-sm font-mono text-ocean-secondary">
+                          {metric.score.toFixed(0)}/100
+                        </span>
+                      </div>
+                      <p className="text-sm text-ocean-secondary leading-relaxed">
+                        {metric.explanation}
+                      </p>
                     </div>
-                    <p className="text-sm text-ocean-secondary leading-relaxed">
-                      {metric.explanation}
-                    </p>
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )
+      }
+    </div >
   );
 }
 

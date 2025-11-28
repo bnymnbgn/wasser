@@ -589,21 +589,6 @@ function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite }: any) {
           >
             <div className="border-t border-ocean-border bg-ocean-surface-elevated/50 p-4">
               <WaterScoreCard scanResult={scan} />
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation(); /* Optional: direkt zur Detailseite */
-                  }}
-                  className="text-xs font-medium text-ocean-tertiary hover:text-sky-500 transition-colors"
-                >
-                  <Link
-                    href={`/scan?profile=${scan.profile}${scan.barcode ? `&barcode=${scan.barcode}` : ""
-                      }`}
-                  >
-                    Details anzeigen &rarr;
-                  </Link>
-                </button>
-              </div>
             </div>
           </motion.div>
         )}

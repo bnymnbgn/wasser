@@ -29,6 +29,7 @@ export interface WaterAnalysisValues {
   tastePalatability?: number;
   bufferCapacity?: number;
   dataQualityScore?: number;
+  pral?: number;
 }
 
 /** Entspricht grob dem Prisma-Model WaterSource */

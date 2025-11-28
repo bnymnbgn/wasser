@@ -6,6 +6,7 @@ import {
   computeTasteBalance,
   computeBufferCapacity,
   computeDataQualityScore,
+  computePralValue,
 } from "@/src/lib/waterMath";
 
 type MetricKey = keyof WaterAnalysisValues;
@@ -39,6 +40,7 @@ export interface WaterInsights {
   tastePalatability?: number;
   bufferCapacity?: number;
   dataQualityScore?: number;
+  pral?: number;
 }
 
 interface ThresholdRule {
@@ -323,6 +325,7 @@ function evaluateProfileFit(values: Partial<WaterAnalysisValues>): Record<Profil
     baby: { status: "ok", reasons: [] },
     sport: { status: "ok", reasons: [] },
     blood_pressure: { status: "ok", reasons: [] },
+    coffee: { status: "ok", reasons: [] },
   };
 
   // Baby fit
@@ -379,6 +382,7 @@ export function deriveWaterInsights(values: Partial<WaterAnalysisValues>): Water
   const tasteBalance = computeTasteBalance(values);
   const bufferCapacity = computeBufferCapacity(values);
   const dataQualityScore = computeDataQualityScore(values);
+  const pral = computePralValue(values);
   const enrichedValues: Partial<WaterAnalysisValues> = {
     ...values,
     ...(hardness !== null ? { hardness } : {}),
@@ -387,6 +391,7 @@ export function deriveWaterInsights(values: Partial<WaterAnalysisValues>): Water
     ...(tasteBalance !== null ? { tastePalatability: tasteBalance } : {}),
     ...(bufferCapacity !== null ? { bufferCapacity } : {}),
     ...(dataQualityScore !== null ? { dataQualityScore } : {}),
+    ...(pral !== null ? { pral } : {}),
   };
 
   const badges = evaluateRegulatoryBadges(enrichedValues);
@@ -433,6 +438,15 @@ export function deriveWaterInsights(values: Partial<WaterAnalysisValues>): Water
       label: "Basische Pufferung",
       description:
         "Hohe Hydrogencarbonatkapazität – neutralisiert Magensäure und unterstützt Regeneration.",
+      tone: "positive",
+    });
+  }
+
+  if (pral !== null && pral < 0) {
+    badges.push({
+      id: "pral_negative",
+      label: "Basisch (PRAL)",
+      description: `PRAL-Wert von ${pral.toFixed(1)} mEq/L. Wirkt basisch auf den Körper und unterstützt den Säure-Basen-Haushalt.`,
       tone: "positive",
     });
   }
@@ -489,5 +503,6 @@ export function deriveWaterInsights(values: Partial<WaterAnalysisValues>): Water
     tastePalatability: tasteBalance ?? undefined,
     bufferCapacity: bufferCapacity ?? undefined,
     dataQualityScore: dataQualityScore ?? undefined,
+    pral: pral ?? undefined,
   };
 }
