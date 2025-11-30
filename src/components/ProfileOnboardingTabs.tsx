@@ -8,7 +8,7 @@ import { hapticLight } from "@/lib/capacitor";
 import { ProfileWeightChart } from "@/src/components/onboarding/ProfileWeightChart";
 import { MetricLearningCard } from "@/src/components/ui/MetricLearningCard";
 
-const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure"];
+const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure", "coffee"];
 
 // Profile Icons (same as ProfileSelector)
 const PROFILE_ICONS: Record<ProfileId, JSX.Element> = {
@@ -30,6 +30,11 @@ const PROFILE_ICONS: Record<ProfileId, JSX.Element> = {
   blood_pressure: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  ),
+  coffee: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 8h1a3 3 0 010 6h-1m-2 5H8a3 3 0 01-3-3V7h13v2M8 3h8M9 3v2M15 3v2" />
     </svg>
   ),
 };

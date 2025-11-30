@@ -8,7 +8,7 @@ import { Capacitor } from '@capacitor/core';
 
 // Database configuration
 const DB_NAME = 'wasserscan.db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Type definitions matching our schema
 export interface WaterSource {
@@ -35,6 +35,7 @@ export interface WaterAnalysis {
   sulfate: number | null;
   bicarbonate: number | null;
   nitrate: number | null;
+   fluoride: number | null;
   totalDissolvedSolids: number | null;
   createdAt: string;
 }
@@ -58,6 +59,37 @@ class SQLiteService {
   private db: SQLiteDBConnection | null = null;
   private isInitialized = false;
   private isInitializing = false;
+  private initPromise: Promise<void> | null = null;
+
+  /**
+   * Normalize DB name for plugin checks (plugin strips .db internally)
+   */
+  private getNormalizedDbName(): string {
+    return DB_NAME.endsWith('.db') ? DB_NAME.slice(0, -3) : DB_NAME;
+  }
+
+  /**
+   * Try to copy a prebuilt database from public/assets/databases (Capacitor asset)
+   */
+  private async ensureDatabaseFromAssets(): Promise<void> {
+    const normalizedName = this.getNormalizedDbName();
+    try {
+      const exists = await CapacitorSQLite.isDatabase({ database: normalizedName });
+      if (exists?.result) {
+        return;
+      }
+    } catch (err) {
+      console.warn('[SQLite] Failed to check database existence, proceeding to copyFromAssets', err);
+    }
+
+    try {
+      console.log('[SQLite] Database not found, attempting copyFromAssets...');
+      await CapacitorSQLite.copyFromAssets({ overwrite: false });
+      console.log('[SQLite] copyFromAssets completed');
+    } catch (err) {
+      console.warn('[SQLite] copyFromAssets failed; will fall back to JSON import', err);
+    }
+  }
 
   /**
    * Check if we're running in a Capacitor environment
@@ -70,62 +102,70 @@ class SQLiteService {
    * Initialize the database connection
    */
   async init(): Promise<void> {
-    if (this.isInitialized || this.isInitializing) return;
+    if (this.isInitialized) return;
+    if (this.initPromise) return this.initPromise;
+
     this.isInitializing = true;
-
-    if (!this.isCapacitor()) {
-      console.log('[SQLite] Not running in Capacitor, skipping initialization');
-      this.isInitializing = false;
-      return;
-    }
-
-    try {
-      // Reuse an existing connection if one is already open (prevents "connection already exists")
-      if (!this.sqliteConnection) {
-        this.sqliteConnection = new SQLiteConnection(CapacitorSQLite);
+    this.initPromise = (async () => {
+      if (!this.isCapacitor()) {
+        console.log('[SQLite] Not running in Capacitor, skipping initialization');
+        return;
       }
 
-      const consistency = await this.sqliteConnection.checkConnectionsConsistency();
-      const hasConnection = await this.sqliteConnection.isConnection(DB_NAME, false);
+      try {
+        // Try to hydrate from prebuilt asset before opening any connection
+        await this.ensureDatabaseFromAssets();
 
-      if (consistency.result && hasConnection.result) {
-        try {
-          // Reuse existing connection if possible
-          this.db = await this.sqliteConnection.retrieveConnection(DB_NAME, false);
-        } catch (err) {
-          console.warn('[SQLite] Failed to retrieve existing connection, closing and recreating', err);
-          await this.sqliteConnection.closeConnection(DB_NAME, false);
-          this.db = null;
+        // Reuse an existing connection if one is already open (prevents "connection already exists")
+        if (!this.sqliteConnection) {
+          this.sqliteConnection = new SQLiteConnection(CapacitorSQLite);
         }
+
+        const consistency = await this.sqliteConnection.checkConnectionsConsistency();
+        const hasConnection = await this.sqliteConnection.isConnection(DB_NAME, false);
+
+        if (consistency.result && hasConnection.result) {
+          try {
+            // Reuse existing connection if possible
+            this.db = await this.sqliteConnection.retrieveConnection(DB_NAME, false);
+          } catch (err) {
+            console.warn('[SQLite] Failed to retrieve existing connection, closing and recreating', err);
+            await this.sqliteConnection.closeConnection(DB_NAME, false);
+            this.db = null;
+          }
+        }
+
+        if (!this.db) {
+          // Open or create the database
+          this.db = await this.sqliteConnection.createConnection(
+            DB_NAME,
+            false, // encrypted
+            'no-encryption',
+            DB_VERSION,
+            false // readonly
+          );
+        }
+
+        // Ensure DB is open
+        const isOpen = (await this.db.isDBOpen())?.result;
+        if (!isOpen) {
+          await this.db.open();
+        }
+
+        await this.ensureSchema();
+        this.isInitialized = true;
+
+        console.log('[SQLite] Database initialized successfully');
+      } catch (error) {
+        console.error('[SQLite] Initialization error:', error);
+        throw error;
+      } finally {
+        this.isInitializing = false;
+        this.initPromise = null;
       }
+    })();
 
-      if (!this.db) {
-        // Open or create the database
-        this.db = await this.sqliteConnection.createConnection(
-          DB_NAME,
-          false, // encrypted
-          'no-encryption',
-          DB_VERSION,
-          false // readonly
-        );
-      }
-
-      // Ensure DB is open
-      const isOpen = (await this.db.isDBOpen())?.result;
-      if (!isOpen) {
-        await this.db.open();
-      }
-
-      await this.ensureSchema();
-      this.isInitialized = true;
-
-      console.log('[SQLite] Database initialized successfully');
-    } catch (error) {
-      console.error('[SQLite] Initialization error:', error);
-      throw error;
-    } finally {
-      this.isInitializing = false;
-    }
+    return this.initPromise;
   }
 
   /**
@@ -165,6 +205,7 @@ class SQLiteService {
         sulfate REAL,
         bicarbonate REAL,
         nitrate REAL,
+        fluoride REAL,
         totalDissolvedSolids REAL,
         createdAt TEXT NOT NULL,
         FOREIGN KEY (waterSourceId) REFERENCES WaterSource(id)
@@ -196,6 +237,14 @@ class SQLiteService {
 
     for (const statement of statements) {
       await this.db.execute(statement);
+    }
+
+    // Add fluoride column if missing (legacy DBs)
+    try {
+      await this.db.execute('ALTER TABLE WaterAnalysis ADD COLUMN fluoride REAL;');
+      console.log('[SQLite] Added fluoride column to WaterAnalysis');
+    } catch {
+      // ignore if column already exists
     }
   }
 
@@ -280,6 +329,31 @@ class SQLiteService {
     return { id, ...data, createdAt };
   }
 
+  /**
+   * Check if preloaded data already exists (used to skip JSON import)
+   */
+  async hasPreloadedData(): Promise<boolean> {
+    try {
+      await this.ensureInitialized();
+    } catch (err) {
+      console.warn('[SQLite] hasPreloadedData could not init DB:', err);
+      return false;
+    }
+
+    if (!this.db) {
+      console.warn('[SQLite] hasPreloadedData: DB handle missing');
+      return false;
+    }
+
+    try {
+      const result = await this.db.query('SELECT COUNT(*) as count FROM WaterSource LIMIT 1');
+      return (result.values?.[0]?.count ?? 0) > 0;
+    } catch (error) {
+      console.error('[SQLite] Error checking preloaded data:', error);
+      return false;
+    }
+  }
+
   // ==================== WaterAnalysis Operations ====================
 
   /**
@@ -296,8 +370,8 @@ class SQLiteService {
       `INSERT INTO WaterAnalysis (
         id, waterSourceId, analysisDate, sourceType, reliabilityScore,
         ph, calcium, magnesium, sodium, potassium, chloride, sulfate,
-        bicarbonate, nitrate, totalDissolvedSolids, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        bicarbonate, nitrate, fluoride, totalDissolvedSolids, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         data.waterSourceId,
@@ -313,6 +387,7 @@ class SQLiteService {
         data.sulfate,
         data.bicarbonate,
         data.nitrate,
+        data.fluoride,
         data.totalDissolvedSolids,
         createdAt
       ]
@@ -349,6 +424,7 @@ class SQLiteService {
           wa.sulfate as wa_sulfate,
           wa.bicarbonate as wa_bicarbonate,
           wa.nitrate as wa_nitrate,
+          wa.fluoride as wa_fluoride,
           wa.totalDissolvedSolids as wa_tds
          FROM ScanResult s
          LEFT JOIN WaterSource w ON s.waterSourceId = w.id
@@ -396,6 +472,7 @@ class SQLiteService {
             sulfate: row.wa_sulfate ?? undefined,
             bicarbonate: row.wa_bicarbonate ?? undefined,
             nitrate: row.wa_nitrate ?? undefined,
+            fluoride: row.wa_fluoride ?? undefined,
             totalDissolvedSolids: row.wa_tds ?? undefined,
           };
 
@@ -570,8 +647,8 @@ class SQLiteService {
             `INSERT OR IGNORE INTO WaterAnalysis (
               id, waterSourceId, analysisDate, sourceType, reliabilityScore,
               ph, calcium, magnesium, sodium, potassium, chloride, sulfate,
-              bicarbonate, nitrate, totalDissolvedSolids, createdAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              bicarbonate, nitrate, fluoride, totalDissolvedSolids, createdAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               analysis.id,
               analysis.waterSourceId,
@@ -587,6 +664,7 @@ class SQLiteService {
               analysis.sulfate,
               analysis.bicarbonate,
               analysis.nitrate,
+              analysis.fluoride,
               analysis.totalDissolvedSolids,
               analysis.createdAt
             ]

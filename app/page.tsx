@@ -1,7 +1,17 @@
-import { redirect } from "next/navigation";
+'use client';
 
-export const dynamic = "force-static";
+import { redirect } from "next/navigation";
+import { useEffect } from "react";
 
 export default function RootPage() {
-  redirect("/dashboard");
+  useEffect(() => {
+    const startScreen = localStorage.getItem('wasserscan-start-screen');
+    if (startScreen === 'scan') {
+      redirect("/scan");
+    } else {
+      redirect("/dashboard");
+    }
+  }, []);
+
+  return null;
 }

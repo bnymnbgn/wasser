@@ -4,9 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { sqliteService, WaterSource, WaterAnalysis } from '@/lib/sqlite';
 import { InitialLoadingScreen } from '@/src/components/ui/InitialLoadingScreen';
-// Import JSON data directly for reliability in Capacitor apps
-import waterSourcesData from '@/src/data/water-sources.json';
-import waterAnalysesData from '@/src/data/water-analyses.json';
+import { initWebDb } from '@/src/lib/webDb';
 
 interface DatabaseContextType {
   isReady: boolean;
@@ -44,9 +42,16 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
 
   useEffect(() => {
     const initDatabase = async () => {
-      // Only initialize on native platforms (not in browser)
-      if (!Capacitor.isNativePlatform()) {
-        console.log('[DatabaseProvider] Running in browser, skipping SQLite initialization');
+      const isNative = Capacitor.isNativePlatform();
+
+      // Web dev DB (optional)
+      if (!isNative) {
+        try {
+          await initWebDb();
+          console.log('[DatabaseProvider] Web DB initialized (dev-only)');
+        } catch (err) {
+          console.warn('[DatabaseProvider] Web DB init failed (ignored):', err);
+        }
         setIsReady(true);
         setIsLoading(false);
         return;
@@ -58,8 +63,13 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
         // Initialize SQLite connection
         await sqliteService.init();
 
-        // Load and import preloaded data from JSON files
-        await loadPreloadedData();
+        // If the bundled DB is empty, import JSON as fallback
+        const hasData = await sqliteService.hasPreloadedData();
+        if (!hasData) {
+          await loadPreloadedData();
+        } else {
+          console.log('[DatabaseProvider] Preloaded DB already has data, skipping JSON import');
+        }
 
         console.log('[DatabaseProvider] Database ready');
         setIsReady(true);
@@ -122,9 +132,20 @@ async function loadPreloadedData(): Promise<void> {
   try {
     console.log('[DatabaseProvider] Loading preloaded data...');
 
-    // Use directly imported JSON data (more reliable for Capacitor apps)
-    const sources: WaterSource[] = waterSourcesData as WaterSource[];
-    const analyses: WaterAnalysis[] = waterAnalysesData as WaterAnalysis[];
+    // Only load JSON data when actually running on the native app
+    if (!Capacitor.isNativePlatform()) {
+      console.log('[DatabaseProvider] Not on native platform, skipping JSON import');
+      return;
+    }
+
+    // Dynamically import JSON to avoid bundling it into the web build
+    const [sourcesModule, analysesModule] = await Promise.all([
+      import('@/src/data/water-sources.json'),
+      import('@/src/data/water-analyses.json'),
+    ]);
+
+    const sources: WaterSource[] = (sourcesModule.default ?? sourcesModule) as WaterSource[];
+    const analyses: WaterAnalysis[] = (analysesModule.default ?? analysesModule) as WaterAnalysis[];
 
     console.log(`[DatabaseProvider] Loaded ${sources.length} sources and ${analyses.length} analyses from imported data`);
 

@@ -98,6 +98,13 @@ function mapWaterValues(nutriments) {
       "fr-hydrogencarbonat"
     ),
     nitrate: readNutrimentMulti(nutriments, "nitrate", "nitrates"),
+    fluoride: readNutrimentMulti(
+      nutriments,
+      "fluoride",
+      "fluorure",
+      "fluor",
+      "fluorid"
+    ),
     totalDissolvedSolids: readNutrimentMulti(
       nutriments,
       "residue_dry",

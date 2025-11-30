@@ -22,7 +22,8 @@
     "cap:open:android": "npx cap open android",
     "cap:run:android": "npx cap run android --no-sync",
     "cap:build:android": "npm run cap:sync:android:static && cd android && ./gradlew assembleDebug",
-    "cap:build:android:release": "npm run cap:sync:android:static && cd android && ./gradlew assembleRelease"
+    "cap:build:android:release": "npm run cap:sync:android:static && cd android && ./gradlew assembleRelease",
+    "build:db:preload": "node scripts/build-preloaded-db.js"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^7.0.2",
@@ -48,7 +49,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^3.5.0",
-    "tesseract.js": "^6.0.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {
@@ -59,6 +59,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^5.1.1",
+    "better-sqlite3": "^11.7.0",
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
     "dotenv": "^17.2.3",

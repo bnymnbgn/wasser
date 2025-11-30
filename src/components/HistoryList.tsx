@@ -32,6 +32,7 @@ const PROFILE_LABELS: Record<ProfileType, string> = {
   baby: "Baby",
   sport: "Sport",
   blood_pressure: "Blutdruck",
+  coffee: "Kaffee",
 };
 
 type SortOption = "newest" | "best" | "worst" | "brand";
@@ -265,17 +266,24 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
                       key={scan.id}
                       onFavorite={() => handleFavorite(scan)}
                       onDelete={() => handleDelete(scan)}
-                      isFavorite={Boolean(favorites[scan.id])}
-                      onLongPress={handleLongPress}
                       onSwipeStart={closeContextMenu}
                       scan={scan}
+                      onMore={(s, x, y) => openContextMenu(s, x, y)}
+                      onShare={() => handleShare(scan)}
+                      onRescan={() => handleRescan(scan)}
+                      onEdit={() => handleEditDetails(scan)}
+                      expanded={expandedId === scan.id}
+                      onLongPress={handleLongPress}
                     >
                       <HistoryCard
                         scan={scan}
                         isExpanded={expandedId === scan.id}
-                        onToggleExpand={() =>
-                          setExpandedId((prev) => (prev === scan.id ? null : scan.id))
-                        }
+                        onToggleExpand={() => {
+                          setExpandedId((prev) => {
+                            const next = prev === scan.id ? null : scan.id;
+                            return next;
+                          });
+                        }}
                         isFavorite={Boolean(favorites[scan.id])}
                       />
                     </SwipeableRow>
@@ -602,29 +610,35 @@ function SwipeableRow({
   children,
   onFavorite,
   onDelete,
-  isFavorite,
-  onLongPress,
   onSwipeStart,
   scan,
+  onShare,
+  onRescan,
+  onEdit,
+  onMore,
+  expanded,
 }: any) {
   const [offset, setOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [showActions, setShowActions] = useState<"left" | "right" | null>(null);
   const startX = useRef(0);
   const longPressTimer = useRef<any>(null);
+  const rowRef = useRef<HTMLDivElement | null>(null);
 
   const handlePointerDown = (e: any) => {
+    if (expanded) return;
     // WICHTIG: Kontextmenü schließen
     if (onSwipeStart) onSwipeStart();
 
+    setShowActions(null);
     startX.current = e.clientX;
     setIsDragging(true);
-    longPressTimer.current = setTimeout(
-      () => onLongPress(scan, e.clientX, e.clientY),
-      600
-    );
+    // long press disabled for swipe to avoid modal
+    longPressTimer.current = null;
   };
 
   const handlePointerMove = (e: any) => {
+    if (expanded) return; // block swipe when card is expanded
     if (!isDragging) return;
     const delta = e.clientX - startX.current;
     // Limit swipe distance
@@ -632,32 +646,83 @@ function SwipeableRow({
   };
 
   const handlePointerUp = () => {
-    clearTimeout(longPressTimer.current);
-    if (offset > 80) onFavorite();
-    if (offset < -80) onDelete();
-    setOffset(0);
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    if (offset > 60) {
+      setShowActions("right");
+      setOffset(110);
+    } else if (offset < -60) {
+      setShowActions("left");
+      setOffset(-110);
+    } else {
+      setShowActions(null);
+      setOffset(0);
+    }
     setIsDragging(false);
   };
 
+  const handleMoreClick = (e: any) => {
+    e.stopPropagation();
+    closeActions();
+    if (onMore) {
+      const rect = rowRef.current?.getBoundingClientRect();
+      const x = rect ? rect.left + rect.width / 2 : e.clientX;
+      const y = rect ? rect.top + rect.height / 2 : e.clientY;
+      onMore(scan, x, y);
+    }
+  };
+
+  const closeActions = () => {
+    setShowActions(null);
+    setOffset(0);
+  };
+
+  const handleFavoriteClick = async (e?: any) => {
+    if (e) e.stopPropagation();
+    await onFavorite();
+    closeActions();
+  };
+
+  const handleDeleteClick = async (e?: any) => {
+    if (e) e.stopPropagation();
+    await onDelete();
+    closeActions();
+  };
+
   return (
-    <div className="relative touch-pan-y select-none group">
-      {/* Hintergrund-Aktionen (Rot/Grün) */}
-      {/* FIX: opacity style verhindert rotes Durchscheinen an den Ecken */}
-      <div
-        className={`absolute inset-0 flex items-center justify-between rounded-2xl px-5 text-xs font-bold uppercase tracking-widest text-white transition-colors ${offset > 0 ? "bg-amber-500" : "bg-rose-500"
-          }`}
-        style={{ opacity: Math.abs(offset) > 2 ? 1 : 0 }}
-      >
-        <div className="flex items-center gap-2" style={{ opacity: offset > 20 ? 1 : 0 }}>
-          {" "}
-          <Star className="w-4 h-4 fill-white" /> Favorit{" "}
+    <div className="relative touch-pan-y select-none group overflow-hidden rounded-2xl" ref={rowRef}>
+      {/* Hintergrund-Aktionen im Apple-Mail-Stil */}
+      <div className="absolute inset-0 flex items-center justify-between px-3 rounded-2xl pointer-events-none">
+        <div className="flex items-center gap-2 pointer-events-auto h-full">
+          <button
+            onClick={handleFavoriteClick}
+            className="flex items-center gap-2 h-full rounded-2xl bg-amber-500 text-white px-3 text-xs font-bold shadow-md"
+            >
+            <Star className="w-4 h-4 fill-white" />
+            Favorit
+          </button>
+          <button
+            onClick={handleMoreClick}
+            className="flex items-center gap-1 h-full rounded-2xl bg-slate-800 text-white px-3 text-xs font-bold shadow-md"
+            >
+            <Edit3 className="w-4 h-4" />
+            …
+          </button>
         </div>
-        <div
-          className="flex items-center gap-2"
-          style={{ opacity: offset < -20 ? 1 : 0 }}
-        >
-          {" "}
-          <Trash2 className="w-4 h-4" /> Löschen{" "}
+        <div className="flex items-center gap-2 pointer-events-auto h-full">
+          <button
+            onClick={handleMoreClick}
+            className="flex items-center gap-1 h-full rounded-2xl bg-slate-800 text-white px-3 text-xs font-bold shadow-md"
+            >
+            <Share2 className="w-4 h-4" />
+            …
+          </button>
+          <button
+            onClick={handleDeleteClick}
+            className="flex items-center gap-2 h-full rounded-2xl bg-rose-500 text-white px-3 text-xs font-bold shadow-md"
+            >
+            <Trash2 className="w-4 h-4" />
+            Löschen
+          </button>
         </div>
       </div>
 
@@ -669,9 +734,10 @@ function SwipeableRow({
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         // WICHTIG: Festen Hintergrund setzen!
-        className="relative ocean-surface rounded-2xl shadow-sm border border-ocean-border overflow-hidden"
+        className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-ocean-border overflow-hidden"
       >
         {children}
+
       </motion.div>
     </div>
   );

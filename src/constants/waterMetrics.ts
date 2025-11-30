@@ -19,6 +19,7 @@ export const WATER_METRIC_FIELDS: WaterMetricConfig[] = [
   { key: "sulfate", label: "Sulfat", unit: "mg/L" },
   { key: "nitrate", label: "Nitrat", unit: "mg/L" },
   { key: "bicarbonate", label: "Hydrogencarbonat", unit: "mg/L" },
+  { key: "fluoride", label: "Fluorid", unit: "mg/L" },
   { key: "totalDissolvedSolids", label: "Gesamtmineralisation", unit: "mg/L" },
 ] as const;
 

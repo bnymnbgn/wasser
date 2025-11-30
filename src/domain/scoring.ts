@@ -6,7 +6,7 @@ import {
   computeTasteBalance,
   computeBufferCapacity,
   computeDataQualityScore,
-} from "@/src/lib/waterMath";
+} from "../lib/waterMath";
 
 export interface MetricScore {
   metric: keyof WaterAnalysisValues;
@@ -744,6 +744,49 @@ function scoreDataTransparency(values: Partial<WaterAnalysisValues>): MetricScor
   };
 }
 
+function scoreFluoride(f: number | undefined, profile: ProfileType): MetricScore {
+  if (f == null) {
+    return {
+      metric: "fluoride",
+      score: 50,
+      weight: 0.8,
+      explanation: "Fluoridgehalt unbekannt.",
+    };
+  }
+
+  // WHO-Empfehlung: 0.5-1.0 mg/L optimal für Zahngesundheit
+  // >1.5 mg/L: Fluorose-Risiko
+  let score: number;
+  let explanation = "Fluorid schützt vor Karies. ";
+
+  if (profile === "baby") {
+    // Babys: < 0.7 mg/L (Fluorose-Risiko bei Zahnentwicklung)
+    score = stepBands(f, [
+      { limit: 0.3, score: 100 },
+      { limit: 0.7, score: 80 },
+      { limit: 1.5, score: 30 },
+    ], true);
+    explanation += "Für Babys sollte Fluorid unter 0.7 mg/L liegen (Zahnentwicklung).";
+  } else {
+    // Erwachsene: 0.5-1.0 optimal
+    score = bellScore(f, 0.7, 0.5); // Ideal 0.7, Toleranz ±0.5
+    if (score >= 80) {
+      explanation += "Optimaler Fluoridgehalt für Zahnschutz.";
+    } else if (f > 1.5) {
+      explanation += "Fluorid erhöht – langfristig Fluorose-Risiko (Zahnflecken).";
+    } else {
+      explanation += "Niedriger Fluoridgehalt – Kariesschutz via Zahnpasta empfohlen.";
+    }
+  }
+
+  return {
+    metric: "fluoride",
+    score,
+    weight: profile === "baby" ? 1.5 : 0.8,
+    explanation,
+  };
+}
+
 // ---------------------------
 // Hauptfunktion
 // ---------------------------
@@ -795,6 +838,7 @@ export function calculateScores(
   metrics.push(scoreTds(values.totalDissolvedSolids));
   metrics.push(scoreTastePalatability(values.sulfate, values.chloride, values.bicarbonate));
   metrics.push(scoreDataTransparency(values));
+  metrics.push(scoreFluoride(values.fluoride, profile));
 
   // nur Metriken berücksichtigen, die eine sinnvolle Weight > 0 haben
   const active = metrics.filter((m) => m.weight > 0);
@@ -802,7 +846,24 @@ export function calculateScores(
   const weightedSum = active.reduce((sum, m) => sum + m.score * m.weight, 0);
   const weightSum = active.reduce((sum, m) => sum + m.weight, 0);
 
-  const totalScore = weightSum > 0 ? weightedSum / weightSum : 50;
+  let totalScore = weightSum > 0 ? weightedSum / weightSum : 50;
+
+  // ---------------------------
+  // Penalty Logic (Non-linear Scoring)
+  // ---------------------------
+
+  // Kritische Metriken, die bei Versagen den Gesamt-Score runterziehen müssen
+  const criticalMetrics = ["nitrate", "sodium", "fluoride"];
+
+  const criticalFailures = metrics
+    .filter(m => criticalMetrics.includes(m.metric))
+    .filter(m => m.score < 30); // Score < 30 gilt als "Versagen"
+
+  if (criticalFailures.length > 0) {
+    // Penalty: Max Score = 70 bei kritischen Fehlern
+    // Das verhindert, dass ein Wasser mit z.B. extrem viel Nitrat trotzdem 90 Punkte bekommt
+    totalScore = Math.min(totalScore, 70);
+  }
 
   return {
     totalScore: clampScore(totalScore),

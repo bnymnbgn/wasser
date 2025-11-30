@@ -34,9 +34,8 @@ async function loadScans(): Promise<DomainScanResult[]> {
   });
 }
 
-const isCapacitorBuild =
-  process.env["CAPACITOR_BUILD"] === "true" ||
-  process.env["CAPACITOR_DEV_SERVER"] === "true";
+// For web/PWA we always use server history; native builds set CAPACITOR_BUILD
+const isCapacitorBuild = process.env["CAPACITOR_BUILD"] === "true";
 export const dynamic = isCapacitorBuild ? "force-static" : "force-dynamic";
 
 export default async function HistoryPage() {

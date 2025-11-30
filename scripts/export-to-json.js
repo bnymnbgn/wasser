@@ -57,6 +57,7 @@ async function exportData() {
         sulfate: true,
         bicarbonate: true,
         nitrate: true,
+        fluoride: true,
         totalDissolvedSolids: true,
         createdAt: true,
       },

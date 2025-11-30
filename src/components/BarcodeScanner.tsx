@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 
 interface BarcodeScannerProps {
@@ -10,6 +10,7 @@ interface BarcodeScannerProps {
 export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [moduleState, setModuleState] = useState<"idle" | "preparing" | "ready" | "error">("idle");
   const isCapacitor = Capacitor.isNativePlatform();
   const googleModuleReadyRef = useRef(false);
   const moduleInstallPromiseRef = useRef<Promise<void> | null>(null);
@@ -19,16 +20,19 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
     GoogleBarcodeScannerModuleInstallState: any
   ) {
     if (googleModuleReadyRef.current) {
+      setModuleState("ready");
       return;
     }
 
     if (Capacitor.getPlatform() !== "android") {
       googleModuleReadyRef.current = true;
+      setModuleState("ready");
       return;
     }
 
     if (typeof BarcodeScanner.isGoogleBarcodeScannerModuleAvailable !== "function") {
       googleModuleReadyRef.current = true;
+      setModuleState("ready");
       return;
     }
 
@@ -45,6 +49,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
     const alreadyAvailable = await checkAvailability();
     if (alreadyAvailable) {
       googleModuleReadyRef.current = true;
+      setModuleState("ready");
       return;
     }
 
@@ -64,6 +69,7 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
             "googleBarcodeScannerModuleInstallProgress",
             (event: { state: number }) => {
               if (event.state === GoogleBarcodeScannerModuleInstallState.COMPLETED) {
+                setModuleState("ready");
                 cleanup().then(resolve);
               } else if (
                 event.state === GoogleBarcodeScannerModuleInstallState.FAILED ||
@@ -106,20 +112,53 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
       });
     }
 
-    await moduleInstallPromiseRef.current;
+    setModuleState("preparing");
+    await moduleInstallPromiseRef.current.catch(() => {
+      setModuleState("error");
+    });
 
     const availableAfterInstall = await checkAvailability();
     googleModuleReadyRef.current = availableAfterInstall;
 
     if (!availableAfterInstall) {
+      setModuleState("error");
       throw new Error("Google Barcode Scanner Modul konnte nicht installiert werden.");
     }
+
+    setModuleState("ready");
   }
+
+  // Preload the Google barcode module early to avoid first-scan wait
+  useEffect(() => {
+    if (!isCapacitor) return;
+    let cancelled = false;
+    const preload = async () => {
+      try {
+        setModuleState((prev) => (prev === "ready" ? prev : "preparing"));
+        const { BarcodeScanner, GoogleBarcodeScannerModuleInstallState } = await import(
+          "@capacitor-mlkit/barcode-scanning"
+        );
+        if (!cancelled) {
+          await ensureGoogleBarcodeScannerModule(BarcodeScanner, GoogleBarcodeScannerModuleInstallState);
+        }
+      } catch (err) {
+        console.warn("Preloading Google Barcode module failed", err);
+        if (!cancelled) setModuleState("error");
+      }
+    };
+    preload();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCapacitor]);
 
   async function startNativeScan() {
     try {
       setError(null);
       setScanning(true);
+      if (moduleState !== "ready") {
+        setModuleState("preparing");
+      }
 
       // Import the ML Kit barcode scanner plugin
       const { BarcodeScanner, GoogleBarcodeScannerModuleInstallState } = await import(
@@ -168,14 +207,14 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
           <button
             type="button"
             onClick={startNativeScan}
-            disabled={scanning}
+            disabled={scanning || moduleState === "preparing"}
             className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-medium ${
               scanning
                 ? "bg-slate-600 text-slate-400 cursor-not-allowed"
                 : "bg-blue-500 text-white hover:bg-blue-600"
             }`}
           >
-            {scanning ? "Scannt..." : "Kamera öffnen"}
+            {scanning ? "Scannt..." : moduleState === "preparing" ? "Lädt Modul…" : "Kamera öffnen"}
           </button>
         </div>
 
@@ -188,6 +227,12 @@ export function BarcodeScanner({ onDetected }: BarcodeScannerProps) {
         {scanning && (
           <div className="mt-2 text-[11px] text-emerald-300 animate-pulse">
             Scanner aktiv - Richte die Kamera auf den Barcode...
+          </div>
+        )}
+
+        {moduleState === "preparing" && !scanning && (
+          <div className="mt-2 text-[11px] text-emerald-300 animate-pulse">
+            Barcode-Modul wird initialisiert …
           </div>
         )}
       </div>

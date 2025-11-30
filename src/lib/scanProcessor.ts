@@ -82,6 +82,7 @@ export async function processBarcodeLocally(
     sulfate: latestAnalysis.sulfate ?? undefined,
     bicarbonate: latestAnalysis.bicarbonate ?? undefined,
     nitrate: latestAnalysis.nitrate ?? undefined,
+    fluoride: (latestAnalysis as any).fluoride ?? undefined,
     totalDissolvedSolids: latestAnalysis.totalDissolvedSolids ?? undefined,
   };
 
@@ -189,6 +190,7 @@ export async function processOCRLocally(
       sulfate: parsedValues.sulfate ?? null,
       bicarbonate: parsedValues.bicarbonate ?? null,
       nitrate: parsedValues.nitrate ?? null,
+      fluoride: (parsedValues as any).fluoride ?? null,
       totalDissolvedSolids: parsedValues.totalDissolvedSolids ?? null,
     });
     waterAnalysisId = newAnalysis.id;

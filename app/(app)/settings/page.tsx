@@ -13,7 +13,9 @@ import {
     Shield,
     Github,
     ArrowLeft,
-    Database
+    Database,
+    Scan,
+    Mail
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -27,6 +29,7 @@ export default function SettingsPage() {
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [profile, setProfile] = useState<ProfileType>('standard');
     const [storageStats, setStorageStats] = useState({ count: 0, sizeBytes: 0 });
+    const [startScreen, setStartScreen] = useState<'dashboard' | 'scan'>('dashboard');
 
     useEffect(() => {
         const loadStats = async () => {
@@ -41,7 +44,18 @@ export default function SettingsPage() {
         if (savedProfile && ['standard', 'baby', 'sport', 'blood_pressure', 'coffee'].includes(savedProfile)) {
             setProfile(savedProfile);
         }
+
+        const savedStartScreen = localStorage.getItem('wasserscan-start-screen') as 'dashboard' | 'scan' | null;
+        if (savedStartScreen && ['dashboard', 'scan'].includes(savedStartScreen)) {
+            setStartScreen(savedStartScreen);
+        }
     }, []);
+
+    const handleStartScreenChange = (screen: 'dashboard' | 'scan') => {
+        setStartScreen(screen);
+        localStorage.setItem('wasserscan-start-screen', screen);
+        hapticLight();
+    };
 
     const handleProfileChange = (newProfile: ProfileType) => {
         setProfile(newProfile);
@@ -193,6 +207,44 @@ export default function SettingsPage() {
                     </div>
                 </section>
 
+                {/* App Behavior Section */}
+                <section className="space-y-3">
+                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">App-Verhalten</h2>
+                    <div className="ocean-card ocean-panel overflow-hidden">
+                        <div className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
+                                    <Scan className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <span className="block text-ocean-primary">Start-Screen</span>
+                                    <span className="text-xs text-ocean-secondary">App startet im {startScreen === 'dashboard' ? 'Dashboard' : 'Scanner'}</span>
+                                </div>
+                            </div>
+                            <div className="flex bg-ocean-surface-elevated rounded-lg p-1 border border-ocean-border">
+                                <button
+                                    onClick={() => handleStartScreenChange('dashboard')}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${startScreen === 'dashboard'
+                                        ? 'bg-ocean-accent text-white shadow-sm'
+                                        : 'text-ocean-secondary hover:text-ocean-primary'
+                                        }`}
+                                >
+                                    Dashboard
+                                </button>
+                                <button
+                                    onClick={() => handleStartScreenChange('scan')}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${startScreen === 'scan'
+                                        ? 'bg-ocean-accent text-white shadow-sm'
+                                        : 'text-ocean-secondary hover:text-ocean-primary'
+                                        }`}
+                                >
+                                    Scanner
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 {/* About Section */}
                 <section className="space-y-3">
                     <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">Über</h2>
@@ -208,6 +260,18 @@ export default function SettingsPage() {
                                 </div>
                             </div>
                         </div>
+                        <a
+                            href="mailto:feedback@wasserscan.app?subject=Feedback%20Wasserscan%20App"
+                            className="w-full flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors border-b border-ocean-border"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
+                                    <Mail className="w-5 h-5" />
+                                </div>
+                                <span className="text-ocean-primary">Feedback senden</span>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-ocean-tertiary" />
+                        </a>
                         <Link
                             href="/privacy"
                             className="w-full flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors border-b border-ocean-border"

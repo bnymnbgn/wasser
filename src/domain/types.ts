@@ -22,6 +22,7 @@ export interface WaterAnalysisValues {
   bicarbonate?: number;
   nitrate?: number;
   totalDissolvedSolids?: number;
+  fluoride?: number;
   // Derived/auxiliary metrics (computed from the above)
   hardness?: number;
   calciumMagnesiumRatio?: number;

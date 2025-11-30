@@ -65,12 +65,11 @@ export default function HistoryPageCapacitor() {
 
           const hasValues = Object.keys(mergedValues).length > 0;
 
-          let metricDetails = metricScores;
-          let insights = undefined;
-
-          if (hasValues) {
+          // Prefer stored metricScores; compute only if missing and values exist
+          let metricDetails = metricScores ?? undefined;
+          const insights = hasValues ? deriveWaterInsights(mergedValues) : undefined;
+          if (!metricDetails && hasValues) {
             const scoreResult = calculateScores(mergedValues, scan.profile as any);
-            insights = deriveWaterInsights(mergedValues);
             metricDetails = scoreResult.metrics;
           }
 
