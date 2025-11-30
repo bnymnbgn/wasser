@@ -146,13 +146,16 @@ function scoreSodium(na: number | undefined, profile: ProfileType): MetricScore 
     return {
       metric: "sodium",
       score: 50,
-      weight: profile === "baby" || profile === "blood_pressure" ? 2 : 1,
+      weight:
+        profile === "baby" || profile === "blood_pressure" || profile === "kidney"
+          ? 2
+          : 1,
       explanation: "Natriumgehalt unbekannt – neutral angenommen.",
     };
   }
 
   let score: number;
-  if (profile === "baby" || profile === "blood_pressure") {
+  if (profile === "baby" || profile === "blood_pressure" || profile === "kidney") {
     // niedriger besser
     score = stepBands(
       na,
@@ -197,15 +200,15 @@ function scoreSodium(na: number | undefined, profile: ProfileType): MetricScore 
 
 function scoreNitrate(no3: number | undefined, profile: ProfileType): MetricScore {
   if (no3 == null) {
-    const baseScore = profile === "baby" ? 40 : 50;
+    const baseScore = profile === "baby" || profile === "kidney" ? 70 : 75;
     return {
       metric: "nitrate",
       score: baseScore,
-      weight: profile === "baby" ? 2 : 1,
+      weight: profile === "baby" || profile === "kidney" ? 2 : 1,
       explanation:
-        profile === "baby"
-          ? "Nitratgehalt fehlt auf dem Etikett – vorsichtshalber Abzug für Babys."
-          : "Nitratgehalt unbekannt – neutral angenommen.",
+        profile === "baby" || profile === "kidney"
+          ? "Nitratgehalt nicht angegeben – typisch niedrig angenommen, aber vorsichtig."
+          : "Nitratgehalt nicht angegeben – typischerweise gering, neutral angenommen.",
     };
   }
 
@@ -362,14 +365,26 @@ function scoreSodiumPotassiumRatio(
   return {
     metric: "sodiumPotassiumRatio",
     score,
-    weight: profile === "blood_pressure" ? 1.2 : 0.6,
+    weight:
+      profile === "blood_pressure"
+        ? 1.8
+        : profile === "kidney"
+        ? 1.8
+        : profile === "sport"
+        ? 1.2
+        : profile === "baby"
+        ? 1.0
+        : profile === "coffee"
+        ? 0.1
+        : 0.8,
     explanation,
   };
 }
 
 function scoreCalciumMagnesiumRatio(
   calcium: number | undefined,
-  magnesium: number | undefined
+  magnesium: number | undefined,
+  profile: ProfileType
 ): MetricScore {
   if (calcium == null || magnesium == null || magnesium === 0) {
     return {
@@ -381,23 +396,39 @@ function scoreCalciumMagnesiumRatio(
   }
 
   const ratio = calcium / magnesium;
-  const score = bellScore(ratio, 2, 0.7);
+  const bands: Record<ProfileType, { ideal: number; tol: number }> = {
+    coffee: { ideal: 1.3, tol: 0.5 }, // 1.0–1.8
+    sport: { ideal: 2.0, tol: 0.7 }, // 1.3–2.7
+    standard: { ideal: 2.0, tol: 0.7 },
+    blood_pressure: { ideal: 2.0, tol: 0.7 },
+    baby: { ideal: 2.0, tol: 0.5 }, // 1.5–2.5
+    kidney: { ideal: 2.0, tol: 0.5 },
+  };
+
+  const { ideal, tol } = bands[profile] ?? bands.standard;
+  const score = bellScore(ratio, ideal, tol);
   let explanation = `Ca:Mg-Verhältnis von ${ratio.toFixed(2)}:1. `;
 
   if (score >= 80) {
-    explanation += "Liegt im idealen Bereich (ca. 1.6–2.4:1) für Mineralbalance.";
-  } else if (score >= 50) {
-    explanation += "Leicht unausgewogen, aber akzeptabel. Magnesium oder Calcium ergänzen.";
-  } else if (ratio < 1.6) {
-    explanation += "Magnesium dominiert – kann zu weichem Geschmack führen, Calcium ergänzen.";
+    explanation += "Liegt im idealen Bereich für Geschmack und Balance.";
+  } else if (ratio < ideal - tol) {
+    explanation +=
+      profile === "coffee"
+        ? "Magnesiumlastig – kann flach/bitter wirken. Für Kaffee eher zu weich."
+        : "Magnesiumlastig – Geschmack kann flach/bitter wirken.";
+  } else if (ratio > ideal + tol) {
+    explanation +=
+      profile === "coffee"
+        ? "Calciumlastig – stumpf/kreidig, weniger geeignet für Kaffee."
+        : "Calciumlastig – stumpf/kreidig im Geschmack.";
   } else {
-    explanation += "Calcium dominiert stark – Magnesium ergänzen für optimale Aufnahme.";
+    explanation += "Leicht unausgewogen, aber noch akzeptabel.";
   }
 
   return {
     metric: "calciumMagnesiumRatio",
     score,
-    weight: 1.5,
+    weight: profile === "coffee" ? 1.2 : 1.5,
     explanation,
   };
 }
@@ -419,8 +450,36 @@ function scoreBicarbonate(hco3: number | undefined, profile: ProfileType): Metri
     return {
       metric: "bicarbonate",
       score,
-      weight: 1.2,
+      weight: 1.4,
       explanation: "Hydrogencarbonat puffert Säure. Für Kaffee ist eine moderate Menge ideal.",
+    };
+  }
+
+  if (profile === "baby") {
+    const score = bandScore(hco3, 50, 300);
+    return {
+      metric: "bicarbonate",
+      score,
+      weight: 1.8,
+      explanation: "Für Babys: moderat (50-300 mg/L). Zu viel kann Stoffwechsel belasten.",
+    };
+  }
+
+  if (profile === "blood_pressure") {
+    const score = stepBands(
+      hco3,
+      [
+        { limit: 1000, score: 100 },
+        { limit: 600, score: 90 },
+        { limit: 300, score: 70 },
+      ],
+      false
+    );
+    return {
+      metric: "bicarbonate",
+      score,
+      weight: 1.5,
+      explanation: "Höheres Hydrogencarbonat entlastet die Nieren und puffert Säuren.",
     };
   }
 
@@ -497,7 +556,7 @@ function scoreBufferCapacity(
   };
 }
 
-function scoreTds(tds: number | undefined): MetricScore {
+function scoreTds(tds: number | undefined, profile: ProfileType): MetricScore {
   if (tds == null) {
     return {
       metric: "totalDissolvedSolids",
@@ -507,23 +566,40 @@ function scoreTds(tds: number | undefined): MetricScore {
     };
   }
 
-  // sehr grobe Einordnung: 150–600 mg/L als "angenehm mineralreich"
-  const score = bandScore(tds, 150, 600);
+  let idealMin: number;
+  let idealMax: number;
+  let weight = 0.9;
+
+  if (profile === "coffee") {
+    idealMin = 50;
+    idealMax = 150; // SCA-Richtwert
+    weight = 2.2;
+  } else if (profile === "sport" || profile === "blood_pressure") {
+    idealMin = 300;
+    idealMax = 800;
+    weight = 1.2;
+  } else if (profile === "kidney") {
+    idealMin = 50;
+    idealMax = 100;
+    weight = 2.0;
+  } else if (profile === "baby") {
+    idealMin = 50;
+    idealMax = 500;
+    weight = 1.8;
+  } else {
+    idealMin = 150;
+    idealMax = 600;
+    weight = 0.8;
+  }
+
+  const score = bandScore(tds, idealMin, idealMax);
   let explanation =
     "Die Gesamtmineralisation beschreibt, wie viele gelöste Mineralstoffe insgesamt im Wasser enthalten sind.";
-
-  if (score >= 80) {
-    explanation += " Dieses Wasser ist deutlich mineralreich.";
-  } else if (score >= 50) {
-    explanation += " Die Mineralisation liegt im mittleren Bereich.";
-  } else {
-    explanation += " Die Mineralisation ist eher niedrig (sehr weiches Wasser).";
-  }
 
   return {
     metric: "totalDissolvedSolids",
     score,
-    weight: 0.8,
+    weight,
     explanation,
   };
 }
@@ -533,14 +609,28 @@ function scorePotassium(k: number | undefined, profile: ProfileType): MetricScor
     return {
       metric: "potassium",
       score: 50,
-      weight: profile === "sport" ? 1.2 : 0.7,
+      weight: profile === "sport" ? 1.2 : profile === "kidney" ? 1.5 : 0.7,
       explanation: "Kaliumgehalt unbekannt – neutral angenommen.",
     };
   }
 
-  // Kalium ist wichtig für Muskelfunktion und Nervensystem
-  // Höhere Werte sind meist positiv, besonders für Sportler
-  const score = bandScore(k, 1, 10); // 1–10 mg/L als guter Bereich
+  let score: number;
+  if (profile === "kidney") {
+    // Nieren: niedrig halten (<5 mg/L)
+    score = stepBands(
+      k,
+      [
+        { limit: 2, score: 100 },
+        { limit: 5, score: 70 },
+        { limit: 10, score: 40 },
+      ],
+      true
+    );
+  } else if (profile === "sport") {
+    score = bandScore(k, 1, 10);
+  } else {
+    score = bandScore(k, 1, 10);
+  }
 
   let explanation =
     "Kalium ist wichtig für Muskelfunktion und Flüssigkeitshaushalt. Ein moderater bis höherer Gehalt ist meist positiv.";
@@ -659,7 +749,8 @@ function scoreSulfate(so4: number | undefined, profile: ProfileType): MetricScor
 function scoreTastePalatability(
   sulfate: number | undefined,
   chloride: number | undefined,
-  bicarbonate: number | undefined
+  bicarbonate: number | undefined,
+  profile?: ProfileType
 ): MetricScore {
   if (sulfate == null && chloride == null && bicarbonate == null) {
     return {
@@ -672,7 +763,11 @@ function scoreTastePalatability(
 
   const bitterLoad = (sulfate ?? 0) + (chloride ?? 0);
   const buffer = bicarbonate ?? 0;
-  const softness = buffer / (bitterLoad + 1);
+  const softness =
+    profile === "coffee"
+      ? (buffer || 0) / Math.max(1, bitterLoad) // strenger für Kaffee
+      : (buffer || 0) / (bitterLoad + 1);
+
   let score: number;
   if (softness >= 2) {
     score = 95;
@@ -698,14 +793,22 @@ function scoreTastePalatability(
   return {
     metric: "tastePalatability",
     score,
-    weight: 0.6,
+    weight:
+      profile === "coffee"
+        ? 1.8
+        : profile === "baby"
+        ? 0.4
+        : profile === "kidney"
+        ? 0.4
+        : profile === "sport" || profile === "blood_pressure"
+        ? 0.4
+        : 0.7,
     explanation,
   };
 }
 
 function scoreDataTransparency(values: Partial<WaterAnalysisValues>): MetricScore {
-  const trackedKeys: (keyof WaterAnalysisValues)[] = [
-    "ph",
+  const requiredKeys: (keyof WaterAnalysisValues)[] = [
     "calcium",
     "magnesium",
     "sodium",
@@ -715,75 +818,133 @@ function scoreDataTransparency(values: Partial<WaterAnalysisValues>): MetricScor
     "bicarbonate",
     "nitrate",
     "totalDissolvedSolids",
+    "fluoride",
   ];
+  const optionalKeys: (keyof WaterAnalysisValues)[] = ["ph"];
 
-  const present = trackedKeys.reduce((count, key) => {
-    return values[key] != null ? count + 1 : count;
-  }, 0);
-  const completeness = (present / trackedKeys.length) * 100;
+  const presentRequired = requiredKeys.filter((k) => values[k] != null);
+  const presentOptional = optionalKeys.filter((k) => values[k] != null);
+
+  const completeness = (presentRequired.length / requiredKeys.length) * 100;
 
   let score = completeness;
-  if (present === 0) {
+  if (presentRequired.length === 0) {
     score = 30;
   }
 
-  let explanation = `${present} von ${trackedKeys.length} Mineralien angegeben. `;
+  let weight = 0.4;
+  if (presentRequired.length < 5) weight = 0.2;
+  if (presentRequired.length === requiredKeys.length) weight = 0.6;
+
+  let explanation = `${presentRequired.length}/${requiredKeys.length} Pflichtwerte (Ca, Mg, Na, K, HCO3, SO4, Cl, NO3, TDS${values.fluoride != null ? ", F" : ""}).`;
+  if (presentOptional.length) {
+    explanation += ` Optional erfasst: ${presentOptional.join(", ")}.`;
+  }
   if (completeness >= 70) {
-    explanation += "Sehr transparentes Etikett – volle Analyse.";
+    explanation += " Sehr transparentes Etikett – volle Analyse.";
   } else if (completeness >= 50) {
-    explanation += "Grunddaten vorhanden, aber mehr Angaben wären hilfreich.";
+    explanation += " Grunddaten vorhanden, aber mehr Angaben wären hilfreich.";
   } else {
-    explanation += "Sehr wenige Werte angegeben – schwierig zu bewerten.";
+    explanation += " Sehr wenige Pflichtwerte angegeben – Bewertung unsicher.";
   }
 
   return {
     metric: "dataQualityScore",
     score: clampScore(score),
-    weight: 0.4,
+    weight,
     explanation,
   };
 }
 
-function scoreFluoride(f: number | undefined, profile: ProfileType): MetricScore {
-  if (f == null) {
+/**
+ * Fluorid-Bewertung (2025) mit Kontext:
+ * - fluoridated: Länder mit absichtlich fluoridiertem Trinkwasser (0.7 mg/L optimal)
+ * - natural: natürliche Werte (EU-typisch <0.3 mg/L), Fokus auf Risiko statt Schutz
+ */
+function scoreFluoride(
+  f: number | undefined,
+  profile: ProfileType,
+  fluoridationContext: "fluoridated" | "natural" = "natural"
+): MetricScore {
+  // Gewichtung: Baby höher, fluoridated etwas höher, natural niedriger
+  let weight = profile === "baby" ? 1.5 : fluoridationContext === "fluoridated" ? 1.0 : 0.6;
+
+  // Fehlender Wert
+  if (f == null || f === 0) {
+    const baseScore = fluoridationContext === "fluoridated" ? 50 : 70;
+    const explanation =
+      fluoridationContext === "fluoridated"
+        ? "Fluorid nicht angegeben – in fluoridierten Regionen fehlt Kariesschutz (Zahnpasta nutzen)."
+        : "Fluorid nicht angegeben – typisch niedrig bei natürlichem Wasser, unbedenklich.";
     return {
       metric: "fluoride",
-      score: 50,
-      weight: 0.8,
-      explanation: "Fluoridgehalt unbekannt.",
+      score: baseScore,
+      weight,
+      explanation,
     };
   }
 
-  // WHO-Empfehlung: 0.5-1.0 mg/L optimal für Zahngesundheit
-  // >1.5 mg/L: Fluorose-Risiko
+  const rounded = f.toFixed(2);
   let score: number;
-  let explanation = "Fluorid schützt vor Karies. ";
+  let explanation = `Fluorid: ${rounded} mg/L. `;
 
   if (profile === "baby") {
-    // Babys: < 0.7 mg/L (Fluorose-Risiko bei Zahnentwicklung)
-    score = stepBands(f, [
-      { limit: 0.3, score: 100 },
-      { limit: 0.7, score: 80 },
-      { limit: 1.5, score: 30 },
-    ], true);
-    explanation += "Für Babys sollte Fluorid unter 0.7 mg/L liegen (Zahnentwicklung).";
-  } else {
-    // Erwachsene: 0.5-1.0 optimal
-    score = bellScore(f, 0.7, 0.5); // Ideal 0.7, Toleranz ±0.5
-    if (score >= 80) {
-      explanation += "Optimaler Fluoridgehalt für Zahnschutz.";
-    } else if (f > 1.5) {
-      explanation += "Fluorid erhöht – langfristig Fluorose-Risiko (Zahnflecken).";
+    // EFSA/WHO: Babys <0.7 mg/L, Risiko ab 1.0 mg/L
+    if (f <= 0.3) {
+      score = 100;
+      explanation += "Perfekt für Babys – sehr niedrig, kein Risiko.";
+    } else if (f <= 0.7) {
+      score = 80;
+      explanation += "Akzeptabel für Babys, aber eher verdünnen.";
+    } else if (f <= 1.0) {
+      score = 50;
+      explanation += "Zu hoch für Babys – Fluorose-Risiko bei Zahnentwicklung.";
     } else {
-      explanation += "Niedriger Fluoridgehalt – Kariesschutz via Zahnpasta empfohlen.";
+      score = 20;
+      explanation += "Deutlich zu hoch – vermeiden (WHO/EFSA).";
+    }
+  } else {
+    if (fluoridationContext === "fluoridated") {
+      // Kariesschutz priorisieren (CDC/WHO: 0.6–1.2 mg/L)
+      if (f >= 0.6 && f <= 1.2) {
+        score = 100;
+        explanation += "Optimaler Kariesschutz (CDC/WHO).";
+      } else if ((f >= 0.4 && f < 0.6) || (f > 1.2 && f <= 1.5)) {
+        score = 80;
+        explanation += "Guter Bereich – wirksamer Schutz, minimales Risiko.";
+      } else if (f < 0.4) {
+        score = 60;
+        explanation += "Zu niedrig für optimalen Schutz – Zahnpasta nutzen.";
+      } else if (f > 1.5 && f <= 2.0) {
+        score = 40;
+        explanation += "Erhöht – leichtes Fluorose-Risiko bei Kindern.";
+      } else {
+        score = 20;
+        explanation += "Zu hoch – WHO-Grenzwert überschritten.";
+      }
+    } else {
+      // Natürliches Wasser: Fokus Risiko (EFSA <1.5 mg/L sicher)
+      if (f <= 0.5) {
+        score = 80;
+        explanation += "Typischer natürlicher Wert – unbedenklich, Kariesschutz via Zahnpasta.";
+      } else if (f <= 0.8) {
+        score = 70;
+        explanation += "Etwas höher, aber sicher (EFSA/WHO).";
+      } else if (f <= 1.5) {
+        score = 50;
+        explanation += "Grenzbereich – bei Kindern auf Fluorose achten.";
+      } else {
+        score = 20;
+        explanation += "Zu hoch für natürliches Wasser – EFSA/WHO warnen.";
+      }
     }
   }
 
   return {
     metric: "fluoride",
     score,
-    weight: profile === "baby" ? 1.5 : 0.8,
-    explanation,
+    weight,
+    explanation: explanation.trim(),
   };
 }
 
@@ -829,14 +990,14 @@ export function calculateScores(
   metrics.push(scoreCalcium(values.calcium, profile));
   metrics.push(scoreMagnesium(values.magnesium, profile));
   metrics.push(scoreSodiumPotassiumRatio(values.sodium, values.potassium, profile));
-  metrics.push(scoreCalciumMagnesiumRatio(values.calcium, values.magnesium));
+  metrics.push(scoreCalciumMagnesiumRatio(values.calcium, values.magnesium, profile));
   metrics.push(scorePotassium(values.potassium, profile));
   metrics.push(scoreChloride(values.chloride));
   metrics.push(scoreSulfate(values.sulfate, profile));
   metrics.push(scoreBicarbonate(values.bicarbonate, profile));
   metrics.push(scoreBufferCapacity(values.bicarbonate, profile));
-  metrics.push(scoreTds(values.totalDissolvedSolids));
-  metrics.push(scoreTastePalatability(values.sulfate, values.chloride, values.bicarbonate));
+  metrics.push(scoreTds(values.totalDissolvedSolids, profile));
+  metrics.push(scoreTastePalatability(values.sulfate, values.chloride, values.bicarbonate, profile));
   metrics.push(scoreDataTransparency(values));
   metrics.push(scoreFluoride(values.fluoride, profile));
 

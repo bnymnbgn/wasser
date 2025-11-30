@@ -319,6 +319,8 @@ function evaluateProfileFit(values: Partial<WaterAnalysisValues>): Record<Profil
   const sodium = values.sodium ?? null;
   const magnesium = values.magnesium ?? null;
   const bicarbonate = values.bicarbonate ?? null;
+  const potassium = values.potassium ?? null;
+  const tds = values.totalDissolvedSolids ?? null;
 
   const fit: Record<ProfileType, ProfileFit> = {
     standard: { status: "ok", reasons: [] },
@@ -326,6 +328,7 @@ function evaluateProfileFit(values: Partial<WaterAnalysisValues>): Record<Profil
     sport: { status: "ok", reasons: [] },
     blood_pressure: { status: "ok", reasons: [] },
     coffee: { status: "ok", reasons: [] },
+    kidney: { status: "ok", reasons: [] },
   };
 
   // Baby fit
@@ -369,6 +372,34 @@ function evaluateProfileFit(values: Partial<WaterAnalysisValues>): Record<Profil
     fit.blood_pressure = {
       status: "avoid",
       reasons: ["Natriumreich (>50 mg/L) – nicht optimal bei Hypertonie."],
+    };
+  }
+
+  // Kidney fit
+  if (
+    sodium != null &&
+    sodium < 20 &&
+    (potassium == null || potassium < 5) &&
+    (tds == null || tds < 120)
+  ) {
+    fit.kidney = {
+      status: "ideal",
+      reasons: ["Sehr natriumarm (<20 mg/L)", "Kalium <5 mg/L", "Niedrige Mineralisation"],
+    };
+  } else if (
+    (sodium == null || sodium < 50) &&
+    (potassium == null || potassium < 10) &&
+    (tds == null || tds < 300)
+  ) {
+    fit.kidney = { status: "ok", reasons: ["Grundsätzlich natrium-/kaliumarm, Mineralisation moderat."] };
+  } else {
+    const reasons = [];
+    if (sodium != null && sodium >= 50) reasons.push("Natrium erhöht für Nierenschonung.");
+    if (potassium != null && potassium >= 10) reasons.push("Kalium erhöht für Nierenschonung.");
+    if (tds != null && tds >= 300) reasons.push("Mineralisation relativ hoch.");
+    fit.kidney = {
+      status: "avoid",
+      reasons: reasons.length ? reasons : ["Keine verlässlichen Werte für Nierenprofil."],
     };
   }
 

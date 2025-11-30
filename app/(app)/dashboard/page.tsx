@@ -104,13 +104,13 @@ function DashboardContent() {
   useEffect(() => {
     // 1. Priority: URL param
     const urlProfile = searchParams.get("profile") as ProfileType | null;
-    if (urlProfile && ["standard", "baby", "sport", "blood_pressure", "coffee"].includes(urlProfile)) {
+    if (urlProfile && ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"].includes(urlProfile)) {
       setProfile(urlProfile);
       localStorage.setItem("wasserscan-profile", urlProfile);
     } else {
       // 2. Priority: Local Storage
       const savedProfile = localStorage.getItem("wasserscan-profile") as ProfileType | null;
-      if (savedProfile && ["standard", "baby", "sport", "blood_pressure", "coffee"].includes(savedProfile)) {
+      if (savedProfile && ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"].includes(savedProfile)) {
         setProfile(savedProfile);
       }
     }

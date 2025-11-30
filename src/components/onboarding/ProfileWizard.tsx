@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Check, ArrowRight, Baby, Activity, HeartPulse, Droplet, Coffee } from "lucide-react";
+import { ChevronRight, Check, ArrowRight, Baby, Activity, HeartPulse, Droplet, Coffee, Shield } from "lucide-react";
 import type { ProfileType } from "@/src/domain/types";
 import { useRouter } from "next/navigation";
 
@@ -25,6 +25,12 @@ const STEPS: WizardStep[] = [
         question: "Musst du auf deinen Blutdruck achten?",
         description: "Bei Bluthochdruck wird oft eine natriumarme Ernährung empfohlen.",
         icon: HeartPulse,
+    },
+    {
+        id: "kidney",
+        question: "Brauchst du natrium- und kaliumarmes Wasser (Nieren)?",
+        description: "Nur nach ärztlicher Empfehlung: sehr niedrige Mineralisation, Na/K niedrig.",
+        icon: Shield,
     },
     {
         id: "coffee",
@@ -59,7 +65,7 @@ export function ProfileWizard() {
         setAnswers(newAnswers);
 
         // Logic: Determine if we should stop or continue
-        // Priority: Baby > Blood Pressure > Coffee > Sport > Standard
+        // Priority: Baby > Blood Pressure > Kidney > Coffee > Sport > Standard
 
         if (currentStep.id === "baby" && answer) {
             finishWizard("baby");
@@ -68,6 +74,11 @@ export function ProfileWizard() {
 
         if (currentStep.id === "blood_pressure" && answer) {
             finishWizard("blood_pressure");
+            return;
+        }
+
+        if (currentStep.id === "kidney" && answer) {
+            finishWizard("kidney");
             return;
         }
 
@@ -100,25 +111,33 @@ export function ProfileWizard() {
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-in fade-in zoom-in duration-500">
                 <div className="relative">
                     <div className="absolute inset-0 bg-ocean-primary/20 blur-3xl rounded-full" />
-                    <div className="relative bg-ocean-surface-elevated border border-ocean-border p-8 rounded-full shadow-2xl">
+                <div className="relative bg-ocean-surface-elevated border border-ocean-border p-8 rounded-full shadow-2xl">
                         {recommendedProfile === "baby" && <Baby className="w-16 h-16 text-ocean-primary" />}
                         {recommendedProfile === "blood_pressure" && <HeartPulse className="w-16 h-16 text-ocean-warning" />}
                         {recommendedProfile === "coffee" && <Coffee className="w-16 h-16 text-amber-400" />}
                         {recommendedProfile === "sport" && <Activity className="w-16 h-16 text-ocean-accent" />}
+                        {recommendedProfile === "kidney" && <Shield className="w-16 h-16 text-teal-400" />}
                         {recommendedProfile === "standard" && <Droplet className="w-16 h-16 text-ocean-info" />}
-                    </div>
+                </div>
                 </div>
 
                 <div className="space-y-2 max-w-md">
                     <h2 className="text-3xl font-bold text-ocean-primary">Dein ideales Profil</h2>
                     <p className="text-xl font-medium capitalize text-ocean-secondary">
-                        {recommendedProfile === "blood_pressure" ? "Blutdruck & Herz" : recommendedProfile === "coffee" ? "Barista & Genuss" : recommendedProfile}
+                        {recommendedProfile === "blood_pressure"
+                          ? "Blutdruck & Herz"
+                          : recommendedProfile === "coffee"
+                          ? "Barista & Genuss"
+                          : recommendedProfile === "kidney"
+                          ? "Nieren"
+                          : recommendedProfile}
                     </p>
                     <p className="text-ocean-tertiary leading-relaxed">
                         {recommendedProfile === "baby" && "Wir achten streng auf niedrige Natrium- und Nitratwerte für die sicherste Zubereitung von Babynahrung."}
                         {recommendedProfile === "blood_pressure" && "Der Fokus liegt auf natriumarmem Wasser, um dein Herz-Kreislauf-System zu entlasten."}
                         {recommendedProfile === "coffee" && "Wir suchen nach weichem Wasser mit neutralem pH-Wert, damit dein Kaffee sein volles Aroma entfalten kann."}
                         {recommendedProfile === "sport" && "Wir suchen nach mineralstoffreichem Wasser, um deine Speicher nach dem Training wieder aufzufüllen."}
+                        {recommendedProfile === "kidney" && "Wir priorisieren extrem natrium- und kaliumarme Wässer mit niedriger Mineralisation. Bitte immer ärztliche Empfehlung beachten."}
                         {recommendedProfile === "standard" && "Ein ausgewogenes Profil für den täglichen Genuss ohne spezielle Einschränkungen."}
                     </p>
                 </div>

@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { WaterScoreCard } from "./WaterScoreCard";
 import type { ScanResult, ProfileType } from "@/src/domain/types";
+import { calculateScores } from "@/src/domain/scoring";
+import { deriveWaterInsights } from "@/src/domain/waterInsights";
 import { hapticLight } from "@/lib/capacitor";
 
 const PROFILE_LABELS: Record<ProfileType, string> = {
@@ -33,6 +35,7 @@ const PROFILE_LABELS: Record<ProfileType, string> = {
   sport: "Sport",
   blood_pressure: "Blutdruck",
   coffee: "Kaffee",
+  kidney: "Nieren",
 };
 
 type SortOption = "newest" | "best" | "worst" | "brand";
@@ -100,6 +103,7 @@ function MiniScoreRing({
 
 export default function HistoryList({ initialScans }: HistoryListProps) {
   const router = useRouter();
+  const [scans, setScans] = useState<ScanResult[]>(initialScans);
   const [searchTerm, setSearchTerm] = useState("");
   const [profileFilter, setProfileFilter] = useState<"all" | ProfileType>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
@@ -134,10 +138,10 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
     localStorage.setItem("history-hidden", JSON.stringify(hidden));
   }, [hidden]);
 
-  const stats = useMemo(() => buildStats(initialScans, hidden), [initialScans, hidden]);
+  const stats = useMemo(() => buildStats(scans, hidden), [scans, hidden]);
 
   const filteredScans = useMemo(() => {
-    return initialScans
+    return scans
       .filter((scan) => !hidden[scan.id])
       .filter((scan) => (profileFilter === "all" ? true : scan.profile === profileFilter))
       .filter((scan) => filterByDate(scan.timestamp, dateFilter))
@@ -149,7 +153,7 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
         return haystack.includes(searchTerm.toLowerCase());
       })
       .sort((a, b) => sortScans(a, b, sortBy));
-  }, [initialScans, hidden, profileFilter, dateFilter, scoreFilter, searchTerm, sortBy]);
+  }, [scans, hidden, profileFilter, dateFilter, scoreFilter, searchTerm, sortBy]);
 
   const groupedScans = useMemo(() => groupScans(filteredScans), [filteredScans]);
 
@@ -198,6 +202,37 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
       await navigator.clipboard.writeText(`${title} – ${text} ${url}`);
       alert("Link kopiert!");
     }
+  };
+
+  const handleProfileSwitch = (scan: ScanResult, nextProfile: ProfileType) => {
+    const mergedValues = {
+      ...(scan.ocrParsedValues ?? {}),
+      ...(scan.userOverrides ?? {}),
+    };
+    const hasValues = Object.keys(mergedValues).length > 0;
+    if (!hasValues) {
+      setScans((prev) =>
+        prev.map((s) => (s.id === scan.id ? { ...s, profile: nextProfile } : s))
+      );
+      return;
+    }
+
+    const scoreResult = calculateScores(mergedValues, nextProfile);
+    const insights = deriveWaterInsights(mergedValues);
+
+    setScans((prev) =>
+      prev.map((s) =>
+        s.id === scan.id
+          ? {
+              ...s,
+              profile: nextProfile,
+              score: scoreResult.totalScore,
+              metricDetails: scoreResult.metrics,
+              insights,
+            }
+          : s
+      )
+    );
   };
 
   const handleRescan = (scan: ScanResult, profile?: ProfileType) => {
@@ -285,6 +320,7 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
                           });
                         }}
                         isFavorite={Boolean(favorites[scan.id])}
+                        onProfileChange={(p: ProfileType) => handleProfileSwitch(scan, p)}
                       />
                     </SwipeableRow>
                   ))}
@@ -532,8 +568,24 @@ function FilterChip({ label, active, onClick }: any) {
   );
 }
 
+function ProfileChip({ label, active, onClick }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={clsx(
+        "rounded-full px-3 py-1 text-xs font-semibold border transition active:scale-95",
+        active
+          ? "bg-sky-500 text-white border-sky-500"
+          : "bg-ocean-surface border-ocean-border text-ocean-secondary hover:text-ocean-primary"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 // --- REDESIGNED CARD ---
-function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite }: any) {
+function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileChange }: any) {
   return (
     <motion.div
       layout
@@ -595,7 +647,19 @@ function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite }: any) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
           >
-            <div className="border-t border-ocean-border bg-ocean-surface-elevated/50 p-4">
+            <div className="border-t border-ocean-border bg-ocean-surface-elevated/50 p-4 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {(["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"] as ProfileType[]).map(
+                  (p) => (
+                    <ProfileChip
+                      key={p}
+                      label={PROFILE_LABELS[p]}
+                      active={scan.profile === p}
+                      onClick={() => onProfileChange?.(p)}
+                    />
+                  )
+                )}
+              </div>
               <WaterScoreCard scanResult={scan} />
             </div>
           </motion.div>

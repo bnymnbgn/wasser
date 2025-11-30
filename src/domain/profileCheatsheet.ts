@@ -515,6 +515,46 @@ export const PROFILE_CHEATSHEET = {
       },
     ],
   },
+  kidney: {
+    id: "kidney",
+    label: "Nieren",
+    shortDescription:
+      "Sehr natrium- und kaliumarm, niedrige Mineralisation; gedacht für nierenentlastendes Wasser (immer ärztlich abklären).",
+    whenToUse:
+      "Wenn explizit natrium- und kaliumarme Wässer benötigt werden. Hinweise von Ärzt:innen beachten.",
+    scoringFocus: [
+      { metric: "natrium", label: "Natrium", weight: 0.9, tone: "critical" },
+      { metric: "kalium", label: "Kalium", weight: 0.9, tone: "critical" },
+      { metric: "nitrat", label: "Nitrat", weight: 0.8, tone: "critical" },
+      { metric: "tds", label: "Gesamtmineralisation", weight: 0.8, tone: "avoid" },
+    ],
+    metrics: [
+      {
+        metric: "sodium",
+        label: "Natrium",
+        importance: "sehr hoch",
+        explanation: "Niedrig halten (<20 mg/L), um die Nieren nicht zu belasten.",
+      },
+      {
+        metric: "potassium",
+        label: "Kalium",
+        importance: "sehr hoch",
+        explanation: "Niedrig halten (<5 mg/L).",
+      },
+      {
+        metric: "totalDissolvedSolids",
+        label: "Gesamtmineralisation",
+        importance: "hoch",
+        explanation: "Niedrige TDS (<100 mg/L) sind entlastend.",
+      },
+      {
+        metric: "nitrate",
+        label: "Nitrat",
+        importance: "hoch",
+        explanation: "Sehr niedrige Nitratwerte bevorzugt; Grenzwerte strikt beachten.",
+      },
+    ],
+  },
 } as const;
 
 export type ProfileId = keyof typeof PROFILE_CHEATSHEET;
