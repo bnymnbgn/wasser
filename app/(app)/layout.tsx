@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from '@/src/components/ThemeProvider';
 import { DatabaseProvider } from '@/src/contexts/DatabaseContext';
+import { ConsumptionProvider } from '@/src/contexts/ConsumptionContext';
 import BottomNav from '@/src/components/BottomNav';
 import { ComparisonProvider } from '@/src/contexts/ComparisonContext';
 import { ComparisonDrawer } from '@/src/components/ComparisonDrawer';
@@ -35,12 +36,14 @@ export default function AppLayout({
     <ThemeProvider defaultTheme="system">
       <ComparisonProvider>
         <DatabaseProvider>
-          <LivingBackground />
-          <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
-            {children}
-          </div>
-          <ComparisonDrawer />
-          <BottomNav />
+          <ConsumptionProvider>
+            <LivingBackground />
+            <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
+              {children}
+            </div>
+            <ComparisonDrawer />
+            <BottomNav />
+          </ConsumptionProvider>
         </DatabaseProvider>
       </ComparisonProvider>
     </ThemeProvider>

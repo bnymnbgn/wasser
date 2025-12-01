@@ -8,7 +8,7 @@ import { Capacitor } from '@capacitor/core';
 
 // Database configuration
 const DB_NAME = 'wasserscan.db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Type definitions matching our schema
 export interface WaterSource {
@@ -52,6 +52,40 @@ export interface ScanResult {
   userOverrides: string | null; // JSON string
   waterSourceId: string | null;
   waterAnalysisId: string | null;
+}
+
+// User profile (hydration) and consumptions
+export interface UserProfile {
+  id: string;
+  weight: number; // kg
+  height: number; // cm
+  age: number;
+  gender: 'male' | 'female' | 'other';
+  activityLevel: 'sedentary' | 'moderate' | 'active' | 'very_active';
+  profileType: string; // ProfileType
+  dailyWaterGoal: number; // ml
+  dailyCalciumGoal: number; // mg
+  dailyMagnesiumGoal: number; // mg
+  dailyPotassiumGoal: number; // mg
+  dailySodiumGoal: number; // mg
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConsumptionEntry {
+  id: string;
+  timestamp: string;
+  waterBrand: string | null;
+  productName: string | null;
+  volumeMl: number;
+  hydrationFactor: number; // e.g. 1.0 water/tea, 0.8 coffee
+  type: 'mineral' | 'tap' | 'tea' | 'coffee' | 'other';
+  calcium: number | null;
+  magnesium: number | null;
+  potassium: number | null;
+  sodium: number | null;
+  scanId: string | null;
+  createdAt: string;
 }
 
 class SQLiteService {
@@ -233,6 +267,38 @@ class SQLiteService {
       `CREATE INDEX IF NOT EXISTS idx_scanresult_source ON ScanResult(waterSourceId);`,
       `CREATE INDEX IF NOT EXISTS idx_scanresult_barcode ON ScanResult(barcode);`,
       `CREATE INDEX IF NOT EXISTS idx_scanresult_score ON ScanResult(score);`
+      ,`CREATE TABLE IF NOT EXISTS UserProfile (
+        id TEXT PRIMARY KEY,
+        weight REAL NOT NULL,
+        height REAL NOT NULL,
+        age INTEGER NOT NULL,
+        gender TEXT NOT NULL,
+        activityLevel TEXT NOT NULL,
+        profileType TEXT NOT NULL,
+        dailyWaterGoal REAL NOT NULL,
+        dailyCalciumGoal REAL NOT NULL,
+        dailyMagnesiumGoal REAL NOT NULL,
+        dailyPotassiumGoal REAL NOT NULL,
+        dailySodiumGoal REAL NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      );`
+      ,`CREATE TABLE IF NOT EXISTS Consumption (
+        id TEXT PRIMARY KEY,
+        timestamp TEXT NOT NULL,
+        waterBrand TEXT,
+        productName TEXT,
+        volumeMl REAL NOT NULL,
+        hydrationFactor REAL NOT NULL,
+        type TEXT NOT NULL,
+        calcium REAL,
+        magnesium REAL,
+        potassium REAL,
+        sodium REAL,
+        scanId TEXT,
+        createdAt TEXT NOT NULL
+      );`
+      ,`CREATE INDEX IF NOT EXISTS idx_consumption_timestamp ON Consumption(timestamp);`
     ];
 
     for (const statement of statements) {
@@ -394,6 +460,134 @@ class SQLiteService {
     );
 
     return { id, ...data, createdAt };
+  }
+
+  // ==================== User Profile ====================
+
+  async upsertUserProfile(profile: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<UserProfile> {
+    await this.ensureInitialized();
+    if (!this.db) throw new Error('Database not initialized');
+
+    const now = new Date().toISOString();
+    const id = profile.id ?? this.generateId();
+
+    await this.db.run(
+      `INSERT INTO UserProfile (
+        id, weight, height, age, gender, activityLevel, profileType,
+        dailyWaterGoal, dailyCalciumGoal, dailyMagnesiumGoal, dailyPotassiumGoal, dailySodiumGoal,
+        createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        weight = excluded.weight,
+        height = excluded.height,
+        age = excluded.age,
+        gender = excluded.gender,
+        activityLevel = excluded.activityLevel,
+        profileType = excluded.profileType,
+        dailyWaterGoal = excluded.dailyWaterGoal,
+        dailyCalciumGoal = excluded.dailyCalciumGoal,
+        dailyMagnesiumGoal = excluded.dailyMagnesiumGoal,
+        dailyPotassiumGoal = excluded.dailyPotassiumGoal,
+        dailySodiumGoal = excluded.dailySodiumGoal,
+        updatedAt = excluded.updatedAt;
+      `,
+      [
+        id,
+        profile.weight,
+        profile.height,
+        profile.age,
+        profile.gender,
+        profile.activityLevel,
+        profile.profileType,
+        profile.dailyWaterGoal,
+        profile.dailyCalciumGoal,
+        profile.dailyMagnesiumGoal,
+        profile.dailyPotassiumGoal,
+        profile.dailySodiumGoal,
+        now,
+        now,
+      ]
+    );
+
+    return { id, createdAt: now, updatedAt: now, ...profile } as UserProfile;
+  }
+
+  async getUserProfile(): Promise<UserProfile | null> {
+    await this.ensureInitialized();
+    if (!this.db) return null;
+    const result = await this.db.query('SELECT * FROM UserProfile LIMIT 1');
+    if (!result.values || result.values.length === 0) return null;
+    return result.values[0] as UserProfile;
+  }
+
+  // ==================== Consumption ====================
+
+  async addConsumption(entry: Omit<ConsumptionEntry, 'createdAt'>): Promise<ConsumptionEntry> {
+    await this.ensureInitialized();
+    if (!this.db) throw new Error('Database not initialized');
+    const createdAt = new Date().toISOString();
+    await this.db.run(
+      `INSERT INTO Consumption (
+        id, timestamp, waterBrand, productName, volumeMl, hydrationFactor, type,
+        calcium, magnesium, potassium, sodium, scanId, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        entry.id,
+        entry.timestamp,
+        entry.waterBrand,
+        entry.productName,
+        entry.volumeMl,
+        entry.hydrationFactor,
+        entry.type,
+        entry.calcium,
+        entry.magnesium,
+        entry.potassium,
+        entry.sodium,
+        entry.scanId,
+        createdAt,
+      ]
+    );
+
+    return { ...entry, createdAt };
+  }
+
+  async deleteConsumption(id: string): Promise<void> {
+    await this.ensureInitialized();
+    if (!this.db) throw new Error('Database not initialized');
+    await this.db.run('DELETE FROM Consumption WHERE id = ?', [id]);
+  }
+
+  async getConsumptionsForDate(date: Date): Promise<ConsumptionEntry[]> {
+    await this.ensureInitialized();
+    if (!this.db) return [];
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    const result = await this.db.query(
+      'SELECT * FROM Consumption WHERE timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC',
+      [start.toISOString(), end.toISOString()]
+    );
+    return (result.values || []) as ConsumptionEntry[];
+  }
+
+  async getConsumptionTotalsForDate(date: Date): Promise<{
+    totalVolume: number;
+    nutrients: { calcium: number; magnesium: number; potassium: number; sodium: number };
+  }> {
+    const entries = await this.getConsumptionsForDate(date);
+    const nutrients = { calcium: 0, magnesium: 0, potassium: 0, sodium: 0 };
+    let totalVolume = 0;
+    entries.forEach((e) => {
+      totalVolume += (e.volumeMl ?? 0) * (e.hydrationFactor ?? 1);
+      nutrients.calcium += e.calcium ?? 0;
+      nutrients.magnesium += e.magnesium ?? 0;
+      nutrients.potassium += e.potassium ?? 0;
+      nutrients.sodium += e.sodium ?? 0;
+    });
+    return { totalVolume, nutrients };
   }
 
   // ==================== ScanResult Operations ====================

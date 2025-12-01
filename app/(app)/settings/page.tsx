@@ -2,6 +2,7 @@
 
 import { useTheme } from '@/src/components/ThemeProvider';
 import { useDatabaseContext } from '@/src/contexts/DatabaseContext';
+import { calculateGoals } from '@/src/lib/userGoals';
 import { hapticLight, hapticMedium } from '@/lib/capacitor';
 import {
     Moon,
@@ -25,11 +26,17 @@ import { Sparkles } from 'lucide-react';
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
-    const { clearHistory, getStorageStats } = useDatabaseContext();
+    const { clearHistory, getStorageStats, userProfile, saveUserProfile } = useDatabaseContext();
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [profile, setProfile] = useState<ProfileType>('standard');
     const [storageStats, setStorageStats] = useState({ count: 0, sizeBytes: 0 });
     const [startScreen, setStartScreen] = useState<'dashboard' | 'scan'>('dashboard');
+    const [weight, setWeight] = useState<string>('');
+    const [height, setHeight] = useState<string>('');
+    const [age, setAge] = useState<string>('');
+    const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
+    const [activity, setActivity] = useState<'sedentary' | 'moderate' | 'active' | 'very_active'>('moderate');
+    const [showBodyErrors, setShowBodyErrors] = useState(false);
 
     useEffect(() => {
         const loadStats = async () => {
@@ -39,17 +46,35 @@ export default function SettingsPage() {
         loadStats();
     }, [getStorageStats]);
 
+    // Reset inline error hint when all numbers are valid
+    useEffect(() => {
+        const w = Number(weight);
+        const h = Number(height);
+        const a = Number(age);
+        if (w > 0 && h > 0 && a > 0) {
+            setShowBodyErrors(false);
+        }
+    }, [weight, height, age]);
+
     useEffect(() => {
         const savedProfile = localStorage.getItem('wasserscan-profile') as ProfileType | null;
-        if (savedProfile && ['standard', 'baby', 'sport', 'blood_pressure', 'coffee'].includes(savedProfile)) {
+        if (savedProfile && ['standard', 'baby', 'sport', 'blood_pressure', 'coffee', 'kidney'].includes(savedProfile)) {
             setProfile(savedProfile);
+        }
+
+        if (userProfile) {
+            setWeight(String(userProfile.weight));
+            setHeight(String(userProfile.height));
+            setAge(String(userProfile.age));
+            setGender(userProfile.gender as any);
+            setActivity(userProfile.activityLevel as any);
         }
 
         const savedStartScreen = localStorage.getItem('wasserscan-start-screen') as 'dashboard' | 'scan' | null;
         if (savedStartScreen && ['dashboard', 'scan'].includes(savedStartScreen)) {
             setStartScreen(savedStartScreen);
         }
-    }, []);
+    }, [userProfile, getStorageStats]);
 
     const handleStartScreenChange = (screen: 'dashboard' | 'scan') => {
         setStartScreen(screen);
@@ -60,6 +85,38 @@ export default function SettingsPage() {
     const handleProfileChange = (newProfile: ProfileType) => {
         setProfile(newProfile);
         localStorage.setItem('wasserscan-profile', newProfile);
+    };
+
+    const handleSaveBodyData = async () => {
+        const w = Number(weight);
+        const h = Number(height);
+        const a = Number(age);
+        if (!w || !h || !a || w <= 0 || h <= 0 || a <= 0) {
+            setShowBodyErrors(true);
+            return;
+        }
+        const goals = calculateGoals({
+            weight: w,
+            height: h,
+            age: a,
+            gender,
+            activityLevel: activity,
+            profileType: profile,
+        });
+        await saveUserProfile({
+            weight: w,
+            height: h,
+            age: a,
+            gender,
+            activityLevel: activity,
+            profileType: profile,
+            dailyWaterGoal: goals.dailyWaterGoal,
+            dailyCalciumGoal: goals.dailyCalciumGoal,
+            dailyMagnesiumGoal: goals.dailyMagnesiumGoal,
+            dailyPotassiumGoal: goals.dailyPotassiumGoal,
+            dailySodiumGoal: goals.dailySodiumGoal,
+        });
+        hapticMedium();
     };
 
     const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
@@ -105,6 +162,98 @@ export default function SettingsPage() {
                     <div className="ocean-card ocean-panel overflow-hidden p-4">
                         <ProfileSelector value={profile} onChange={handleProfileChange} />
                     </div>
+                </section>
+
+                {/* Body Data Section */}
+                <section className="space-y-3">
+                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">Körperdaten</h2>
+                    <div className="ocean-card ocean-panel overflow-hidden p-4 space-y-3">
+                        {showBodyErrors && (
+                            <p className="text-xs text-ocean-error mb-1">
+                                Bitte positive Werte eintragen, bevor du speicherst.
+                            </p>
+                        )}
+                        <div className="grid grid-cols-2 gap-2">
+                            <label className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
+                                <span>Gewicht (kg)</span>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="flex-1 bg-transparent outline-none text-ocean-primary"
+                                    value={weight}
+                                    onChange={(e) => setWeight(e.target.value)}
+                                />
+                                {weight !== '' && (Number(weight) <= 0 || !Number.isFinite(Number(weight))) && (
+                                    <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>
+                                )}
+                            </label>
+                            <label className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
+                                <span>Größe (cm)</span>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="flex-1 bg-transparent outline-none text-ocean-primary"
+                                    value={height}
+                                    onChange={(e) => setHeight(e.target.value)}
+                                />
+                                {height !== '' && (Number(height) <= 0 || !Number.isFinite(Number(height))) && (
+                                    <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>
+                                )}
+                            </label>
+                            <label className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
+                                <span>Alter</span>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="flex-1 bg-transparent outline-none text-ocean-primary"
+                                    value={age}
+                                    onChange={(e) => setAge(e.target.value)}
+                                />
+                                {age !== '' && (Number(age) <= 0 || !Number.isFinite(Number(age))) && (
+                                    <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>
+                                )}
+                            </label>
+                            <div className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
+                                <span>Geschlecht</span>
+                                <select
+                                    className="flex-1 bg-transparent outline-none text-ocean-primary"
+                                    value={gender}
+                                    onChange={(e) => setGender(e.target.value as any)}
+                                >
+                                    <option value="male">Männlich</option>
+                                    <option value="female">Weiblich</option>
+                                    <option value="other">Anderes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
+                            <span>Aktivität</span>
+                            <select
+                                className="flex-1 bg-transparent outline-none text-ocean-primary"
+                            value={activity}
+                            onChange={(e) => setActivity(e.target.value as any)}
+                        >
+                            <option value="sedentary">Sitzend</option>
+                            <option value="moderate">Moderat</option>
+                            <option value="active">Aktiv</option>
+                            <option value="very_active">Sehr aktiv</option>
+                        </select>
+                    </div>
+                    <button
+                        onClick={handleSaveBodyData}
+                        disabled={
+                            !weight ||
+                            !height ||
+                            !age ||
+                            Number(weight) <= 0 ||
+                            Number(height) <= 0 ||
+                            Number(age) <= 0
+                        }
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-ocean-primary to-ocean-accent text-white font-semibold"
+                    >
+                        Ziele berechnen & speichern
+                    </button>
+                </div>
                 </section>
 
                 {/* Appearance Section */}

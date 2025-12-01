@@ -12,6 +12,8 @@ interface DatabaseContextType {
   error: string | null;
   clearHistory: () => Promise<void>;
   getStorageStats: () => Promise<{ count: number; sizeBytes: number }>;
+  userProfile: UserProfile | null;
+  saveUserProfile: (profile: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => Promise<void>;
 }
 
 const DatabaseContext = createContext<DatabaseContextType>({
@@ -20,6 +22,8 @@ const DatabaseContext = createContext<DatabaseContextType>({
   error: null,
   clearHistory: async () => { },
   getStorageStats: async () => ({ count: 0, sizeBytes: 0 }),
+  userProfile: null,
+  saveUserProfile: async () => { },
 });
 
 export function useDatabaseContext() {
@@ -35,6 +39,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -71,6 +76,12 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
           console.log('[DatabaseProvider] Preloaded DB already has data, skipping JSON import');
         }
 
+        // Load user profile if exists
+        const existingProfile = await sqliteService.getUserProfile();
+        if (existingProfile) {
+          setUserProfile(existingProfile);
+        }
+
         console.log('[DatabaseProvider] Database ready');
         setIsReady(true);
       } catch (err) {
@@ -104,6 +115,16 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     }
   };
 
+  const saveUserProfile = async (profile: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
+    try {
+      const saved = await sqliteService.upsertUserProfile(profile);
+      setUserProfile(saved);
+    } catch (err) {
+      console.error('[DatabaseProvider] Failed to save user profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save profile');
+    }
+  };
+
   const getStorageStats = async () => {
     if (!Capacitor.isNativePlatform()) {
       return { count: 12, sizeBytes: 24576 }; // Mock data
@@ -117,7 +138,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   };
 
   return (
-    <DatabaseContext.Provider value={{ isReady, isLoading, error, clearHistory, getStorageStats }}>
+    <DatabaseContext.Provider value={{ isReady, isLoading, error, clearHistory, getStorageStats, userProfile, saveUserProfile }}>
       {mounted && isLoading && Capacitor.isNativePlatform() && <InitialLoadingScreen />}
       {children}
     </DatabaseContext.Provider>
