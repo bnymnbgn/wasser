@@ -37,6 +37,54 @@ function scoreLabel(score: number | undefined) {
   return "Kritisch";
 }
 
+function statusClasses(score: number | undefined) {
+  if (score == null) return "bg-ocean-surface border-ocean-border text-ocean-secondary";
+  if (score >= 80) return "bg-ocean-success-bg border-ocean-success/40 text-ocean-success";
+  if (score >= 50) return "bg-ocean-warning-bg border-ocean-warning/40 text-ocean-warning";
+  return "bg-ocean-error-bg border-ocean-error/40 text-ocean-error";
+}
+
+function MineralTooltip({
+  mineral,
+  info,
+  profile,
+  children,
+}: {
+  mineral: string;
+  info?: { name: string; description: string; optimal?: string; profiles?: Partial<Record<ProfileType, string>> };
+  profile: ProfileType;
+  children: ReactNode;
+}) {
+  const [show, setShow] = useState(false);
+  if (!info) return <>{children}</>;
+  const profileHint = info.profiles?.[profile];
+  const bodyText = profileHint ?? info.description;
+  const optimalText = (info as any).profileOptimal?.[profile] ?? info.optimal;
+  return (
+    <div
+      className="relative inline-block"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      onTouchStart={() => setShow(true)}
+      onTouchEnd={() => setShow(false)}
+    >
+      <button type="button" className="cursor-help" aria-label={info.name}>
+        {children}
+      </button>
+      {show && (
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 rounded-2xl border border-ocean-border bg-ocean-surface shadow-lg p-3">
+          <div className="text-xs font-semibold text-ocean-primary mb-1">{info.name}</div>
+          {bodyText && <p className="text-[11px] text-ocean-secondary leading-snug mb-2">{bodyText}</p>}
+          {optimalText && (
+            <div className="text-[11px] text-ocean-success font-medium">Optimal: {optimalText}</div>
+          )}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 bg-ocean-surface border-b border-r border-ocean-border" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   scanResult: ScanResult;
 }
@@ -76,6 +124,153 @@ const glossaryRegex = new RegExp(
   `\\b(${GLOSSARY_ENTRIES.map((entry) => entry.term).join("|")})\\b`,
   "gi"
 );
+
+const MINERAL_INFO: Record<
+  string,
+  {
+    name: string;
+    description?: string;
+    optimal?: string;
+    profiles?: Partial<Record<ProfileType, string>>;
+    profileOptimal?: Partial<Record<ProfileType, string>>;
+  }
+> = {
+  calcium: {
+    name: "Calcium",
+    profiles: {
+      baby: "Niedrig halten, weil Säuglinge empfindlich auf Mineralbelastung reagieren.",
+      coffee: "Weiches Wasser (Ca:Mg ~1–1.5) verhindert flachen/sauren Geschmack.",
+      sport: "Mehr Ca ok für Elektrolyt-Ausgleich, Verhältnis zu Mg ~2:1 beachten.",
+      kidney: "Niedrige Mineralisation entlastet die Niere.",
+      blood_pressure: "Moderate Werte, da Ca neutral, aber Gesamt-TDS im Blick behalten.",
+      standard: "Ausgewogen, Ca:Mg nahe 2:1 schmeckt rund.",
+      sport: "Höhere Ca-Menge unterstützt Regeneration, aber Mg nicht vergessen.",
+    },
+    optimal: "Ca:Mg ~2:1",
+  },
+  magnesium: {
+    name: "Magnesium",
+    profiles: {
+      sport: "Höherer Mg-Anteil unterstützt Muskel-/Nervenregeneration.",
+      baby: "Nur moderat, um Mineralbelastung gering zu halten.",
+      kidney: "So niedrig wie möglich, da Ausscheidung eingeschränkt.",
+      coffee: "Moderate Mg-Anteile genügen; zu viel kann bitter wirken.",
+      blood_pressure: "Moderate Werte ok; Fokus eher auf niedriges Na.",
+      standard: "Ausgewogen für Geschmack und Versorgung.",
+    },
+    optimal: "Sport höher, Baby moderat",
+  },
+  sodium: {
+    name: "Natrium",
+    profiles: {
+      blood_pressure: "So niedrig wie möglich, <20 mg/L ideal zur Druckentlastung.",
+      kidney: "Sehr niedrig, <20 mg/L, um Natriumlast zu minimieren.",
+      sport: "Etwas mehr ok (20–50 mg/L) für Elektrolyte beim Schwitzen.",
+      baby: "Niedrig halten, da hohe Na-Werte ungeeignet für Säuglinge.",
+      coffee: "Niedrige Na-Werte vermeiden salzigen Geschmack.",
+      standard: "Moderate Werte, wenn kein spezielles Ziel.",
+    },
+    optimal: "<20 mg/L BP/Niere",
+  },
+  potassium: {
+    name: "Kalium",
+    profiles: {
+      kidney: "Streng niedrig halten.",
+      sport: "Moderate Werte ok.",
+      blood_pressure: "Eher niedrig halten.",
+      coffee: "Kein großer Faktor für Geschmack.",
+      baby: "Niedrig halten, da Babys Kalium schwer ausscheiden können.",
+      standard: "Moderate Werte ok, solange Na:K Verhältnis passt.",
+    },
+    profileOptimal: {
+      kidney: "<5 mg/L",
+      baby: "<5 mg/L",
+      blood_pressure: "Niedrig",
+      sport: "Moderate Werte ok",
+      coffee: "Kein Schwerpunkt",
+    },
+  },
+  bicarbonate: {
+    name: "Hydrogencarbonat",
+    profiles: {
+      coffee: "40–120 mg/L puffert Säuren, besserer Geschmack.",
+      sport: "Höher ok, unterstützt Regeneration und Magen.",
+      baby: "Nicht zu hoch, um Belastung zu vermeiden.",
+      blood_pressure: "Moderate bis höhere Werte entlasten Säurelast.",
+      kidney: "Eher niedriger, um Gesamt-TDS klein zu halten.",
+      standard: "Moderate Werte machen Wasser bekömmlich.",
+    },
+    optimal: "Kaffee 40–120",
+  },
+  sulfate: {
+    name: "Sulfat",
+    profiles: {
+      coffee: "Niedrig für weniger Bitterkeit in der Tasse.",
+      baby: "Niedrig halten, hohe Werte können laxativ wirken.",
+      kidney: "Niedrig bevorzugt, um Last zu senken.",
+      sport: "Moderate Werte ok; zu hoch kann abführend wirken.",
+      blood_pressure: "Moderate Werte, Fokus bleibt Na niedrig.",
+      standard: "Moderate Werte für neutralen Geschmack.",
+    },
+    optimal: "Niedrig–moderat",
+  },
+  chloride: {
+    name: "Chlorid",
+    profiles: {
+      coffee: "Niedrig für klaren Geschmack; vermeidet salzige Noten.",
+      kidney: "Niedrig bevorzugt, um Salzlast zu senken.",
+      blood_pressure: "Niedrig, da meist mit Na gekoppelt.",
+      baby: "Niedrig halten, um Mineralbelastung gering zu halten.",
+      sport: "Moderate Werte ok.",
+      standard: "Moderate Werte für ausgewogenen Geschmack.",
+    },
+    optimal: "Niedrig",
+  },
+  nitrate: {
+    name: "Nitrat",
+    profiles: {
+      baby: "Unter 10 mg/L zwingend wegen Methämoglobinämie-Risiko.",
+      kidney: "Sehr niedrig bevorzugt.",
+      blood_pressure: "Niedrig halten.",
+      sport: "Niedrig, da kein Nutzen und mögliches Risiko.",
+      coffee: "Kein Geschmacksnutzen, niedrig halten.",
+      standard: "Niedrig bevorzugt.",
+    },
+    optimal: "<10 mg/L Baby",
+  },
+  totalDissolvedSolids: {
+    name: "TDS",
+    profiles: {
+      coffee: "50–150 mg/L optimal weich.",
+      sport: "Höher (300–800) für Elektrolyte.",
+      blood_pressure: "Mittel bis höher ok.",
+      kidney: "Sehr niedrig <100 mg/L.",
+      baby: "Niedrig bis moderat.",
+      standard: "Mittelbereich schmeckt meist ausgewogen.",
+    },
+    optimal: "Profilabhängig",
+  },
+  fluoride: {
+    name: "Fluorid",
+    profiles: {
+      baby: "Streng <0.7 mg/L.",
+      coffee: "Geschmacklich kaum relevant.",
+      standard: "Bei fehlender Angabe meist vernachlässigbar.",
+      blood_pressure: "Kein Haupttreiber, aber niedrig unkritisch.",
+      kidney: "Niedrig halten, vermeidet zusätzliche Last.",
+      sport: "Kein wesentlicher Faktor.",
+    },
+    optimal: "<0.7 mg/L Baby",
+  },
+  ph: {
+    name: "pH",
+    profiles: {
+      coffee: "Nahe neutral für gute Extraktion.",
+    },
+    description: "Neutraler pH schmeckt angenehmer und löst Mineralien gleichmäßig.",
+    optimal: "6.5–8 (generisch für alle)",
+  },
+};
 
 export function WaterScoreCard({ scanResult }: Props) {
   const [showDetails, setShowDetails] = useState(false);
@@ -253,26 +448,46 @@ export function WaterScoreCard({ scanResult }: Props) {
             {WATER_METRIC_FIELDS.map((field) => {
               const metric = field.key;
               const value = mergedValues[metric];
-              if (value == null) return null;
+              if (value == null) {
+                // Show empty badge for pH so it’s visible even wenn fehlt
+                if (metric === "ph") {
+                  return (
+                    <div
+                      key={field.key}
+                      className="p-3 rounded-2xl border bg-ocean-surface border-ocean-border backdrop-blur-sm"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-medium text-ocean-secondary">
+                          {WATER_METRIC_LABELS[metric]}
+                        </p>
+                        <span className="text-[10px] px-2 py-1 rounded-full font-semibold bg-white/10 text-ocean-tertiary">
+                          –
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-ocean-tertiary">–</p>
+                    </div>
+                  );
+                }
+                return null;
+              }
               const unit = field.unit ?? (metric === "ph" ? "" : " mg/L");
               const metricScore = metricScores?.[metric];
-              const chipColor =
-                metricScore !== undefined && metricScore >= 80
-                  ? "ocean-success"
-                  : metricScore !== undefined && metricScore >= 50
-                    ? "ocean-warning"
-                    : "ocean-error";
+              const statusStyle = statusClasses(metricScore);
+              const info = MINERAL_INFO[metric];
 
               return (
-                <div key={field.key} className="ocean-card p-3 rounded-2xl border border-ocean-surface">
+                <div
+                  key={field.key}
+                  className={`p-3 rounded-2xl border ${statusStyle} backdrop-blur-sm`}
+                >
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-medium text-ocean-secondary">
-                      {WATER_METRIC_LABELS[metric]}
-                    </p>
+                    <MineralTooltip mineral={metric} info={info} profile={profile}>
+                      <p className="text-xs font-medium text-ocean-secondary cursor-help">
+                        {WATER_METRIC_LABELS[metric]}
+                      </p>
+                    </MineralTooltip>
                     {metricScore !== undefined && (
-                      <span
-                        className={`text-[10px] px-2 py-1 rounded-full font-semibold ${chipColor}-bg ${chipColor}`}
-                      >
+                      <span className="text-[10px] px-2 py-1 rounded-full font-semibold bg-white/20">
                         {metricScore.toFixed(0)}
                       </span>
                     )}

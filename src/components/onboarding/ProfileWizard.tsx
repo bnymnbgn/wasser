@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ArrowRight, Baby, Activity, HeartPulse, Droplet, Coffee, Shield, User, Ruler, Scale, Heart } from "lucide-react";
+import { ChevronRight, ArrowRight, Baby, Activity, HeartPulse, Droplet, Coffee, Shield, User, Ruler, Scale, Heart, Info } from "lucide-react";
 import clsx from "clsx";
 import type { ProfileType } from "@/src/domain/types";
 import { useRouter } from "next/navigation";
@@ -213,17 +213,25 @@ export function ProfileWizard() {
             <LabelInput label="Alter" value={age} onChange={setAge} icon={Heart} />
             <div className="col-span-2 grid grid-cols-2 gap-2">
               <SelectChip label="Geschlecht" options={["male", "female", "other"]} value={gender} onChange={setGender} />
-              <SelectChip
-                label="Aktivität"
-                options={[
-                  { value: "sedentary", label: "Sitzend" },
-                  { value: "moderate", label: "Moderat" },
-                  { value: "active", label: "Aktiv" },
-                  { value: "very_active", label: "Sehr aktiv" },
-                ]}
-                value={activity}
-                onChange={setActivity}
-              />
+              <div className="space-y-2">
+                <SelectChip
+                  label="Aktivität"
+                  options={[
+                    { value: "sedentary", label: "Sitzend" },
+                    { value: "moderate", label: "Moderat" },
+                    { value: "active", label: "Aktiv" },
+                    { value: "very_active", label: "Sehr aktiv" },
+                  ]}
+                  value={activity}
+                  onChange={setActivity}
+                />
+                <div className="flex items-start gap-3 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2">
+                  <Info className="w-5 h-5 mt-[2px] text-ocean-primary flex-shrink-0" />
+                  <p className="text-[11px] leading-snug text-ocean-secondary">
+                    Sitzend: Schreibtisch/kaum Bewegung · Moderat: 1–2x Sport/Woche · Aktiv: fast täglich Bewegung · Sehr aktiv: intensives Training/Handwerk.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         ) : (

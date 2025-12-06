@@ -27,7 +27,8 @@ export function ConsumptionProvider({ children }: { children: React.ReactNode })
 
   const refresh = async () => {
     if (!Capacitor.isNativePlatform()) {
-      setConsumptions([]);
+      // Browser/dev: keep in-memory list only
+      setConsumptions((prev) => prev);
       return;
     }
     const entries = await sqliteService.getConsumptionsForDate(new Date());
@@ -39,11 +40,19 @@ export function ConsumptionProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const add = async (entry: Omit<ConsumptionEntry, "createdAt">) => {
+    if (!Capacitor.isNativePlatform()) {
+      setConsumptions((prev) => [...prev, { ...entry, createdAt: new Date().toISOString() }]);
+      return;
+    }
     await sqliteService.addConsumption(entry);
     await refresh();
   };
 
   const remove = async (id: string) => {
+    if (!Capacitor.isNativePlatform()) {
+      setConsumptions((prev) => prev.filter((c) => c.id !== id));
+      return;
+    }
     await sqliteService.deleteConsumption(id);
     await refresh();
   };

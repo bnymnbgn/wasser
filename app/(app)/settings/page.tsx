@@ -230,20 +230,26 @@ export default function SettingsPage() {
                             <span>Aktivität</span>
                             <select
                                 className="flex-1 bg-transparent outline-none text-ocean-primary"
-                            value={activity}
-                            onChange={(e) => setActivity(e.target.value as any)}
-                        >
-                            <option value="sedentary">Sitzend</option>
-                            <option value="moderate">Moderat</option>
-                            <option value="active">Aktiv</option>
-                            <option value="very_active">Sehr aktiv</option>
-                        </select>
-                    </div>
-                    <button
-                        onClick={handleSaveBodyData}
-                        disabled={
-                            !weight ||
-                            !height ||
+                                value={activity}
+                                onChange={(e) => setActivity(e.target.value as any)}
+                            >
+                                <option value="sedentary">Sitzend</option>
+                                <option value="moderate">Moderat</option>
+                                <option value="active">Aktiv</option>
+                                <option value="very_active">Sehr aktiv</option>
+                            </select>
+                        </div>
+                        <div className="flex items-start gap-3 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-[11px] text-ocean-secondary">
+                            <Info className="w-5 h-5 mt-[2px] text-ocean-primary flex-shrink-0" />
+                            <p>
+                                Sitzend: Schreibtisch/kaum Bewegung · Moderat: 1–2x Sport/Woche · Aktiv: fast täglich Bewegung · Sehr aktiv: intensives Training/Handwerk.
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleSaveBodyData}
+                            disabled={
+                                !weight ||
+                                !height ||
                             !age ||
                             Number(weight) <= 0 ||
                             Number(height) <= 0 ||

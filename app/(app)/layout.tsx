@@ -38,11 +38,13 @@ export default function AppLayout({
         <DatabaseProvider>
           <ConsumptionProvider>
             <LivingBackground />
-            <div className="min-h-screen pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
-              {children}
+            <div className="flex flex-col min-h-screen relative z-10">
+              <div className="flex-1 flex flex-col">
+                {children}
+              </div>
+              <BottomNav />
             </div>
             <ComparisonDrawer />
-            <BottomNav />
           </ConsumptionProvider>
         </DatabaseProvider>
       </ComparisonProvider>

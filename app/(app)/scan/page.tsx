@@ -56,9 +56,11 @@ function ScanPageContent() {
   const params = useSearchParams();
   const router = useRouter();
   const defaultProfile = (params.get("profile") ?? "standard") as ProfileType;
+  const initialModeParam = params.get("mode");
+  const initialMode: Mode = initialModeParam === "barcode" ? "barcode" : "ocr";
 
   const [profile] = useState<ProfileType>(defaultProfile);
-  const [mode, setMode] = useState<Mode>("ocr");
+  const [mode, setMode] = useState<Mode>(initialMode);
 
   const [ocrText, setOcrText] = useState("");
   const [barcode, setBarcode] = useState("");

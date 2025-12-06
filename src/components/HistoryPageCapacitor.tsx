@@ -11,6 +11,7 @@ import { deriveWaterInsights } from '@/src/domain/waterInsights';
 import { useDatabaseContext } from '@/src/contexts/DatabaseContext';
 import { RefreshCw } from 'lucide-react';
 
+
 /**
  * Client-side history page for Capacitor builds
  * Loads scan data from local SQLite database
@@ -22,17 +23,6 @@ export default function HistoryPageCapacitor() {
   const [isLoadingScans, setIsLoadingScans] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
-
-
-  const handleRefresh = useCallback(() => {
-    // Force re-run of effect by toggling a dummy state or just calling the function if extracted
-    // Simpler: just reload the page or use a refresh trigger
-    // Since we can't easily extract the function without refactoring, let's just use a refresh trigger state
-    // But wait, we can just add a state 'refreshTrigger' and add it to dependency array
-    setRefreshTrigger(prev => prev + 1);
-  }, []);
-
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Update effect dependency
@@ -184,17 +174,10 @@ export default function HistoryPageCapacitor() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
-      {/* --- NEUER HINTERGRUND --- */}
-      {/* Ein fester Farbverlauf für Atmosphäre */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-100/40 via-transparent to-transparent dark:from-sky-900/20 pointer-events-none" />
-
-      {/* Ein Grid Overlay für Textur (optional) */}
-      <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 pointer-events-none" />
-
-      <div className="relative mx-auto max-w-2xl px-4 py-6 safe-area-top pb-[calc(var(--bottom-nav-height)+32px)]">
+    <main className="flex-1 flex flex-col relative text-slate-900 dark:text-slate-100 overflow-hidden">
+      <div className="relative flex-1 flex flex-col mx-auto w-full max-w-2xl px-4 py-6 safe-area-top pb-[calc(var(--bottom-nav-height)+32px)] min-h-0">
         {/* Header Title */}
-        <header className="mb-6 px-1 flex items-center justify-between">
+        <header className="flex-none mb-6 px-1 flex items-center justify-between">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-ocean-primary via-white to-ocean-accent">
               Verlauf
@@ -217,7 +200,9 @@ export default function HistoryPageCapacitor() {
           </button>
         </header>
 
-        <HistoryList initialScans={scans} />
+        <div className="flex-1 min-h-0 relative">
+          <HistoryList initialScans={scans} />
+        </div>
       </div>
     </main>
   );

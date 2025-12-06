@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, type ReactNode, type TouchEvent } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
@@ -17,6 +18,7 @@ import {
   Calendar,
   Search,
   ChevronDown,
+  ChevronUp,
   Edit3,
   Target,
   Sparkles,
@@ -122,6 +124,14 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
     y: number;
   } | null>(null);
   const [detailScan, setDetailScan] = useState<ScanResult | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const pullStartY = useRef<number | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleSearchChange = useDebouncedCallback((value: string) => {
+    setSearchTerm(value);
+  }, 300);
 
   useEffect(() => {
     const storedFav = localStorage.getItem("history-favorites");
@@ -156,6 +166,75 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
   }, [scans, hidden, profileFilter, dateFilter, scoreFilter, searchTerm, sortBy]);
 
   const groupedScans = useMemo(() => groupScans(filteredScans), [filteredScans]);
+
+  // Pagination Logic (Load more)
+  const ITEMS_PER_PAGE = 5;
+  const [page, setPage] = useState(0);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [profileFilter, dateFilter, scoreFilter, searchTerm, hidden]);
+
+  const showCount = useMemo(() => (page + 1) * ITEMS_PER_PAGE, [page]);
+  const currentPageItems = useMemo(() => filteredScans.slice(0, showCount), [filteredScans, showCount]);
+  const hasMore = filteredScans.length > currentPageItems.length;
+
+  const collapseToFirstPage = () => {
+    setPage(0);
+    if (listRef.current) {
+      listRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      const res = await fetch("/api/history");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setScans(data as ScanResult[]);
+          setPage(0);
+        }
+      }
+    } catch (err) {
+      console.warn("Refresh failed", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing]);
+
+  const onTouchStart = (e: TouchEvent) => {
+    if (!listRef.current) return;
+    if (listRef.current.scrollTop <= 0) {
+      pullStartY.current = e.touches[0].clientY;
+      setPullDistance(0);
+    } else {
+      pullStartY.current = null;
+    }
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    if (pullStartY.current == null) return;
+    const delta = e.touches[0].clientY - pullStartY.current;
+    if (delta > 0) {
+      e.preventDefault();
+      setPullDistance(Math.min(delta, 120));
+    } else {
+      setPullDistance(0);
+    }
+  };
+
+  const onTouchEnd = () => {
+    const threshold = 60;
+    if (pullDistance >= threshold) {
+      void handleRefresh();
+    }
+    pullStartY.current = null;
+    setPullDistance(0);
+  };
 
   const handleFavorite = async (scan: ScanResult) => {
     await hapticLight();
@@ -224,12 +303,12 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
       prev.map((s) =>
         s.id === scan.id
           ? {
-              ...s,
-              profile: nextProfile,
-              score: scoreResult.totalScore,
-              metricDetails: scoreResult.metrics,
-              insights,
-            }
+            ...s,
+            profile: nextProfile,
+            score: scoreResult.totalScore,
+            metricDetails: scoreResult.metrics,
+            insights,
+          }
           : s
       )
     );
@@ -241,6 +320,23 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
     });
     if (scan.barcode) query.set("barcode", scan.barcode);
     router.push(`/scan?${query.toString()}`);
+  };
+
+  const handlePrefillConsumption = async (scan: ScanResult, volume: number = 500) => {
+    await hapticLight();
+    const mergedValues = {
+      ...(scan.ocrParsedValues ?? {}),
+      ...(scan.userOverrides ?? {}),
+    };
+    const payload = {
+      id: scan.id,
+      volumeMl: volume,
+      brand: scan.productInfo?.brand ?? null,
+      productName: scan.productInfo?.productName ?? null,
+      values: mergedValues,
+    };
+    localStorage.setItem("consumption-prefill", JSON.stringify(payload));
+    router.push("/dashboard?prefill=1");
   };
 
   const handleEditDetails = (scan: ScanResult) => {
@@ -258,12 +354,10 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
   const hasResults = filteredScans.length > 0;
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* --- DASHBOARD STATS --- */}
-      <StatsHeader stats={stats} />
-
-      {/* --- FILTER & SEARCH BAR --- */}
-      <div className="sticky top-2 z-30">
+    <div className="h-full flex flex-col relative overflow-hidden text-slate-900 dark:text-slate-100">
+      {/* Header Area */}
+      <div className="flex-none z-10">
+        <StatsHeader stats={stats} />
         <FilterToolbar
           profileFilter={profileFilter}
           setProfileFilter={setProfileFilter}
@@ -274,102 +368,191 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
           sortBy={sortBy}
           setSortBy={setSortBy}
           searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
+          onSearchChange={handleSearchChange}
         />
       </div>
 
-      {!hasResults && <NoResults />}
-
-      {hasResults && (
-        <div className="space-y-8">
-          {groupedScans.map(({ label, items }, groupIndex) =>
-            items ? (
-              <motion.div
-                key={label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: groupIndex * 0.1 }}
-                className="space-y-3"
-              >
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-2">
-                  <Calendar className="w-3 h-3" />
-                  {label}
-                </div>
-                <div className="space-y-3">
-                  {items?.map((scan) => (
-                    <SwipeableRow
-                      key={scan.id}
-                      onFavorite={() => handleFavorite(scan)}
-                      onDelete={() => handleDelete(scan)}
-                      onSwipeStart={closeContextMenu}
-                      scan={scan}
-                      onMore={(s, x, y) => openContextMenu(s, x, y)}
-                      onShare={() => handleShare(scan)}
-                      onRescan={() => handleRescan(scan)}
-                      onEdit={() => handleEditDetails(scan)}
-                      expanded={expandedId === scan.id}
-                      onLongPress={handleLongPress}
-                    >
-                      <HistoryCard
-                        scan={scan}
-                        isExpanded={expandedId === scan.id}
-                        onToggleExpand={() => {
-                          setExpandedId((prev) => {
-                            const next = prev === scan.id ? null : scan.id;
-                            return next;
-                          });
-                        }}
-                        isFavorite={Boolean(favorites[scan.id])}
-                        onProfileChange={(p: ProfileType) => handleProfileSwitch(scan, p)}
-                      />
-                    </SwipeableRow>
-                  ))}
-                </div>
-              </motion.div>
-            ) : null
-          )}
-        </div>
-      )}
-
-      {/* --- UNDO TOAST --- */}
-      <AnimatePresence>
-        {undoQueue && (
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"
-          >
-            <div className="rounded-full bg-slate-900/90 dark:bg-slate-800/90 text-white backdrop-blur-md border border-slate-700 px-5 py-3 shadow-2xl flex items-center gap-4 text-sm">
-              <span>Scan entfernt</span>
-              <button
-                onClick={undoDelete}
-                className="text-emerald-400 font-bold hover:text-emerald-300"
-              >
-                Rückgängig
-              </button>
+      {/* Main Content Area (Paginated) */}
+      <div className="flex-1 relative w-full overflow-hidden pb-16">
+        {!hasResults ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+              <Search className="w-8 h-8 text-slate-400" />
             </div>
-          </motion.div>
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+              Keine Einträge
+            </h3>
+            <p className="text-sm text-slate-500 mt-2 max-w-[250px]">
+              Versuche deine Filter anzupassen oder scanne ein neues Wasser.
+            </p>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col overflow-hidden">
+            {/* Simple List Container */}
+            <div className="flex-1 relative">
+              <div
+                ref={listRef}
+                className="px-4 pt-4 h-full overflow-y-auto scrollbar-hide"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+              >
+                <div
+                  className="flex items-center justify-center text-[11px] text-ocean-secondary transition-all duration-150"
+                  style={{
+                    height: pullDistance > 0 ? 36 : isRefreshing ? 36 : 0,
+                    opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
+                  }}
+                >
+                  {isRefreshing ? "Aktualisiere..." : "Zum Aktualisieren ziehen"}
+                </div>
+                <div
+                  className="space-y-4 pb-4 transition-transform duration-150"
+                  style={{ transform: `translateY(${pullDistance}px)` }}
+                >
+                  {(() => {
+                    const favoriteItems = currentPageItems.filter((s) => favorites[s.id]);
+                    const regularItems = currentPageItems.filter((s) => !favorites[s.id]);
+                    return (
+                      <>
+                        {favoriteItems.length > 0 && (
+                          <>
+                            <div className="px-1 mt-1 text-[11px] font-bold text-sky-600 flex items-center gap-1">
+                              <span role="img" aria-label="star">⭐</span> Favoriten
+                            </div>
+                            {favoriteItems.map((scan) => (
+                              <SwipeableRow
+                                key={scan.id}
+                                onFavorite={() => handleFavorite(scan)}
+                                onDelete={() => handleDelete(scan)}
+                                onSwipeStart={closeContextMenu}
+                                scan={scan}
+                                onMore={(s: any, x: any, y: any) => openContextMenu(s, x, y)}
+                                onShare={() => handleShare(scan)}
+                                onRescan={() => handleRescan(scan)}
+                                onEdit={() => handleEditDetails(scan)}
+                                expanded={expandedId === scan.id}
+                                onLongPress={handleLongPress}
+                              >
+                                <HistoryCard
+                                  scan={scan}
+                                  isExpanded={expandedId === scan.id}
+                                  onToggleExpand={() => {
+                                    setExpandedId((prev) => {
+                                      const next = prev === scan.id ? null : scan.id;
+                                      return next;
+                                    });
+                                  }}
+                                  isFavorite={Boolean(favorites[scan.id])}
+                                  onProfileChange={(p: ProfileType) => handleProfileSwitch(scan, p)}
+                                  onPrefillConsumption={handlePrefillConsumption}
+                                />
+                              </SwipeableRow>
+                            ))}
+                          </>
+                        )}
+                        {regularItems.map((scan) => (
+                          <SwipeableRow
+                            key={scan.id}
+                            onFavorite={() => handleFavorite(scan)}
+                            onDelete={() => handleDelete(scan)}
+                            onSwipeStart={closeContextMenu}
+                            scan={scan}
+                            onMore={(s: any, x: any, y: any) => openContextMenu(s, x, y)}
+                            onShare={() => handleShare(scan)}
+                            onRescan={() => handleRescan(scan)}
+                            onEdit={() => handleEditDetails(scan)}
+                            expanded={expandedId === scan.id}
+                            onLongPress={handleLongPress}
+                          >
+                            <HistoryCard
+                              scan={scan}
+                              isExpanded={expandedId === scan.id}
+                              onToggleExpand={() => {
+                                setExpandedId((prev) => {
+                                  const next = prev === scan.id ? null : scan.id;
+                                  return next;
+                                });
+                              }}
+                              isFavorite={Boolean(favorites[scan.id])}
+                              onProfileChange={(p: ProfileType) => handleProfileSwitch(scan, p)}
+                              onPrefillConsumption={handlePrefillConsumption}
+                            />
+                          </SwipeableRow>
+                        ))}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {(hasMore || page > 0) && (
+              <div className="py-6 flex justify-center gap-3">
+                {page > 0 && (
+                  <button
+                    onClick={collapseToFirstPage}
+                    className="px-4 py-3 bg-ocean-surface border border-ocean-border text-ocean-primary rounded-full font-medium text-sm shadow-lg active:scale-95 flex items-center gap-2"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                    Weniger anzeigen
+                  </button>
+                )}
+                {hasMore && (
+                  <button
+                    onClick={() => setPage((p) => p + 1)}
+                    className="px-6 py-3 bg-sky-500 text-white rounded-full font-medium text-sm shadow-lg active:scale-95"
+                  >
+                    Mehr anzeigen ({filteredScans.length - currentPageItems.length} weitere)
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
-      </AnimatePresence>
 
-      {/* --- CONTEXT MENU (VIA PORTAL) --- */}
-      {contextMenu && (
-        <ContextMenu
-          context={contextMenu}
-          onClose={closeContextMenu}
-          onShare={() => handleShare(contextMenu.scan)}
-          onRescan={() => handleRescan(contextMenu.scan)}
-          onProfileSwitch={(profile: ProfileType) => handleRescan(contextMenu.scan, profile)}
-          onEdit={() => handleEditDetails(contextMenu.scan)}
-          onFavorite={() => handleFavorite(contextMenu.scan)}
-          isFavorite={Boolean(favorites[contextMenu.scan.id])}
-        />
-      )}
+        {/* Undo Toast */}
+        <AnimatePresence>
+          {undoQueue && (
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"
+            >
+              <div className="rounded-full bg-slate-900/90 dark:bg-slate-800/90 text-white backdrop-blur-md border border-slate-700 px-5 py-3 shadow-2xl flex items-center gap-4 text-sm">
+                <span>Scan entfernt</span>
+                <button
+                  onClick={undoDelete}
+                  className="text-emerald-400 font-bold hover:text-emerald-300"
+                >
+                  Rückgängig
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {detailScan && (
-        <DetailDialog scan={detailScan} onClose={() => setDetailScan(null)} />
-      )}
+        {/* Context Menu Portal */}
+        {contextMenu && (
+          <ContextMenu
+            context={contextMenu}
+            onClose={closeContextMenu}
+            onShare={() => handleShare(contextMenu.scan)}
+            onRescan={() => handleRescan(contextMenu.scan)}
+            onProfileSwitch={(profile: ProfileType) =>
+              handleRescan(contextMenu.scan, profile)
+            }
+            onEdit={() => handleEditDetails(contextMenu.scan)}
+            onFavorite={() => handleFavorite(contextMenu.scan)}
+            isFavorite={Boolean(favorites[contextMenu.scan.id])}
+          />
+        )}
+
+        {detailScan && (
+          <DetailDialog scan={detailScan} onClose={() => setDetailScan(null)} />
+        )}
+      </div>
     </div>
   );
 }
@@ -411,10 +594,10 @@ function StatsHeader({ stats }: { stats: ReturnType<typeof buildStats> }) {
   );
 }
 
-function StatCard({ icon, label, value, unit, description, bgClass }: any) {
+function StatCard({ icon, label, value, unit, description }: any) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-ocean-border p-4 backdrop-blur-sm ${bgClass}`}
+      className="relative rounded-2xl border border-ocean-border p-4"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="p-1.5 rounded-lg bg-white/10 shadow-sm">
@@ -446,19 +629,19 @@ function FilterToolbar({
   sortBy,
   setSortBy,
   searchTerm,
-  setSearchTerm,
+  onSearchChange,
 }: any) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-3xl border border-ocean-border ocean-surface backdrop-blur-xl shadow-lg p-3 transition-all">
+    <div className="mt-4 rounded-3xl border border-ocean-border ocean-surface backdrop-blur-xl shadow-lg p-3 transition-all">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-tertiary" />
           <input
             type="search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            defaultValue={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Suchen..."
             className="w-full h-10 rounded-xl bg-ocean-background/50 pl-10 pr-4 text-sm text-ocean-primary outline-none focus:ring-2 focus:ring-sky-500/30 transition-all placeholder:text-ocean-tertiary"
           />
@@ -585,11 +768,15 @@ function ProfileChip({ label, active, onClick }: any) {
 }
 
 // --- REDESIGNED CARD ---
-function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileChange }: any) {
+  function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileChange, onPrefillConsumption }: any) {
   return (
     <motion.div
-      layout
       className="group relative overflow-hidden ocean-surface"
+      className="group relative overflow-hidden ocean-surface border border-ocean-border/60 rounded-2xl"
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.2 }}
     >
       <button onClick={onToggleExpand} className="w-full text-left p-4">
         <div className="flex items-center justify-between gap-4">
@@ -603,32 +790,32 @@ function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileCh
                   <Star className="w-2.5 h-2.5 text-white fill-white" />
                 </div>
               )}
-            </div>
+              </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <h4 className="font-bold text-ocean-primary truncate text-sm leading-tight">
-                  {scan.productInfo?.brand ?? "Unbekanntes Wasser"}
-                </h4>
-                {scan.productInfo?.productName && (
-                  <span className="text-xs text-ocean-tertiary truncate hidden sm:inline">
-                    · {scan.productInfo.productName}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h4 className="font-bold text-ocean-primary truncate text-base leading-tight">
+                    {scan.productInfo?.brand ?? "Unbekanntes Wasser"}
+                  </h4>
+                  {scan.productInfo?.productName && (
+                    <span className="text-xs text-ocean-tertiary truncate hidden sm:inline">
+                      · {scan.productInfo.productName}
                   </span>
                 )}
-              </div>
-              <div className="text-xs text-ocean-secondary flex items-center gap-1.5">
-                <span>{formatDate(new Date(scan.timestamp))}</span>
-                <span className="w-0.5 h-0.5 rounded-full bg-ocean-border" />
-                <span className="capitalize text-sky-600 dark:text-sky-400 font-medium">
-                  {PROFILE_LABELS[scan.profile as ProfileType] || scan.profile}
-                </span>
+                </div>
+                <div className="text-xs text-ocean-secondary/80 flex items-center gap-1.5">
+                  <span>{formatDate(new Date(scan.timestamp))}</span>
+                  <span className="w-0.5 h-0.5 rounded-full bg-ocean-border" />
+                  <span className="capitalize text-sky-600 dark:text-sky-400 font-medium">
+                    {PROFILE_LABELS[scan.profile as ProfileType] || scan.profile}
+                  </span>
               </div>
             </div>
           </div>
 
           {/* Right: Mini Score & Chevron */}
           <div className="flex items-center gap-3">
-            <MiniScoreRing score={scan.score} size={36} />
+            <MiniScoreRing score={scan.score} size={44} />
             <motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
               className="text-sky-600 dark:text-sky-400"
@@ -659,6 +846,26 @@ function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileCh
                     />
                   )
                 )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPrefillConsumption(scan);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-ocean-primary text-white text-sm font-semibold hover:scale-[1.01] active:scale-95 transition"
+                >
+                  + Konsum (500 ml)
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPrefillConsumption(scan, 330);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-ocean-border text-sm font-semibold text-ocean-primary hover:bg-ocean-surface"
+                >
+                  + Konsum (330 ml)
+                </button>
               </div>
               <WaterScoreCard scanResult={scan} />
             </div>
@@ -760,14 +967,14 @@ function SwipeableRow({
           <button
             onClick={handleFavoriteClick}
             className="flex items-center gap-2 h-full rounded-2xl bg-amber-500 text-white px-3 text-xs font-bold shadow-md"
-            >
+          >
             <Star className="w-4 h-4 fill-white" />
             Favorit
           </button>
           <button
             onClick={handleMoreClick}
             className="flex items-center gap-1 h-full rounded-2xl bg-slate-800 text-white px-3 text-xs font-bold shadow-md"
-            >
+          >
             <Edit3 className="w-4 h-4" />
             …
           </button>
@@ -776,14 +983,14 @@ function SwipeableRow({
           <button
             onClick={handleMoreClick}
             className="flex items-center gap-1 h-full rounded-2xl bg-slate-800 text-white px-3 text-xs font-bold shadow-md"
-            >
+          >
             <Share2 className="w-4 h-4" />
             …
           </button>
           <button
             onClick={handleDeleteClick}
             className="flex items-center gap-2 h-full rounded-2xl bg-rose-500 text-white px-3 text-xs font-bold shadow-md"
-            >
+          >
             <Trash2 className="w-4 h-4" />
             Löschen
           </button>

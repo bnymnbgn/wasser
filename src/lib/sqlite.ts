@@ -143,6 +143,7 @@ class SQLiteService {
     this.initPromise = (async () => {
       if (!this.isCapacitor()) {
         console.log('[SQLite] Not running in Capacitor, skipping initialization');
+        this.isInitialized = true;
         return;
       }
 
@@ -323,6 +324,9 @@ class SQLiteService {
     }
 
     if (!this.db) {
+      if (!this.isCapacitor()) {
+        return;
+      }
       throw new Error('[SQLite] Database not initialized');
     }
   }
@@ -381,7 +385,14 @@ class SQLiteService {
    */
   async createWaterSource(data: Omit<WaterSource, 'id' | 'createdAt'>): Promise<WaterSource> {
     await this.ensureInitialized();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] createWaterSource called in web context – returning mock');
+        const createdAt = new Date().toISOString();
+        return { id: this.generateId(), ...data, createdAt };
+      }
+      throw new Error('Database not initialized');
+    }
 
     const id = this.generateId();
     const createdAt = new Date().toISOString();
@@ -427,7 +438,14 @@ class SQLiteService {
    */
   async createWaterAnalysis(data: Omit<WaterAnalysis, 'id' | 'createdAt'>): Promise<WaterAnalysis> {
     await this.ensureInitialized();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] createWaterAnalysis called in web context – returning mock');
+        const createdAt = new Date().toISOString();
+        return { id: this.generateId(), ...data, createdAt };
+      }
+      throw new Error('Database not initialized');
+    }
 
     const id = this.generateId();
     const createdAt = new Date().toISOString();
@@ -466,7 +484,14 @@ class SQLiteService {
 
   async upsertUserProfile(profile: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<UserProfile> {
     await this.ensureInitialized();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] upsertUserProfile called in web context – returning mock');
+        const now = new Date().toISOString();
+        return { id: profile.id ?? this.generateId(), createdAt: now, updatedAt: now, ...profile } as UserProfile;
+      }
+      throw new Error('Database not initialized');
+    }
 
     const now = new Date().toISOString();
     const id = profile.id ?? this.generateId();
@@ -524,7 +549,13 @@ class SQLiteService {
 
   async addConsumption(entry: Omit<ConsumptionEntry, 'createdAt'>): Promise<ConsumptionEntry> {
     await this.ensureInitialized();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] addConsumption called in web context – storing in-memory only');
+        return { ...entry, createdAt: new Date().toISOString() };
+      }
+      throw new Error('Database not initialized');
+    }
     const createdAt = new Date().toISOString();
     await this.db.run(
       `INSERT INTO Consumption (
@@ -554,7 +585,13 @@ class SQLiteService {
 
   async deleteConsumption(id: string): Promise<void> {
     await this.ensureInitialized();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] deleteConsumption called in web context – no-op');
+        return;
+      }
+      throw new Error('Database not initialized');
+    }
     await this.db.run('DELETE FROM Consumption WHERE id = ?', [id]);
   }
 
@@ -597,7 +634,13 @@ class SQLiteService {
    */
   async getScanHistory(limit = 50): Promise<(ScanResult & { waterSource?: WaterSource; productInfo?: { brand: string; productName: string; origin?: string | null } })[]> {
     await this.ensureInitialized();
-    if (!this.db) return [];
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] getScanHistory called in web context – returning empty list');
+        return [];
+      }
+      throw new Error('Database not initialized');
+    }
 
     try {
       const result = await this.db.query(
@@ -706,7 +749,14 @@ class SQLiteService {
    */
   async createScanResult(data: Omit<ScanResult, 'id' | 'timestamp'>): Promise<ScanResult> {
     await this.ensureInitialized();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] createScanResult called in web context – returning mock');
+        const timestamp = new Date().toISOString();
+        return { id: this.generateId(), timestamp, ...data };
+      }
+      throw new Error('Database not initialized');
+    }
 
     const id = this.generateId();
     const timestamp = new Date().toISOString();
@@ -739,7 +789,13 @@ class SQLiteService {
    */
   async clearScanHistory(): Promise<void> {
     await this.ensureInitialized();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] clearScanHistory called in web context – no-op');
+        return;
+      }
+      throw new Error('Database not initialized');
+    }
 
     try {
       await this.db.run('DELETE FROM ScanResult');
@@ -789,7 +845,13 @@ class SQLiteService {
    */
   async importPreloadedData(sources: WaterSource[], analyses: WaterAnalysis[]): Promise<void> {
     await this.ensureInitialized();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) {
+      if (!this.isCapacitor()) {
+        console.warn('[SQLite] importPreloadedData called in web context – no-op');
+        return;
+      }
+      throw new Error('Database not initialized');
+    }
 
     console.log(`[SQLite] Starting import: ${sources.length} water sources and ${analyses.length} analyses`);
 
