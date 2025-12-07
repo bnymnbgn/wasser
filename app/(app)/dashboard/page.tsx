@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Settings, Scan, ChevronRight } from "lucide-react";
+import { Settings, Scan } from "lucide-react";
 import clsx from "clsx";
 import { hapticLight, hapticMedium } from "@/lib/capacitor";
 import type { ProfileType } from "@/src/domain/types";
@@ -197,18 +197,28 @@ function DashboardContent() {
                 showControls={false}
                 consumedMl={consumed}
               />
-              {/* Floating Stats */}
-              <div className="absolute top-[20%] right-[-10%] flex flex-col gap-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ziel</span>
-                  <span className="text-lg font-semibold text-slate-300">{(hydrationGoal / 1000).toFixed(1)}L</span>
-                </div>
+              {/* Floating Stats - Hydration */}
+              <div className="absolute top-[15%] right-[-12%] flex flex-col items-center">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Ziel</span>
+                <span className="text-base font-semibold text-slate-300">{(hydrationGoal / 1000).toFixed(1)}L</span>
               </div>
-              <div className="absolute bottom-[20%] left-[-10%] flex flex-col gap-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Offen</span>
-                  <span className="text-lg font-semibold text-slate-300">{Math.max(0, hydrationGoal - consumed)}ml</span>
-                </div>
+              <div className="absolute bottom-[15%] left-[-12%] flex flex-col items-center">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Offen</span>
+                <span className="text-base font-semibold text-slate-300">{Math.max(0, hydrationGoal - consumed)}ml</span>
+              </div>
+
+              {/* Floating Stats - Mineralien */}
+              <div className="absolute top-[15%] left-[-12%] flex flex-col items-center">
+                <span className="text-[10px] font-medium text-cyan-500/70 uppercase tracking-wider">Ca</span>
+                <span className="text-base font-semibold text-cyan-300">{nutrients[0]?.value ?? 0}<span className="text-[10px] text-slate-500 ml-0.5">mg</span></span>
+              </div>
+              <div className="absolute bottom-[15%] right-[-12%] flex flex-col items-center">
+                <span className="text-[10px] font-medium text-emerald-500/70 uppercase tracking-wider">Mg</span>
+                <span className="text-base font-semibold text-emerald-300">{nutrients[1]?.value ?? 0}<span className="text-[10px] text-slate-500 ml-0.5">mg</span></span>
+              </div>
+              <div className="absolute bottom-[-5%] left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <span className="text-[10px] font-medium text-amber-500/70 uppercase tracking-wider">Na</span>
+                <span className="text-base font-semibold text-amber-300">{nutrients[2]?.value ?? 0}<span className="text-[10px] text-slate-500 ml-0.5">mg</span></span>
               </div>
             </div>
 
@@ -332,31 +342,6 @@ function DashboardContent() {
           </section>
 
 
-
-          {/* Footer Info: Nutrients & History */}
-          <section className={clsx(
-            "mt-12 flex items-center justify-between px-2",
-            mounted ? "opacity-100" : "opacity-0",
-            "transition duration-1000 delay-500"
-          )}>
-            {/* Micro Nutrients */}
-            <div className="flex gap-4">
-              {nutrients.map((n) => (
-                <div key={n.key} className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{n.label}</span>
-                  <span className="text-sm font-medium text-slate-300">{n.value}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* History Link */}
-            <Link href="/history" className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-white transition-colors">
-              <span>Verlauf</span>
-              <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
-                <ChevronRight className="w-3 h-3" />
-              </div>
-            </Link>
-          </section>
 
         </div>
 
