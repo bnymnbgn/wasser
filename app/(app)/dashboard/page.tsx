@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Settings, Droplet, Baby, Activity, HeartPulse, Coffee, Shield } from "lucide-react";
@@ -46,6 +46,8 @@ function DashboardContent() {
   const [selectedScan, setSelectedScan] = useState<any | null>(null);
   const [controlPage, setControlPage] = useState(0); // 0 = Standard, 1 = Recent
   const [showProfilePicker, setShowProfilePicker] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchDeltaX = useRef(0);
 
   // Custom volume modal
   const [isCustomVolumeOpen, setIsCustomVolumeOpen] = useState(false);
@@ -170,6 +172,29 @@ function DashboardContent() {
     hapticLight();
   };
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+    touchDeltaX.current = 0;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartX.current === null) return;
+    touchDeltaX.current = (e.touches[0]?.clientX ?? touchStartX.current) - touchStartX.current;
+  };
+
+  const handleTouchEnd = () => {
+    const delta = touchDeltaX.current;
+    touchStartX.current = null;
+    touchDeltaX.current = 0;
+    const threshold = 40;
+    if (Math.abs(delta) < threshold) return;
+    if (delta < 0) {
+      setControlPage((p) => Math.min(1, p + 1));
+    } else {
+      setControlPage((p) => Math.max(0, p - 1));
+    }
+  };
+
 
   return (
     <main className="flex-1 w-full flex flex-col relative overflow-hidden text-slate-200 selection:bg-blue-500/30">
@@ -284,7 +309,12 @@ function DashboardContent() {
             )}>
 
               {/* Sliding Container */}
-              <div className="w-full relative overflow-hidden min-h-[190px] pb-2">
+              <div
+                className="w-full relative overflow-hidden min-h-[190px] pb-2"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
                 <div
                   className="flex w-full transition-transform duration-500 ease-out will-change-transform"
                   style={{ transform: `translateX(-${controlPage * 100}%)` }}
