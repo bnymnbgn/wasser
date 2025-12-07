@@ -365,7 +365,7 @@ function LabelInput({ label, value, onChange, icon: Icon }: { label: string; val
         className="flex-1 bg-transparent outline-none text-ocean-primary"
         placeholder={label}
       />
-      {invalid && <span className="text-[10px] text-ocean-error ml-2">> 0</span>}
+      {invalid && <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>}
     </label>
   );
 }

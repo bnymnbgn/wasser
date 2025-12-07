@@ -157,7 +157,7 @@ function DashboardContent() {
       <div className="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-900/10 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="relative z-10 mx-auto w-full max-w-md px-6 pt-6 flex flex-col flex-1">
+      <div className="relative z-10 mx-auto w-full max-w-md px-6 pt-6 flex flex-col flex-1 gap-8 pb-24">
 
         {/* Minimal Header */}
         <header className={clsx(
@@ -182,7 +182,7 @@ function DashboardContent() {
         </header>
 
         {/* Centered Content Wrapper */}
-        <div className="flex-1 flex flex-col justify-end">
+        <div className="flex-1 flex flex-col gap-8">
 
           {/* Hero: Bottle */}
           <section className={clsx(
@@ -470,5 +470,4 @@ function RecentWaterSelector({ recentScans, selectedScan, onSelect }: any) {
     </div>
   );
 }
-
 

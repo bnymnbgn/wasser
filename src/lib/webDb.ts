@@ -7,7 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import type { SQLiteDBConnection } from "@capacitor-community/sqlite";
 import { CapacitorSQLite, SQLiteConnection } from "@capacitor-community/sqlite";
 
-const enableWebDb = process.env.NEXT_PUBLIC_ENABLE_WEB_DB === "true";
+const enableWebDb = process.env["NEXT_PUBLIC_ENABLE_WEB_DB"] === "true";
 const DB_NAME = "wasserscan";
 
 let webDb: SQLiteDBConnection | null = null;

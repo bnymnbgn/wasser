@@ -38,7 +38,7 @@ export default function AppLayout({
         <DatabaseProvider>
           <ConsumptionProvider>
             <LivingBackground />
-            <div className="flex flex-col min-h-screen relative z-10">
+            <div className="flex flex-col min-h-screen relative z-10 pb-24">
               <div className="flex-1 flex flex-col">
                 {children}
               </div>

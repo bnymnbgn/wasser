@@ -208,8 +208,10 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
 
   const onTouchStart = (e: TouchEvent) => {
     if (!listRef.current) return;
+    const touch = e.touches?.[0];
+    if (!touch) return;
     if (listRef.current.scrollTop <= 0) {
-      pullStartY.current = e.touches[0].clientY;
+      pullStartY.current = touch.clientY;
       setPullDistance(0);
     } else {
       pullStartY.current = null;
@@ -218,7 +220,9 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
 
   const onTouchMove = (e: TouchEvent) => {
     if (pullStartY.current == null) return;
-    const delta = e.touches[0].clientY - pullStartY.current;
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    const delta = touch.clientY - pullStartY.current;
     if (delta > 0) {
       e.preventDefault();
       setPullDistance(Math.min(delta, 120));
@@ -771,7 +775,6 @@ function ProfileChip({ label, active, onClick }: any) {
   function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileChange, onPrefillConsumption }: any) {
   return (
     <motion.div
-      className="group relative overflow-hidden ocean-surface"
       className="group relative overflow-hidden ocean-surface border border-ocean-border/60 rounded-2xl"
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}

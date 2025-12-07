@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { sqliteService, WaterSource, WaterAnalysis } from '@/lib/sqlite';
+import { sqliteService, WaterSource, WaterAnalysis, type UserProfile } from '@/lib/sqlite';
 import { InitialLoadingScreen } from '@/src/components/ui/InitialLoadingScreen';
 import { initWebDb } from '@/src/lib/webDb';
 

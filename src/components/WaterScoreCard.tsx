@@ -1,6 +1,6 @@
 'use client';
 
-import type { ScanResult, WaterAnalysisValues } from "@/src/domain/types";
+import type { ScanResult, WaterAnalysisValues, ProfileType } from "@/src/domain/types";
 import type { ProfileFit } from "@/src/domain/waterInsights";
 import { WaterScoreCircle } from "@/src/components/ui/WaterScoreCircle";
 import { motion } from "framer-motion";
@@ -51,7 +51,7 @@ function MineralTooltip({
   children,
 }: {
   mineral: string;
-  info?: { name: string; description: string; optimal?: string; profiles?: Partial<Record<ProfileType, string>> };
+  info?: { name: string; description?: string; optimal?: string; profiles?: Partial<Record<ProfileType, string>> };
   profile: ProfileType;
   children: ReactNode;
 }) {
@@ -140,7 +140,6 @@ const MINERAL_INFO: Record<
     profiles: {
       baby: "Niedrig halten, weil Säuglinge empfindlich auf Mineralbelastung reagieren.",
       coffee: "Weiches Wasser (Ca:Mg ~1–1.5) verhindert flachen/sauren Geschmack.",
-      sport: "Mehr Ca ok für Elektrolyt-Ausgleich, Verhältnis zu Mg ~2:1 beachten.",
       kidney: "Niedrige Mineralisation entlastet die Niere.",
       blood_pressure: "Moderate Werte, da Ca neutral, aber Gesamt-TDS im Blick behalten.",
       standard: "Ausgewogen, Ca:Mg nahe 2:1 schmeckt rund.",

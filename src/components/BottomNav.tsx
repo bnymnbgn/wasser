@@ -54,7 +54,7 @@ export default function BottomNav() {
   const staticItems = navItems.filter((item) => item.id !== "scan");
 
   return (
-    <nav className="pointer-events-none z-40 w-full mt-4 pb-8">
+    <nav className="pointer-events-none z-40 w-full mt-4 pb-8 fixed bottom-0 left-0 right-0">
       <div className="mx-auto w-full max-w-xl px-4">
         <div className="pointer-events-auto relative flex items-center justify-between rounded-ocean-xl border border-white/10 bg-slate-900/60 backdrop-blur-xl px-4 py-3 shadow-2xl">
           {staticItems.map((item) => {
