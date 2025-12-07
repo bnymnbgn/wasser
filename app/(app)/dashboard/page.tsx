@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Settings, Scan, ChevronRight } from "lucide-react";
+import { Settings, Droplet, Baby, Activity, HeartPulse, Coffee, Shield } from "lucide-react";
 import clsx from "clsx";
 import { hapticLight, hapticMedium } from "@/lib/capacitor";
 import type { ProfileType } from "@/src/domain/types";
@@ -13,6 +13,18 @@ import { sqliteService } from "@/src/lib/sqlite"; // Direct import for fetch
 import type { ScanResult } from "@/src/lib/sqlite";
 import { useConsumptionContext } from "@/src/contexts/ConsumptionContext";
 import { BottleVisualizer } from "@/src/components/BottleVisualizer";
+
+const PROFILE_META: Record<
+  ProfileType,
+  { label: string; icon: any; accent: string; bg: string }
+> = {
+  standard: { label: "Standard", icon: Droplet, accent: "text-blue-200", bg: "bg-blue-500/10" },
+  baby: { label: "Baby", icon: Baby, accent: "text-pink-200", bg: "bg-pink-500/10" },
+  sport: { label: "Sport", icon: Activity, accent: "text-emerald-200", bg: "bg-emerald-500/10" },
+  blood_pressure: { label: "Blutdruck", icon: HeartPulse, accent: "text-rose-200", bg: "bg-rose-500/10" },
+  coffee: { label: "Barista", icon: Coffee, accent: "text-amber-200", bg: "bg-amber-500/10" },
+  kidney: { label: "Niere", icon: Shield, accent: "text-teal-200", bg: "bg-teal-500/10" },
+};
 
 export default function DashboardPage() {
   return (
@@ -33,6 +45,7 @@ function DashboardContent() {
   const [recentScans, setRecentScans] = useState<any[]>([]);
   const [selectedScan, setSelectedScan] = useState<any | null>(null);
   const [controlPage, setControlPage] = useState(0); // 0 = Standard, 1 = Recent
+  const [showProfilePicker, setShowProfilePicker] = useState(false);
 
   // Custom volume modal
   const [isCustomVolumeOpen, setIsCustomVolumeOpen] = useState(false);
@@ -150,6 +163,13 @@ function DashboardContent() {
     ];
   }, [consumptions]);
 
+  const handleProfileSelect = (next: ProfileType) => {
+    setProfile(next);
+    localStorage.setItem("wasserscan-profile", next);
+    setShowProfilePicker(false);
+    hapticLight();
+  };
+
 
   return (
     <main className="flex-1 w-full flex flex-col relative overflow-hidden text-slate-200 selection:bg-blue-500/30">
@@ -172,13 +192,54 @@ function DashboardContent() {
           >
             <Settings className="w-5 h-5" />
           </Link>
-          <Link
-            href={{ pathname: "/scan", query: { profile } }}
-            onClick={() => hapticMedium()}
-            className="p-3 rounded-full bg-blue-500/20 border border-blue-500/20 text-blue-200 hover:text-white hover:bg-blue-500/30 transition-all backdrop-blur-md"
-          >
-            <Scan className="w-5 h-5" />
-          </Link>
+          <div className="relative">
+            {(() => {
+              const CurrentIcon = PROFILE_META[profile].icon;
+              return (
+                <button
+                  onClick={() => setShowProfilePicker((v) => !v)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition-all backdrop-blur-md"
+                >
+                  <div className={clsx("p-2 rounded-full", PROFILE_META[profile].bg)}>
+                    <CurrentIcon className={clsx("w-5 h-5", PROFILE_META[profile].accent)} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[10px] uppercase tracking-wider text-slate-500">Profil</p>
+                    <p className="text-xs font-semibold text-slate-100">{PROFILE_META[profile].label}</p>
+                  </div>
+                </button>
+              );
+            })()}
+            {showProfilePicker && (
+              <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur-lg p-2 z-20">
+                {(Object.keys(PROFILE_META) as ProfileType[]).map((p) => {
+                  const meta = PROFILE_META[p];
+                  const active = p === profile;
+                  const Icon = meta.icon;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => handleProfileSelect(p)}
+                      className={clsx(
+                        "w-full flex items-center gap-2 px-3 py-2 rounded-xl border transition-all text-left",
+                        active
+                          ? "bg-blue-500/20 border-blue-400/50 text-white"
+                          : "bg-white/0 border-white/5 text-slate-200 hover:bg-white/5"
+                      )}
+                    >
+                      <div className={clsx("p-2 rounded-full", meta.bg)}>
+                        <Icon className={clsx("w-4 h-4", meta.accent)} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold">{meta.label}</span>
+                        <span className="text-[10px] text-slate-500">Tippen zum Wechseln</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </header>
 
         {/* Centered Content Wrapper */}
@@ -197,30 +258,33 @@ function DashboardContent() {
                 showControls={false}
                 consumedMl={consumed}
               />
-              {/* Floating Stats */}
-              <div className="absolute top-[20%] right-[-10%] flex flex-col gap-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ziel</span>
-                  <span className="text-lg font-semibold text-slate-300">{(hydrationGoal / 1000).toFixed(1)}L</span>
-                </div>
+              {/* Floating Stats - Hydration */}
+              <div className="absolute top-[15%] right-[-12%] flex flex-col items-center">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Ziel</span>
+                <span className="text-base font-semibold text-slate-300">{(hydrationGoal / 1000).toFixed(1)}L</span>
               </div>
-              <div className="absolute bottom-[20%] left-[-10%] flex flex-col gap-4">
-                <div className="flex flex-col items-center">
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Offen</span>
-                  <span className="text-lg font-semibold text-slate-300">{Math.max(0, hydrationGoal - consumed)}ml</span>
-                </div>
+              <div className="absolute bottom-[15%] left-[-12%] flex flex-col items-center">
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Offen</span>
+                <span className="text-base font-semibold text-slate-300">{Math.max(0, hydrationGoal - consumed)}ml</span>
+              </div>
+
+              {/* Floating Stats - Mineralien (NEU) */}
+              <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 flex items-center gap-3 px-3 py-2 rounded-full bg-slate-900/50 border border-white/5 backdrop-blur-sm">
+                <MineralStat label="Ca" color="text-cyan-300" value={nutrients[0]?.value ?? 0} />
+                <MineralStat label="Mg" color="text-emerald-300" value={nutrients[1]?.value ?? 0} />
+                <MineralStat label="Na" color="text-amber-300" value={nutrients[2]?.value ?? 0} />
               </div>
             </div>
 
             {/* Paginated Controls Wrapper */}
             <div className={clsx(
-              "mt-8 w-full relative z-20 flex flex-col items-center",
+              "mt-14 w-full relative z-20 flex flex-col items-center",
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8",
               "transition duration-700 delay-200"
             )}>
 
               {/* Sliding Container */}
-              <div className="w-full relative overflow-hidden min-h-[190px]">
+              <div className="w-full relative overflow-hidden min-h-[190px] pb-2">
                 <div
                   className="flex w-full transition-transform duration-500 ease-out will-change-transform"
                   style={{ transform: `translateX(-${controlPage * 100}%)` }}
@@ -313,50 +377,23 @@ function DashboardContent() {
                   </div>
 
                 </div>
-              </div>
-
-              {/* Pagination Dots */}
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => setControlPage(0)}
-                  className={clsx("h-1.5 rounded-full transition-all duration-300", controlPage === 0 ? "bg-white w-4" : "bg-white/20 w-1.5 hover:bg-white/40")}
-                />
-                <button
-                  onClick={() => setControlPage(1)}
-                  className={clsx("h-1.5 rounded-full transition-all duration-300", controlPage === 1 ? "bg-white w-4" : "bg-white/20 w-1.5 hover:bg-white/40")}
-                />
-              </div>
-
-            </div>
-
-          </section>
-
-
-
-          {/* Footer Info: Nutrients & History */}
-          <section className={clsx(
-            "mt-12 flex items-center justify-between px-2",
-            mounted ? "opacity-100" : "opacity-0",
-            "transition duration-1000 delay-500"
-          )}>
-            {/* Micro Nutrients */}
-            <div className="flex gap-4">
-              {nutrients.map((n) => (
-                <div key={n.key} className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{n.label}</span>
-                  <span className="text-sm font-medium text-slate-300">{n.value}</span>
+                {/* Pagination Dots */}
+                <div className="flex gap-2 absolute bottom-1 left-1/2 -translate-x-1/2">
+                  <button
+                    onClick={() => setControlPage(0)}
+                    className={clsx("h-1.5 rounded-full transition-all duration-300", controlPage === 0 ? "bg-white w-4" : "bg-white/20 w-1.5 hover:bg-white/40")}
+                  />
+                  <button
+                    onClick={() => setControlPage(1)}
+                    className={clsx("h-1.5 rounded-full transition-all duration-300", controlPage === 1 ? "bg-white w-4" : "bg-white/20 w-1.5 hover:bg-white/40")}
+                  />
                 </div>
-              ))}
+              </div>
+
             </div>
 
-            {/* History Link */}
-            <Link href="/history" className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-white transition-colors">
-              <span>Verlauf</span>
-              <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
-                <ChevronRight className="w-3 h-3" />
-              </div>
-            </Link>
           </section>
+
 
         </div>
 
@@ -471,3 +508,14 @@ function RecentWaterSelector({ recentScans, selectedScan, onSelect }: any) {
   );
 }
 
+function MineralStat({ label, color, value }: { label: string; color: string; value: number }) {
+  return (
+    <div className="flex flex-col items-center leading-tight">
+      <span className={clsx("text-[10px] font-medium uppercase tracking-wider text-slate-400")}>{label}</span>
+      <span className={clsx("text-sm font-semibold", color)}>
+        {value}
+        <span className="text-[9px] text-slate-500 ml-0.5">mg</span>
+      </span>
+    </div>
+  );
+}

@@ -1,8 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ArrowRight, Baby, Activity, HeartPulse, Droplet, Coffee, Shield, User, Ruler, Scale, Heart, Info } from "lucide-react";
+import {
+  ArrowRight,
+  Baby,
+  Activity,
+  HeartPulse,
+  Droplet,
+  Coffee,
+  Shield,
+  User,
+  Ruler,
+  Scale,
+  Heart,
+  Info,
+  Sparkles,
+  SkipForward,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
 import clsx from "clsx";
 import type { ProfileType } from "@/src/domain/types";
 import { useRouter } from "next/navigation";
@@ -15,6 +32,54 @@ interface WizardStep {
   description?: string;
   icon: React.ElementType;
 }
+
+const PROFILE_META: Record<
+  ProfileType,
+  { label: string; subtitle: string; chips: string[]; accent: string; icon: React.ElementType }
+> = {
+  baby: {
+    label: "Baby",
+    subtitle: "Sehr niedrige Mineralisation, natrium- & nitratarm",
+    chips: ["Natrium/Nitrat streng niedrig", "Nur nach Empfehlung", "Sanfter Geschmack"],
+    accent: "text-pink-400",
+    icon: Baby,
+  },
+  blood_pressure: {
+    label: "Blutdruck & Herz",
+    subtitle: "Natriumärmer, ausgewogen",
+    chips: ["Weniger Natrium", "Ausgewogene Härte", "Ruhiger Geschmack"],
+    accent: "text-rose-400",
+    icon: HeartPulse,
+  },
+  kidney: {
+    label: "Nieren",
+    subtitle: "Natrium- & kaliumarm, geringe Mineralisation",
+    chips: ["Sehr wenig Na/K", "Leichte Mineralien", "Eng mit Arzt abklären"],
+    accent: "text-teal-400",
+    icon: Shield,
+  },
+  coffee: {
+    label: "Barista",
+    subtitle: "Weiches Wasser für klare Aromen",
+    chips: ["Weich & neutral", "Höhere Extraktion", "Feiner Geschmack"],
+    accent: "text-amber-400",
+    icon: Coffee,
+  },
+  sport: {
+    label: "Sport",
+    subtitle: "Mehr Magnesium/Natrium für Regeneration",
+    chips: ["Mehr Mg/Na", "Schneller Auffüllen", "Frischer Geschmack"],
+    accent: "text-ocean-accent",
+    icon: Activity,
+  },
+  standard: {
+    label: "Standard",
+    subtitle: "Ausgewogen für den Alltag",
+    chips: ["Balance", "Kein Spezialfokus", "Alltagstauglich"],
+    accent: "text-ocean-info",
+    icon: Droplet,
+  },
+};
 
 const STEPS: WizardStep[] = [
   {
@@ -65,9 +130,36 @@ export function ProfileWizard() {
   const [age, setAge] = useState<string>("");
   const [gender, setGender] = useState<Gender>("male");
   const [activity, setActivity] = useState<Activity>("moderate");
+  const [showActivityInfo, setShowActivityInfo] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
 
   const currentStep = STEPS[currentStepIndex];
+  const needsBodyData = recommendedProfile ? !["baby", "coffee"].includes(recommendedProfile) : false;
+  const resetWizard = () => {
+    setRecommendedProfile(null);
+    setCurrentStepIndex(-1);
+    setAnswers({});
+    setShowErrors(false);
+  };
+
+  const effectiveMetrics = useMemo(() => {
+    const weightNum = Number(weight) > 0 ? Number(weight) : 70;
+    const heightNum = Number(height) > 0 ? Number(height) : 175;
+    const ageNum = Number(age) > 0 ? Number(age) : 30;
+    return { weightNum, heightNum, ageNum };
+  }, [weight, height, age]);
+
+  const previewGoals = useMemo(() => {
+    if (!recommendedProfile) return null;
+    return calculateGoals({
+      weight: effectiveMetrics.weightNum,
+      height: effectiveMetrics.heightNum,
+      age: effectiveMetrics.ageNum,
+      gender,
+      activityLevel: activity,
+      profileType: recommendedProfile,
+    });
+  }, [activity, effectiveMetrics.ageNum, effectiveMetrics.heightNum, effectiveMetrics.weightNum, gender, recommendedProfile]);
 
   // Clear error hint once all values are valid again
   useEffect(() => {
@@ -78,10 +170,6 @@ export function ProfileWizard() {
       setShowErrors(false);
     }
   }, [weight, height, age]);
-
-  const handleStart = () => {
-    setCurrentStepIndex(0);
-  };
 
   const handleAnswer = (answer: boolean) => {
     if (!currentStep) return;
@@ -169,53 +257,65 @@ export function ProfileWizard() {
   };
 
   if (recommendedProfile) {
-    const needsBodyData = !["baby", "coffee"].includes(recommendedProfile);
+    const meta = PROFILE_META[recommendedProfile];
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-in fade-in zoom-in duration-500">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-in fade-in zoom-in duration-500 pb-24">
         <div className="relative">
           <div className="absolute inset-0 bg-ocean-primary/20 blur-3xl rounded-full" />
           <div className="relative bg-ocean-surface-elevated border border-ocean-border p-8 rounded-full shadow-2xl">
-            {recommendedProfile === "baby" && <Baby className="w-16 h-16 text-ocean-primary" />}
-            {recommendedProfile === "blood_pressure" && <HeartPulse className="w-16 h-16 text-ocean-warning" />}
-            {recommendedProfile === "coffee" && <Coffee className="w-16 h-16 text-amber-400" />}
-            {recommendedProfile === "sport" && <Activity className="w-16 h-16 text-ocean-accent" />}
-            {recommendedProfile === "kidney" && <Shield className="w-16 h-16 text-teal-400" />}
-            {recommendedProfile === "standard" && <Droplet className="w-16 h-16 text-ocean-info" />}
+            <meta.icon className={clsx("w-16 h-16", meta.accent)} />
           </div>
         </div>
 
         <div className="space-y-2 max-w-md">
           <h2 className="text-3xl font-bold text-ocean-primary">Dein ideales Profil</h2>
-          <p className="text-xl font-medium capitalize text-ocean-secondary">
-            {recommendedProfile === "blood_pressure"
-              ? "Blutdruck & Herz"
-              : recommendedProfile === "coffee"
-              ? "Barista & Genuss"
-              : recommendedProfile === "kidney"
-              ? "Nieren"
-              : recommendedProfile}
-          </p>
-          <p className="text-ocean-tertiary leading-relaxed">
-            {recommendedProfile === "baby" && "Wir achten streng auf niedrige Natrium- und Nitratwerte für die sicherste Zubereitung von Babynahrung."}
-            {recommendedProfile === "blood_pressure" && "Der Fokus liegt auf natriumarmem Wasser, um dein Herz-Kreislauf-System zu entlasten."}
-            {recommendedProfile === "kidney" && "Wir priorisieren extrem natrium- und kaliumarme Wässer mit niedriger Mineralisation. Bitte ärztliche Empfehlung beachten."}
-            {recommendedProfile === "coffee" && "Wir suchen nach weichem Wasser mit neutralem pH-Wert, damit dein Kaffee sein volles Aroma entfalten kann."}
-            {recommendedProfile === "sport" && "Wir suchen nach mineralstoffreichem Wasser, um deine Speicher nach dem Training wieder aufzufüllen."}
-            {recommendedProfile === "standard" && "Ein ausgewogenes Profil für den täglichen Genuss ohne spezielle Einschränkungen."}
-          </p>
+          <p className="text-xl font-medium text-ocean-secondary">{meta.label}</p>
+          <p className="text-ocean-tertiary leading-relaxed">{meta.subtitle}</p>
         </div>
+
+        <div className="flex flex-wrap gap-2 justify-center">
+          {meta.chips.map((chip) => (
+            <span
+              key={chip}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-ocean-border bg-ocean-surface text-sm text-ocean-primary"
+            >
+              <Check className="w-4 h-4 text-ocean-primary" />
+              {chip}
+            </span>
+          ))}
+        </div>
+
+        {previewGoals && (
+          <div className="rounded-2xl border border-ocean-border bg-ocean-surface px-4 py-3 text-sm text-ocean-secondary shadow-inner">
+            <p className="font-semibold text-ocean-primary mb-1">Tagesziel (geschätzt)</p>
+            <div className="flex flex-wrap gap-3">
+              <Chip label={`Wasser: ≈ ${Math.round(previewGoals.dailyWaterGoal)} ml`} />
+              <Chip label={`Calcium: ${Math.round(previewGoals.dailyCalciumGoal)} mg`} />
+              <Chip label={`Magnesium: ${Math.round(previewGoals.dailyMagnesiumGoal)} mg`} />
+            </div>
+          </div>
+        )}
 
         {/* Körperdaten */}
         {needsBodyData ? (
-          <div className="grid grid-cols-2 gap-3 w-full max-w-lg text-left">
-            <LabelInput label="Gewicht (kg)" value={weight} onChange={setWeight} icon={Scale} />
-            <LabelInput label="Größe (cm)" value={height} onChange={setHeight} icon={Ruler} />
-            <LabelInput label="Alter" value={age} onChange={setAge} icon={Heart} />
-            <div className="col-span-2 grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg text-left">
+            <LabelInput label="Gewicht" unit="kg" value={weight} onChange={setWeight} icon={Scale} />
+            <LabelInput label="Größe" unit="cm" value={height} onChange={setHeight} icon={Ruler} />
+            <LabelInput label="Alter" unit="Jahre" value={age} onChange={setAge} icon={Heart} />
+            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
               <SelectChip label="Geschlecht" options={["male", "female", "other"]} value={gender} onChange={setGender} />
               <div className="space-y-2">
                 <SelectChip
                   label="Aktivität"
+                  labelExtra={
+                    <button
+                      type="button"
+                      onClick={() => setShowActivityInfo((v) => !v)}
+                      className="ml-2 inline-flex items-center justify-center rounded-full border border-ocean-border/70 text-ocean-primary hover:border-ocean-primary/80 transition px-2 py-[2px]"
+                    >
+                      <Info className="w-3 h-3" />
+                    </button>
+                  }
                   options={[
                     { value: "sedentary", label: "Sitzend" },
                     { value: "moderate", label: "Moderat" },
@@ -225,12 +325,32 @@ export function ProfileWizard() {
                   value={activity}
                   onChange={setActivity}
                 />
-                <div className="flex items-start gap-3 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2">
-                  <Info className="w-5 h-5 mt-[2px] text-ocean-primary flex-shrink-0" />
-                  <p className="text-[11px] leading-snug text-ocean-secondary">
-                    Sitzend: Schreibtisch/kaum Bewegung · Moderat: 1–2x Sport/Woche · Aktiv: fast täglich Bewegung · Sehr aktiv: intensives Training/Handwerk.
-                  </p>
-                </div>
+                {showActivityInfo && (
+                  <div className="flex items-start gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2">
+                    <Info className="w-4 h-4 mt-[2px] text-ocean-primary flex-shrink-0" />
+                    <div className="space-y-2 text-[11px] text-ocean-secondary">
+                      <p className="leading-snug">Aktivität kalibriert dein Tagesziel.</p>
+                      <div className="space-y-1">
+                        <div className="flex gap-2">
+                          <span className="font-semibold text-ocean-primary">Sitzend</span>
+                          <span className="text-ocean-secondary/80">Schreibtisch, kaum Bewegung</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="font-semibold text-ocean-primary">Moderat</span>
+                          <span className="text-ocean-secondary/80">1–2x Sport/Woche</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="font-semibold text-ocean-primary">Aktiv</span>
+                          <span className="text-ocean-secondary/80">fast täglich</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="font-semibold text-ocean-primary">Sehr aktiv</span>
+                          <span className="text-ocean-secondary/80">intensiv / Handwerk</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -240,22 +360,30 @@ export function ProfileWizard() {
           </p>
         )}
 
-        <button
-          onClick={applyProfile}
-          disabled={
-            needsBodyData &&
-            (!weight ||
-              !height ||
-              !age ||
-              Number(weight) <= 0 ||
-              Number(height) <= 0 ||
-              Number(age) <= 0)
-          }
-          className="group relative inline-flex items-center gap-3 px-8 py-4 bg-ocean-primary text-white rounded-full font-semibold shadow-[0_0_20px_rgba(14,165,233,0.4)] hover:shadow-[0_0_30px_rgba(14,165,233,0.6)] transition-all transform hover:scale-105 active:scale-95"
-        >
-          <span>Profil übernehmen</span>
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={applyProfile}
+            disabled={
+              needsBodyData &&
+              (!weight ||
+                !height ||
+                !age ||
+                Number(weight) <= 0 ||
+                Number(height) <= 0 ||
+                Number(age) <= 0)
+            }
+            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-ocean-primary text-white rounded-full font-semibold shadow-[0_0_20px_rgba(14,165,233,0.4)] hover:shadow-[0_0_30px_rgba(14,165,233,0.6)] transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span>Profil übernehmen</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </button>
+          <button
+            onClick={resetWizard}
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border border-ocean-border bg-ocean-surface text-ocean-secondary font-semibold hover:bg-ocean-surface-elevated transition-all"
+          >
+            Profil ändern
+          </button>
+        </div>
         {showErrors && needsBodyData && (
           <p className="text-sm text-ocean-error mt-2">
             Bitte gültige Werte &gt; 0 für Gewicht, Größe und Alter eingeben.
@@ -267,23 +395,35 @@ export function ProfileWizard() {
 
   if (currentStepIndex === -1) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-8">
-        <div className="space-y-4 max-w-lg">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 px-3">
+        <div className="space-y-3 max-w-xl">
           <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-ocean-primary via-white to-ocean-accent">
-            Finde dein Wasser.
+            Wähle dein Profil.
           </h1>
           <p className="text-lg text-ocean-secondary leading-relaxed">
-            Nicht jedes Wasser ist gleich. Beantworte ein paar Fragen, wir berechnen dein Profil und deinen Tagesbedarf.
+            Zwei Schritte: Profil wählen, optional Körperdaten ergänzen. Fertig.
           </p>
         </div>
-
-        <button
-          onClick={handleStart}
-          className="group inline-flex items-center gap-2 px-8 py-4 bg-ocean-surface-elevated border border-ocean-border hover:border-ocean-primary/50 rounded-full text-ocean-primary font-medium transition-all hover:shadow-lg hover:-translate-y-1"
-        >
-          <span>Jetzt starten</span>
-          <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-3xl">
+          {(["baby", "blood_pressure", "kidney", "coffee", "sport", "standard"] as ProfileType[]).map((p) => {
+            const meta = PROFILE_META[p];
+            return (
+              <ProfileCard
+                key={p}
+                title={meta.label}
+                subtitle={meta.subtitle}
+                icon={meta.icon}
+                accent={meta.accent}
+                chips={meta.chips.slice(0, 2)}
+                onClick={() => finishWizard(p)}
+              />
+            );
+          })}
+        </div>
+        <p className="text-xs text-ocean-tertiary flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-ocean-primary" />
+          Du kannst später jederzeit in den Einstellungen wechseln.
+        </p>
       </div>
     );
   }
@@ -291,18 +431,50 @@ export function ProfileWizard() {
   if (!currentStep) return null;
 
   return (
-    <div className="max-w-xl mx-auto w-full min-h-[50vh] flex flex-col justify-center">
-      <div className="mb-8 flex justify-between items-center px-2">
-        <span className="text-xs font-mono text-ocean-tertiary uppercase tracking-widest">
-          Schritt {currentStepIndex + 1} / {STEPS.length}
-        </span>
-        <div className="flex gap-1">
-          {STEPS.map((_, idx) => (
+    <div className="max-w-3xl mx-auto w-full min-h-[60vh] flex flex-col justify-center px-3 pb-16">
+      <div className="mb-6 flex flex-col gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-xs font-mono text-ocean-tertiary uppercase tracking-widest">
+            Schritt {currentStepIndex + 1} / {STEPS.length}
+          </span>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setCurrentStepIndex(Math.max(0, currentStepIndex - 1))}
+              disabled={currentStepIndex === 0}
+              className={clsx(
+                "inline-flex items-center gap-2 px-3 py-2 text-xs rounded-full border transition-all",
+                currentStepIndex === 0
+                  ? "border-ocean-border text-ocean-tertiary cursor-not-allowed"
+                  : "border-ocean-border text-ocean-secondary hover:border-ocean-primary hover:text-ocean-primary"
+              )}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Zurück
+            </button>
+            <button
+              onClick={() => handleAnswer(false)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-xs rounded-full border border-dashed border-ocean-border text-ocean-secondary hover:border-ocean-primary/50 hover:text-ocean-primary transition-all"
+            >
+              <SkipForward className="w-4 h-4" />
+              Überspringen
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {STEPS.map((step, idx) => (
             <div
-              key={idx}
-              className={`h-1 w-8 rounded-full transition-colors duration-500 ${idx <= currentStepIndex ? "bg-ocean-primary" : "bg-ocean-surface-elevated"}
-                `}
-            />
+              key={step.id}
+              className={clsx(
+                "px-3 py-2 rounded-full text-xs font-semibold border transition-all",
+                idx === currentStepIndex
+                  ? "bg-ocean-primary text-white border-ocean-primary shadow-md"
+                  : idx < currentStepIndex
+                  ? "bg-ocean-surface text-ocean-primary border-ocean-border"
+                  : "bg-ocean-surface-elevated text-ocean-secondary border-ocean-border"
+              )}
+            >
+              {step.question.replace(/\?.*$/, "")}
+            </div>
           ))}
         </div>
       </div>
@@ -310,40 +482,42 @@ export function ProfileWizard() {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep.id}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
           className="space-y-8"
         >
-          <div className="flex justify-center mb-6">
-            <div className="p-6 rounded-full bg-ocean-surface-elevated border border-ocean-border shadow-xl">
+          <div className="flex justify-center mb-2">
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-ocean-surface via-ocean-surface-elevated to-ocean-surface border border-ocean-border shadow-2xl">
               <currentStep.icon className="w-12 h-12 text-ocean-primary" />
             </div>
           </div>
 
-          <div className="text-center space-y-3">
-            <h2 className="text-2xl md:text-3xl font-bold text-ocean-primary">
-              {currentStep.question}
-            </h2>
-            <p className="text-ocean-secondary text-lg">
-              {currentStep.description}
-            </p>
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl md:text-3xl font-bold text-ocean-primary">{currentStep.question}</h2>
+            <p className="text-ocean-secondary text-lg">{currentStep.description}</p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-surface-elevated border border-ocean-border text-xs text-ocean-tertiary">
+              <Sparkles className="w-4 h-4 text-ocean-primary" />
+              Wir empfehlen dir das beste Profil auf Basis deiner Antworten.
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-8">
-            <button
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
+            <ChoiceCard
+              title="Nein, Standard reicht"
+              subtitle="Kein spezieller Bedarf. Wir bleiben ausgeglichen."
+              icon={Droplet}
               onClick={() => handleAnswer(false)}
-              className="px-6 py-4 rounded-2xl border border-ocean-border bg-ocean-surface hover:bg-ocean-surface-elevated text-ocean-secondary font-medium transition-all hover:scale-[1.02] active:scale-95"
-            >
-              Nein
-            </button>
-            <button
+              tone="neutral"
+            />
+            <ChoiceCard
+              title="Ja, bitte berücksichtigen"
+              subtitle="Empfohlen, wenn das Thema für dich wichtig ist."
+              icon={currentStep.icon}
               onClick={() => handleAnswer(true)}
-              className="px-6 py-4 rounded-2xl border border-ocean-primary/30 bg-ocean-primary/10 hover:bg-ocean-primary/20 text-ocean-primary font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(14,165,233,0.1)]"
-            >
-              Ja
-            </button>
+              tone="accent"
+            />
           </div>
         </motion.div>
       </AnimatePresence>
@@ -351,30 +525,139 @@ export function ProfileWizard() {
   );
 }
 
-function LabelInput({ label, value, onChange, icon: Icon }: { label: string; value: string; onChange: (v: string) => void; icon: any }) {
+function ChoiceCard({
+  title,
+  subtitle,
+  icon: Icon,
+  onClick,
+  tone = "neutral",
+}: {
+  title: string;
+  subtitle: string;
+  icon: any;
+  onClick: () => void;
+  tone?: "neutral" | "accent";
+}) {
+  const accentClasses =
+    tone === "accent"
+      ? "border-ocean-primary/40 bg-ocean-primary/10 hover:bg-ocean-primary/15 text-ocean-primary shadow-[0_0_18px_rgba(14,165,233,0.12)]"
+      : "border-ocean-border bg-ocean-surface hover:bg-ocean-surface-elevated text-ocean-secondary";
+
+  return (
+    <button
+      onClick={onClick}
+      className={clsx(
+        "w-full rounded-2xl border p-5 text-left transition-all hover:-translate-y-[2px] hover:shadow-xl active:scale-[0.99]",
+        accentClasses
+      )}
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className="h-10 w-10 rounded-xl bg-ocean-surface-elevated flex items-center justify-center border border-ocean-border">
+          <Icon className="w-5 h-5 text-ocean-primary" />
+        </div>
+        <div>
+          <p className="text-base font-semibold">{title}</p>
+          <p className="text-sm text-ocean-secondary">{subtitle}</p>
+        </div>
+      </div>
+      <div className="text-xs text-ocean-tertiary">Klicke, um fortzufahren</div>
+    </button>
+  );
+}
+
+function Chip({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean-surface-elevated text-ocean-primary border border-ocean-border text-xs font-semibold">
+      {label}
+    </span>
+  );
+}
+
+function ProfileCard({
+  title,
+  subtitle,
+  chips,
+  icon: Icon,
+  accent,
+  onClick,
+}: {
+  title: string;
+  subtitle: string;
+  chips: string[];
+  icon: any;
+  accent: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group w-full rounded-2xl border border-ocean-border bg-ocean-surface p-4 text-left transition-all hover:border-ocean-primary/40 hover:-translate-y-[2px] hover:shadow-xl active:scale-[0.99]"
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className="h-11 w-11 rounded-xl bg-ocean-surface-elevated flex items-center justify-center border border-ocean-border">
+          <Icon className={clsx("w-5 h-5", accent)} />
+        </div>
+        <div>
+          <p className="text-base font-semibold text-ocean-primary">{title}</p>
+          <p className="text-sm text-ocean-secondary">{subtitle}</p>
+        </div>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {chips.map((chip) => (
+          <span key={chip} className="text-[11px] px-2 py-1 rounded-full bg-ocean-surface-elevated text-ocean-secondary border border-ocean-border">
+            {chip}
+          </span>
+        ))}
+      </div>
+    </button>
+  );
+}
+
+function LabelInput({
+  label,
+  unit,
+  value,
+  onChange,
+  icon: Icon,
+}: {
+  label: string;
+  unit: string;
+  value: string;
+  onChange: (v: string) => void;
+  icon: any;
+}) {
   const num = Number(value);
   const invalid = value !== "" && (!Number.isFinite(num) || num <= 0);
   return (
-    <label className="flex items-center gap-2 rounded-2xl border border-ocean-border bg-ocean-surface p-3 text-sm text-ocean-secondary">
+    <label
+      className={clsx(
+        "flex items-center gap-2 rounded-2xl border bg-ocean-surface p-3 text-sm transition-colors",
+        invalid ? "border-ocean-error/60" : "border-ocean-border"
+      )}
+    >
       <Icon className="w-4 h-4 text-ocean-primary" />
       <input
         type="text"
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 bg-transparent outline-none text-ocean-primary"
+        className="flex-1 bg-transparent outline-none text-ocean-primary placeholder:text-ocean-tertiary"
         placeholder={label}
       />
+      <span className="text-[11px] text-ocean-tertiary">{unit}</span>
       {invalid && <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>}
     </label>
   );
 }
 
-function SelectChip({ label, options, value, onChange }: any) {
+function SelectChip({ label, options, value, onChange, labelExtra }: any) {
   const opts = options.map((o: any) => (typeof o === "string" ? { value: o, label: o } : o));
   return (
     <div className="space-y-1">
-      <p className="text-[11px] uppercase tracking-[0.3em] text-ocean-secondary">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] uppercase tracking-[0.3em] text-ocean-secondary">{label}</p>
+        {labelExtra}
+      </div>
       <div className="flex flex-wrap gap-2">
         {opts.map((opt: any) => (
           <button
