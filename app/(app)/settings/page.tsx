@@ -4,6 +4,8 @@ import { useTheme } from '@/src/components/ThemeProvider';
 import { useDatabaseContext } from '@/src/contexts/DatabaseContext';
 import { calculateGoals } from '@/src/lib/userGoals';
 import { hapticLight, hapticMedium } from '@/lib/capacitor';
+import { scheduleHydrationReminders, cancelHydrationReminders } from '@/src/lib/notifications';
+import clsx from 'clsx';
 import {
     Moon,
     Sun,
@@ -37,6 +39,7 @@ export default function SettingsPage() {
     const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
     const [activity, setActivity] = useState<'sedentary' | 'moderate' | 'active' | 'very_active'>('moderate');
     const [showBodyErrors, setShowBodyErrors] = useState(false);
+    const [reminderInterval, setReminderInterval] = useState<number>(0);
 
     useEffect(() => {
         const loadStats = async () => {
@@ -73,6 +76,12 @@ export default function SettingsPage() {
         const savedStartScreen = localStorage.getItem('wasserscan-start-screen') as 'dashboard' | 'scan' | null;
         if (savedStartScreen && ['dashboard', 'scan'].includes(savedStartScreen)) {
             setStartScreen(savedStartScreen);
+        }
+
+        const savedInterval = localStorage.getItem('wasserscan-reminder-interval');
+        if (savedInterval) {
+            const parsed = parseInt(savedInterval);
+            if (!Number.isNaN(parsed)) setReminderInterval(parsed);
         }
     }, [userProfile, getStorageStats]);
 
@@ -128,6 +137,17 @@ export default function SettingsPage() {
         await hapticMedium();
         await clearHistory();
         setShowClearConfirm(false);
+    };
+
+    const handleReminderChange = async (nextInterval: number) => {
+        setReminderInterval(nextInterval);
+        localStorage.setItem('wasserscan-reminder-interval', String(nextInterval));
+        if (nextInterval > 0) {
+            await scheduleHydrationReminders(nextInterval);
+        } else {
+            await cancelHydrationReminders();
+        }
+        hapticLight();
     };
 
     return (
@@ -260,6 +280,38 @@ export default function SettingsPage() {
                         Ziele berechnen & speichern
                     </button>
                 </div>
+                </section>
+
+                {/* Hydration Reminders */}
+                <section className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary">Erinnerungen</h2>
+                        <span className="text-[10px] text-ocean-secondary">Lokale Push</span>
+                    </div>
+                    <div className="ocean-card ocean-panel overflow-hidden p-4 space-y-3">
+                        <p className="text-sm text-ocean-secondary">
+                            Stelle ein, wie oft du ans Trinken erinnert werden möchtest. Wir planen Benachrichtigungen für die nächsten 8 Stunden.
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {[0, 30, 60, 90, 120, 180].map((min) => (
+                                <button
+                                    key={min}
+                                    onClick={() => handleReminderChange(min)}
+                                    className={clsx(
+                                        "px-3 py-2 rounded-xl border text-sm font-semibold transition",
+                                        reminderInterval === min
+                                            ? "bg-gradient-to-r from-ocean-primary to-ocean-accent text-white border-ocean-primary"
+                                            : "bg-ocean-surface text-ocean-secondary border-ocean-border hover:border-ocean-primary/40"
+                                    )}
+                                >
+                                    {min === 0 ? "Aus" : `${min} min`}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-[11px] text-ocean-tertiary">
+                            Hinweise: Bitte Benachrichtigungen erlauben. Änderungen überschreiben bestehende Reminder.
+                        </p>
+                    </div>
                 </section>
 
                 {/* Appearance Section */}
