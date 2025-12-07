@@ -1,29 +1,29 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Settings, Droplet, Baby, Activity, HeartPulse, Coffee, Shield } from "lucide-react";
+import { Settings, Droplet, Baby, Activity, HeartPulse, Coffee, Shield, ChevronDown, Check } from "lucide-react";
 import clsx from "clsx";
 import { hapticLight, hapticMedium } from "@/lib/capacitor";
 import type { ProfileType } from "@/src/domain/types";
 import { useUserProfile } from "@/src/hooks/useUserProfile";
 import { useDatabaseContext } from "@/src/contexts/DatabaseContext";
-import { sqliteService } from "@/src/lib/sqlite"; // Direct import for fetch
-import type { ScanResult } from "@/src/lib/sqlite";
+import { sqliteService } from "@/src/lib/sqlite";
 import { useConsumptionContext } from "@/src/contexts/ConsumptionContext";
 import { BottleVisualizer } from "@/src/components/BottleVisualizer";
+import { QuickAddControls } from "@/src/components/QuickAddControls";
 
 const PROFILE_META: Record<
   ProfileType,
-  { label: string; icon: any; accent: string; bg: string }
+  { label: string; icon: any; accent: string; bg: string; desc: string }
 > = {
-  standard: { label: "Standard", icon: Droplet, accent: "text-blue-200", bg: "bg-blue-500/10" },
-  baby: { label: "Baby", icon: Baby, accent: "text-pink-200", bg: "bg-pink-500/10" },
-  sport: { label: "Sport", icon: Activity, accent: "text-emerald-200", bg: "bg-emerald-500/10" },
-  blood_pressure: { label: "Blutdruck", icon: HeartPulse, accent: "text-rose-200", bg: "bg-rose-500/10" },
-  coffee: { label: "Barista", icon: Coffee, accent: "text-amber-200", bg: "bg-amber-500/10" },
-  kidney: { label: "Niere", icon: Shield, accent: "text-teal-200", bg: "bg-teal-500/10" },
+  standard: { label: "Standard", icon: Droplet, accent: "text-blue-200", bg: "bg-blue-500/10", desc: "Ausgewogene Hydratation" },
+  baby: { label: "Baby", icon: Baby, accent: "text-pink-200", bg: "bg-pink-500/10", desc: "Niedriger Natriumgehalt" },
+  sport: { label: "Sport", icon: Activity, accent: "text-emerald-200", bg: "bg-emerald-500/10", desc: "Elektrolyt-Fokus" },
+  blood_pressure: { label: "Blutdruck", icon: HeartPulse, accent: "text-rose-200", bg: "bg-rose-500/10", desc: "Natriumarm" },
+  coffee: { label: "Barista", icon: Coffee, accent: "text-amber-200", bg: "bg-amber-500/10", desc: "Weiches Wasser" },
+  kidney: { label: "Niere", icon: Shield, accent: "text-teal-200", bg: "bg-teal-500/10", desc: "Schonende Zusammensetzung" },
 };
 
 export default function DashboardPage() {
@@ -38,31 +38,30 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const [profile, setProfile] = useState<ProfileType>("standard");
   const [mounted, setMounted] = useState(false);
+
+  // Echte Logik Hooks
   const { goals } = useUserProfile();
   const { consumptions, add, remove, refresh } = useConsumptionContext();
   const { isReady } = useDatabaseContext();
 
   const [recentScans, setRecentScans] = useState<any[]>([]);
   const [selectedScan, setSelectedScan] = useState<any | null>(null);
-  const [controlPage, setControlPage] = useState(0); // 0 = Standard, 1 = Recent
-  const [showProfilePicker, setShowProfilePicker] = useState(false);
-  const touchStartX = useRef<number | null>(null);
-  const touchDeltaX = useRef(0);
 
-  // Custom volume modal
+  // UI States
+  const [showProfileSheet, setShowProfileSheet] = useState(false);
   const [isCustomVolumeOpen, setIsCustomVolumeOpen] = useState(false);
   const [customAmount, setCustomAmount] = useState("");
+  const [lastAddedAmount, setLastAddedAmount] = useState<{ val: number; id: number } | null>(null);
 
-  // Load recent scans
+  // Lade Historie (Original Logik)
   useEffect(() => {
     if (!isReady) return;
     const fetchRecent = async () => {
       try {
         const history = await sqliteService.getScanHistory(20);
-        // Deduplicate by brand+productName
         const unique = new Map();
-        history.forEach(h => {
-          if (!h.productInfo?.brand) return; // Skip empty
+        history.forEach((h) => {
+          if (!h.productInfo?.brand) return;
           const key = `${h.productInfo.brand}-${h.productInfo.productName}`;
           if (!unique.has(key)) {
             unique.set(key, h);
@@ -76,12 +75,13 @@ function DashboardContent() {
     fetchRecent();
   }, [isReady]);
 
-  // Handle adding consumption (logic moved from inline)
+  // Handle Add (Original Logik + Feedback)
   const handleAddConsumption = async (volume: number) => {
+    if (volume <= 0) return;
     hapticMedium();
 
-    // Default: "mineral" with effectively empty minerals if no scan selected
-    // If selectedScan: parse its values
+    setLastAddedAmount({ val: volume, id: Date.now() });
+    setTimeout(() => setLastAddedAmount(null), 2000);
 
     let mineralValues = { calcium: 0, magnesium: 0, sodium: 0, potassium: 0 };
     let brand = null;
@@ -93,17 +93,16 @@ function DashboardContent() {
       productName = selectedScan.productInfo?.productName ?? null;
       scanId = selectedScan.id;
 
-      // Try to parse values
       try {
         const parsed = JSON.parse(selectedScan.ocrParsedValues || "{}");
         mineralValues = {
           calcium: parsed.calcium || 0,
           magnesium: parsed.magnesium || 0,
           sodium: parsed.sodium || 0,
-          potassium: parsed.potassium || 0
+          potassium: parsed.potassium || 0,
         };
       } catch (e) {
-        // ignore
+        /* ignore */
       }
     }
 
@@ -118,18 +117,20 @@ function DashboardContent() {
       ...mineralValues,
       scanId: scanId,
     };
+
     await add(entry);
     await refresh();
   };
 
+  // Profile laden/speichern
   useEffect(() => {
     const urlProfile = searchParams.get("profile") as ProfileType | null;
-    if (urlProfile && ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"].includes(urlProfile)) {
+    if (urlProfile && Object.keys(PROFILE_META).includes(urlProfile)) {
       setProfile(urlProfile);
       localStorage.setItem("wasserscan-profile", urlProfile);
     } else {
       const savedProfile = localStorage.getItem("wasserscan-profile") as ProfileType | null;
-      if (savedProfile && ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"].includes(savedProfile)) {
+      if (savedProfile && Object.keys(PROFILE_META).includes(savedProfile)) {
         setProfile(savedProfile);
       }
     }
@@ -137,17 +138,11 @@ function DashboardContent() {
     return () => clearTimeout(t);
   }, [searchParams]);
 
-
-
   const hydrationGoal = goals?.dailyWaterGoal ?? 2500;
-  const consumed = consumptions.reduce(
-    (sum, c) => sum + (c.volumeMl ?? 0) * (c.hydrationFactor ?? 1),
-    0
-  );
+  const consumed = consumptions.reduce((sum, c) => sum + (c.volumeMl ?? 0) * (c.hydrationFactor ?? 1), 0);
   const hydrationPct = Math.min(100, Math.round((consumed / hydrationGoal) * 100));
   const bottleFill = Math.min(100, Math.max(0, hydrationPct));
 
-  // Nutrients from water
   const nutrients = useMemo(() => {
     const total = consumptions.reduce(
       (acc, c) => {
@@ -165,51 +160,55 @@ function DashboardContent() {
     ];
   }, [consumptions]);
 
+  const lastIntake = useMemo(() => {
+    if (!consumptions || consumptions.length === 0) return null;
+    const sorted = [...consumptions].sort((a, b) => new Date(b.timestamp ?? "").getTime() - new Date(a.timestamp ?? "").getTime());
+    const latest = sorted[0];
+    const volume = latest.volumeMl ?? 0;
+    const ts = latest.timestamp ? new Date(latest.timestamp) : null;
+
+    const formatTimeAgo = (d: Date) => {
+      const diffMs = Date.now() - d.getTime();
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 1) return "gerade eben";
+      if (mins < 60) return `vor ${mins} min`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `vor ${hours} Std`;
+      const days = Math.floor(hours / 24);
+      return `vor ${days} Tag${days === 1 ? "" : "en"}`;
+    };
+
+    return {
+      volume,
+      timeAgo: ts ? formatTimeAgo(ts) : null,
+    };
+  }, [consumptions]);
+
   const handleProfileSelect = (next: ProfileType) => {
     setProfile(next);
     localStorage.setItem("wasserscan-profile", next);
-    setShowProfilePicker(false);
+    setShowProfileSheet(false);
     hapticLight();
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    touchStartX.current = e.touches[0]?.clientX ?? null;
-    touchDeltaX.current = 0;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartX.current === null) return;
-    touchDeltaX.current = (e.touches[0]?.clientX ?? touchStartX.current) - touchStartX.current;
-  };
-
-  const handleTouchEnd = () => {
-    const delta = touchDeltaX.current;
-    touchStartX.current = null;
-    touchDeltaX.current = 0;
-    const threshold = 40;
-    if (Math.abs(delta) < threshold) return;
-    if (delta < 0) {
-      setControlPage((p) => Math.min(1, p + 1));
-    } else {
-      setControlPage((p) => Math.max(0, p - 1));
-    }
-  };
-
-
   return (
     <main className="flex-1 w-full flex flex-col relative overflow-hidden text-slate-200 selection:bg-blue-500/30">
-      {/* Background Ambient Glow */}
-      <div className="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 rounded-full blur-[120px] pointer-events-none" />
+      <div
+        className={clsx(
+          "fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] pointer-events-none transition-colors duration-1000",
+          PROFILE_META[profile].bg.replace("/10", "/20")
+        )}
+      />
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-900/10 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="relative z-10 mx-auto w-full max-w-md px-6 pt-6 flex flex-col flex-1 gap-8 pb-24">
-
-        {/* Minimal Header */}
-        <header className={clsx(
-          "flex items-center justify-between mb-4",
-          mounted ? "opacity-100" : "opacity-0",
-          "transition duration-700"
-        )}>
+      <div className="relative z-10 mx-auto w-full max-w-md h-full flex flex-col pb-6 flex-1">
+        <header
+          className={clsx(
+            "flex items-center justify-between px-6 pt-6 pb-2",
+            mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4",
+            "transition duration-700 ease-out"
+          )}
+        >
           <Link
             href="/settings"
             onClick={() => hapticLight()}
@@ -217,240 +216,155 @@ function DashboardContent() {
           >
             <Settings className="w-5 h-5" />
           </Link>
-          <div className="relative">
-            {(() => {
-              const CurrentIcon = PROFILE_META[profile].icon;
-              return (
-                <button
-                  onClick={() => setShowProfilePicker((v) => !v)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition-all backdrop-blur-md"
-                >
-                  <div className={clsx("p-2 rounded-full", PROFILE_META[profile].bg)}>
-                    <CurrentIcon className={clsx("w-5 h-5", PROFILE_META[profile].accent)} />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500">Profil</p>
-                    <p className="text-xs font-semibold text-slate-100">{PROFILE_META[profile].label}</p>
-                  </div>
-                </button>
-              );
-            })()}
-            {showProfilePicker && (
-              <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur-lg p-2 z-20">
-                {(Object.keys(PROFILE_META) as ProfileType[]).map((p) => {
-                  const meta = PROFILE_META[p];
-                  const active = p === profile;
-                  const Icon = meta.icon;
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => handleProfileSelect(p)}
-                      className={clsx(
-                        "w-full flex items-center gap-2 px-3 py-2 rounded-xl border transition-all text-left",
-                        active
-                          ? "bg-blue-500/20 border-blue-400/50 text-white"
-                          : "bg-white/0 border-white/5 text-slate-200 hover:bg-white/5"
-                      )}
-                    >
-                      <div className={clsx("p-2 rounded-full", meta.bg)}>
-                        <Icon className={clsx("w-4 h-4", meta.accent)} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-semibold">{meta.label}</span>
-                        <span className="text-[10px] text-slate-500">Tippen zum Wechseln</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+
+          <button
+            onClick={() => {
+              setShowProfileSheet(true);
+              hapticLight();
+            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition-all backdrop-blur-md group"
+          >
+            <div className={clsx("p-1.5 rounded-full", PROFILE_META[profile].bg)}>
+              {(() => {
+                const Icon = PROFILE_META[profile].icon;
+                return <Icon className={clsx("w-4 h-4", PROFILE_META[profile].accent)} />;
+              })()}
+            </div>
+            <span className="text-xs font-semibold pr-1">{PROFILE_META[profile].label}</span>
+            <ChevronDown className="w-3 h-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+          </button>
         </header>
 
-        {/* Centered Content Wrapper */}
-        <div className="flex-1 flex flex-col gap-8">
+        <div className="flex-1 flex flex-col items-center justify-center relative -mt-4 min-h-[300px]">
+          <div
+            className={clsx(
+              "relative scale-90 sm:scale-100 transition-transform duration-1000 ease-out",
+              mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            )}
+          >
+            <BottleVisualizer fillLevel={bottleFill} isBubbling={hydrationPct < 95} showControls={false} consumedMl={consumed} />
 
-          {/* Hero: Bottle */}
-          <section className={clsx(
-            "flex flex-col items-center justify-center relative -mt-8",
-            mounted ? "opacity-100 scale-100" : "opacity-0 scale-95",
-            "transition duration-1000 delay-100 ease-out"
-          )}>
-            <div className="relative scale-90 sm:scale-100">
-              <BottleVisualizer
-                fillLevel={bottleFill}
-                isBubbling={hydrationPct < 95}
-                showControls={false}
-                consumedMl={consumed}
-              />
-              {/* Floating Stats - Hydration */}
-              <div className="absolute top-[15%] right-[-12%] flex flex-col items-center">
-                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Ziel</span>
-                <span className="text-base font-semibold text-slate-300">{(hydrationGoal / 1000).toFixed(1)}L</span>
+            {lastAddedAmount && (
+              <div key={lastAddedAmount.id} className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-50 animate-float-up">
+                <span className="text-3xl font-black text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] tracking-tighter">
+                  +{lastAddedAmount.val}
+                </span>
               </div>
-              <div className="absolute bottom-[15%] left-[-12%] flex flex-col items-center">
-                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Offen</span>
-                <span className="text-base font-semibold text-slate-300">{Math.max(0, hydrationGoal - consumed)}ml</span>
-              </div>
+            )}
 
-              {/* Floating Stats - Mineralien (NEU) */}
-              <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 flex items-center gap-3 px-3 py-2 rounded-full bg-slate-900/50 border border-white/5 backdrop-blur-sm">
-                <MineralStat label="Ca" color="text-cyan-300" value={nutrients[0]?.value ?? 0} />
-                <MineralStat label="Mg" color="text-emerald-300" value={nutrients[1]?.value ?? 0} />
-                <MineralStat label="Na" color="text-amber-300" value={nutrients[2]?.value ?? 0} />
-              </div>
+            <div className="absolute top-[10%] right-[-15%] flex flex-col items-center bg-slate-900/40 backdrop-blur-sm p-2 rounded-xl border border-white/5 shadow-xl">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Ziel</span>
+              <span className="text-sm font-bold text-white">{(hydrationGoal / 1000).toFixed(1)}L</span>
             </div>
-
-            {/* Paginated Controls Wrapper */}
-            <div className={clsx(
-              "mt-14 w-full relative z-20 flex flex-col items-center",
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8",
-              "transition duration-700 delay-200"
-            )}>
-
-              {/* Sliding Container */}
-              <div
-                className="w-full relative overflow-hidden min-h-[190px] pb-2"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <div
-                  className="flex w-full transition-transform duration-500 ease-out will-change-transform"
-                  style={{ transform: `translateX(-${controlPage * 100}%)` }}
-                >
-
-                  {/* PAGE 0: Standard Volumes */}
-                  <div className="w-full flex-shrink-0 px-1">
-                    {/* Selected Water Indicator (if active) */}
-                    {selectedScan && (
-                      <div className="mb-3 flex items-center justify-center animate-in fade-in slide-in-from-top-2">
-                        <button
-                          onClick={() => setSelectedScan(null)}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-xs font-medium text-blue-200 hover:bg-blue-500/30 transition-colors"
-                        >
-                          <span>{selectedScan.productInfo?.brand || "Auswahl"} verwenden</span>
-                          <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white">✕</div>
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-4 gap-3">
-                      {[250, 500, 750, 1000].map((ml) => (
-                        <button
-                          key={ml}
-                          onClick={() => handleAddConsumption(ml)}
-                          className="group relative flex flex-col items-center justify-center py-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 active:scale-95 transition-all backdrop-blur-sm"
-                        >
-                          <span className="text-sm font-semibold text-slate-300 group-hover:text-white">{ml}</span>
-                          <span className="text-[10px] text-slate-500 group-hover:text-slate-400">ml</span>
-                          <div className="absolute inset-0 rounded-2xl bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors" />
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => setIsCustomVolumeOpen(true)}
-                        className="col-span-4 mt-1 flex items-center justify-center py-3 rounded-2xl border border-white/10 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
-                      >
-                        <span>Andere Menge eingeben...</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* PAGE 1: Recent Waters */}
-                  <div className="w-full flex-shrink-0 px-1">
-                    <div className="flex flex-col gap-3 h-full">
-                      <div className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                        Zuletzt getrunken
-                      </div>
-
-                      <div className="flex-1 min-h-[140px]">
-                        {recentScans.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2 pr-1">
-                            <button
-                              onClick={() => { setSelectedScan(null); setControlPage(0); }}
-                              className={clsx(
-                                "flex items-center gap-2 px-3 py-3 rounded-xl border transition-all text-left",
-                                !selectedScan ? "bg-blue-500/20 border-blue-500/50 text-blue-100" : "bg-white/5 border-white/5 text-slate-400"
-                              )}
-                            >
-                              <div className="w-2 h-2 rounded-full bg-slate-400/50 shrink-0" />
-                              <span className="text-xs font-medium">Standard</span>
-                            </button>
-                            {recentScans.map((scan) => {
-                              const isActive = selectedScan?.id === scan.id;
-                              return (
-                                <button
-                                  key={scan.id}
-                                  onClick={() => { setSelectedScan(scan); setControlPage(0); }}
-                                  className={clsx(
-                                    "flex items-center gap-2 px-3 py-3 rounded-xl border transition-all text-left",
-                                    isActive ? "bg-blue-500 text-white border-blue-400" : "bg-white/5 border-white/5 text-slate-300"
-                                  )}
-                                >
-                                  <div className={clsx("w-2 h-2 rounded-full shrink-0", isActive ? "bg-white" : "bg-sky-500")} />
-                                  <div className="min-w-0 flex-1 overflow-hidden">
-                                    <div className="text-xs font-bold truncate block">{scan.productInfo?.brand || "Unbekannt"}</div>
-                                    <div className="text-[10px] opacity-70 truncate block">{scan.productInfo?.productName}</div>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-24 text-slate-500 text-xs text-center px-4">
-                            <p>Noch keine Scans im Verlauf.</p>
-                            <p className="mt-1">Scanne ein Wasser, um es hier zu sehen!</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-                {/* Pagination Dots */}
-                <div className="flex gap-2 absolute bottom-1 left-1/2 -translate-x-1/2">
-                  <button
-                    onClick={() => setControlPage(0)}
-                    className={clsx("h-1.5 rounded-full transition-all duration-300", controlPage === 0 ? "bg-white w-4" : "bg-white/20 w-1.5 hover:bg-white/40")}
-                  />
-                  <button
-                    onClick={() => setControlPage(1)}
-                    className={clsx("h-1.5 rounded-full transition-all duration-300", controlPage === 1 ? "bg-white w-4" : "bg-white/20 w-1.5 hover:bg-white/40")}
-                  />
-                </div>
-              </div>
-
+            <div className="absolute bottom-[20%] left-[-15%] flex flex-col items-center bg-slate-900/40 backdrop-blur-sm p-2 rounded-xl border border-white/5 shadow-xl">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Offen</span>
+              <span className="text-sm font-bold text-white">{Math.max(0, hydrationGoal - consumed)}ml</span>
             </div>
-
-          </section>
-
-
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-3 px-3 py-2 rounded-full bg-slate-900/60 border border-white/5 backdrop-blur-sm">
+              <MineralStat label="Ca" color="text-cyan-300" value={nutrients[0]?.value ?? 0} />
+              <MineralStat label="Mg" color="text-emerald-300" value={nutrients[1]?.value ?? 0} />
+              <MineralStat label="Na" color="text-amber-300" value={nutrients[2]?.value ?? 0} />
+            </div>
+          </div>
         </div>
 
+        <div className="relative z-30 mt-auto pt-1 pb-1">
+          <div className="flex items-center justify-between text-[11px] text-slate-400 px-4 mb-1">
+            <span>Zuletzt getrunken:</span>
+            {lastIntake ? (
+              <span className="text-slate-200">
+                {lastIntake.volume} ml{lastIntake.timeAgo ? ` • ${lastIntake.timeAgo}` : ""}
+              </span>
+            ) : (
+              <span className="text-slate-500">Noch nichts erfasst</span>
+            )}
+          </div>
+          <QuickAddControls
+            onAdd={handleAddConsumption}
+            onCustom={() => setIsCustomVolumeOpen(true)}
+            recentScans={recentScans}
+            selectedScan={selectedScan}
+            onSelectScan={(s: any) => {
+              setSelectedScan(s);
+              hapticLight();
+            }}
+          />
+        </div>
       </div>
-      {/* Custom Volume Dialog */}
+
+      {showProfileSheet && (
+        <>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-in fade-in duration-300" onClick={() => setShowProfileSheet(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 rounded-t-[2.5rem] border-t border-white/10 shadow-2xl p-6 pb-12 animate-in slide-in-from-bottom duration-300">
+            <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-8" />
+
+            <h3 className="text-lg font-bold text-white mb-6 px-2">Profil wählen</h3>
+
+            <div className="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto scrollbar-hide pb-8">
+              {(Object.keys(PROFILE_META) as ProfileType[]).map((p) => {
+                const meta = PROFILE_META[p];
+                const active = p === profile;
+                const Icon = meta.icon;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => handleProfileSelect(p)}
+                    className={clsx(
+                      "flex flex-col gap-3 p-4 rounded-3xl border transition-all text-left relative overflow-hidden",
+                      active
+                        ? "bg-gradient-to-r from-ocean-primary to-ocean-accent text-white border-ocean-primary/50 shadow-xl shadow-blue-900/30"
+                        : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10"
+                    )}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className={clsx("p-2.5 rounded-full", active ? "bg-white/15" : meta.bg)}>
+                        <Icon className={clsx("w-5 h-5", active ? "text-white" : meta.accent)} />
+                      </div>
+                      {active && (
+                        <div className="bg-white text-ocean-primary p-1 rounded-full">
+                          <Check size={12} strokeWidth={4} />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="block font-bold text-sm">{meta.label}</span>
+                      <span className={clsx("text-[10px] leading-tight block mt-1", active ? "text-white" : "text-slate-500")}>
+                        {meta.desc}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
       {isCustomVolumeOpen && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-6 scale-100 animate-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-semibold text-white text-center">Eigene Menge</h3>
-            <div className="flex items-center justify-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6 animate-in fade-in duration-200">
+          <div className="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-[2rem] p-8 shadow-2xl flex flex-col gap-6 scale-100 animate-in zoom-in-95 duration-200">
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-white">Eigene Menge</h3>
+              <p className="text-xs text-slate-500 mt-1">Gib die Menge in ml ein</p>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 py-4">
               <input
                 autoFocus
                 type="number"
                 inputMode="numeric"
-                className="w-32 bg-transparent text-4xl font-bold text-center text-blue-400 outline-none border-b-2 border-slate-700 focus:border-blue-500 transition-colors pb-2"
+                min={1}
+                className="w-32 bg-transparent text-5xl font-black text-center text-slate-100 outline-none placeholder:text-slate-700"
                 placeholder="0"
                 value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
+                onChange={(e) => setCustomAmount(e.target.value.replace(/[^0-9]/g, ""))}
               />
-              <span className="text-xl text-slate-500 font-medium mt-2">ml</span>
+              <span className="text-xl text-slate-500 font-bold mt-3">ml</span>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setIsCustomVolumeOpen(false)}
-                className="py-3 rounded-xl bg-slate-800 text-slate-400 font-medium hover:bg-slate-700 transition"
-              >
-                Abbrechen
+              <button onClick={() => setIsCustomVolumeOpen(false)} className="py-4 rounded-2xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition">
+                Abbruch
               </button>
               <button
                 onClick={() => {
@@ -461,80 +375,15 @@ function DashboardContent() {
                     setCustomAmount("");
                   }
                 }}
-                className="py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition"
+                className="py-4 rounded-2xl bg-gradient-to-r from-ocean-primary to-ocean-accent text-white font-bold hover:brightness-110 transition"
               >
-                Hinzufügen
+                OK
               </button>
             </div>
           </div>
         </div>
       )}
     </main>
-  );
-}
-
-// --- SUBCOMPONENTS ---
-
-function RecentWaterSelector({ recentScans, selectedScan, onSelect }: any) {
-  if (!recentScans || recentScans.length === 0) return null;
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between px-1">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Zuletzt getrunken</span>
-        {selectedScan && (
-          <button onClick={() => onSelect(null)} className="text-[10px] text-blue-400 hover:text-blue-300">
-            Auswahl aufheben
-          </button>
-        )}
-      </div>
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 sm:mx-0 sm:px-0 mask-linear-fade">
-        {/* Helper to select "Standard/Unknown" implicitly by deselecting */}
-        <button
-          onClick={() => onSelect(null)}
-          className={clsx(
-            "flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all",
-            !selectedScan
-              ? "bg-blue-500/20 border-blue-500/50 text-blue-100 shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)]"
-              : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
-          )}
-        >
-          <div className="w-2 h-2 rounded-full bg-slate-400/50" />
-          <span className="text-xs font-medium whitespace-nowrap">Standard</span>
-        </button>
-
-        {recentScans.map((scan: any) => {
-          const isActive = selectedScan?.id === scan.id;
-          return (
-            <button
-              key={scan.id}
-              onClick={() => onSelect(isActive ? null : scan)}
-              className={clsx(
-                "flex-shrink-0 flex items-center gap-3 px-3 py-2 rounded-xl border transition-all max-w-[200px]",
-                isActive
-                  ? "bg-blue-500 text-white border-blue-400 shadow-[0_0_20px_-5px_rgba(59,130,246,0.5)]"
-                  : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10 hover:border-white/10"
-              )}
-            >
-              {/* Minimal Icon based on Reliability/Score if avail, else generic */}
-              <div className={clsx(
-                "w-2 h-2 rounded-full",
-                isActive ? "bg-white" : "bg-sky-500"
-              )} />
-
-              <div className="flex flex-col items-start min-w-0">
-                <span className={clsx("text-xs font-bold truncate w-full", isActive ? "text-white" : "text-slate-200")}>
-                  {scan.productInfo?.brand || "Unbekannt"}
-                </span>
-                <span className={clsx("text-[10px] truncate w-full", isActive ? "text-blue-100" : "text-slate-500")}>
-                  {scan.productInfo?.productName || "Wasser"}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
   );
 }
 

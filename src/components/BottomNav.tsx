@@ -3,8 +3,9 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Home, ScanLine, History, BookOpen, Camera, Keyboard } from "lucide-react";
+import { Home, ScanLine, History, BookOpen, Camera, Keyboard, Columns } from "lucide-react";
 import { hapticLight } from "@/lib/capacitor";
+import { useComparison } from "@/src/contexts/ComparisonContext";
 
 interface NavItem {
   id: string;
@@ -27,6 +28,12 @@ const navItems: NavItem[] = [
     icon: ScanLine,
   },
   {
+    id: "compare",
+    label: "Vergleich",
+    path: "#compare",
+    icon: Columns,
+  },
+  {
     id: "history",
     label: "Verlauf",
     path: "/history",
@@ -44,9 +51,14 @@ export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [showScanMenu, setShowScanMenu] = useState(false);
+  const { items: comparisonItems } = useComparison();
 
   const handleNavigation = async (path: string) => {
     await hapticLight();
+    if (path === "#compare") {
+      window.dispatchEvent(new Event("open-comparison"));
+      return;
+    }
     router.push(path);
   };
 
@@ -58,7 +70,7 @@ export default function BottomNav() {
       <div className="mx-auto w-full max-w-xl px-4">
         <div className="pointer-events-auto relative flex items-center justify-between rounded-ocean-xl border border-white/10 bg-slate-900/60 backdrop-blur-xl px-4 py-3 shadow-2xl">
           {staticItems.map((item) => {
-            const isActive = pathname === item.path;
+            const isActive = item.id !== "compare" && pathname === item.path;
             const Icon = item.icon;
 
             return (
@@ -69,11 +81,13 @@ export default function BottomNav() {
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
               >
-                <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-ocean-lg border border-ocean-border ${isActive ? "ocean-surface-elevated text-ocean-accent ocean-glow" : "ocean-surface"
-                    }`}
-                >
+                <span className={`relative flex h-10 w-10 items-center justify-center rounded-ocean-lg border border-ocean-border ${isActive ? "ocean-surface-elevated text-ocean-accent ocean-glow" : "ocean-surface"}`}>
                   <Icon className="h-5 w-5" />
+                  {item.id === "compare" && comparisonItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 min-w-[20px] rounded-full bg-gradient-to-r from-ocean-primary to-ocean-accent px-1.5 text-[10px] font-bold text-white flex items-center justify-center shadow-lg">
+                      {comparisonItems.length}
+                    </span>
+                  )}
                 </span>
                 <span className={isActive ? "text-ocean-accent" : ""}>{item.label}</span>
               </button>

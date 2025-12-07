@@ -288,9 +288,43 @@
     color: var(--ocean-info);
   }
 
-  .ocean-info-bg {
-    background: var(--ocean-info-bg);
+.ocean-info-bg {
+  background: var(--ocean-info-bg);
+}
+}
+
+/* Float-up animation for +volume indicator */
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.8);
   }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60px) scale(1);
+  }
+}
+
+.animate-float-up {
+  animation: float-up 1.5s ease-out forwards;
+}
+
+/* Scroll helpers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.mask-linear-fade {
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
 }
 
 /* Typography system */

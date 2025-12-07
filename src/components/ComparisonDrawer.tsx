@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Columns, Trash2, X } from 'lucide-react';
 import { useComparison } from '@/src/contexts/ComparisonContext';
@@ -11,22 +11,14 @@ export function ComparisonDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const hasItems = items.length > 0;
 
+  useEffect(() => {
+    const handler = () => setIsOpen(true);
+    window.addEventListener("open-comparison", handler as EventListener);
+    return () => window.removeEventListener("open-comparison", handler as EventListener);
+  }, []);
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="fixed right-4 bottom-[calc(var(--bottom-nav-height)+2.5rem)] z-40 flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-2xl shadow-blue-500/40 transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
-      >
-        <Columns className="w-4 h-4" />
-        Vergleichen
-        {items.length > 0 && (
-          <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold">
-            {items.length}
-          </span>
-        )}
-      </button>
-
       <AnimatePresence>
         {isOpen && (
           <motion.div

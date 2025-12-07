@@ -406,7 +406,7 @@ export default function SettingsPage() {
                     <div className="ocean-card ocean-panel overflow-hidden">
                         <div className="p-4 border-b border-ocean-border flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-info-bg text-ocean-info">
+                                <div className="p-2 rounded-full bg-gradient-to-r from-ocean-primary to-ocean-accent text-white shadow-[0_0_18px_-6px_rgba(14,165,233,0.8)] border border-white/10">
                                     <Info className="w-5 h-5" />
                                 </div>
                                 <div>
