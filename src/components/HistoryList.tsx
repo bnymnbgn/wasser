@@ -380,15 +380,23 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
       <div className="flex-1 relative w-full overflow-hidden pb-16">
         {!hasResults ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-16 h-16 mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-              <Search className="w-8 h-8 text-slate-400" />
+            <div className="w-24 h-24 mb-4 rounded-3xl bg-ocean-surface-elevated border border-ocean-border flex items-center justify-center shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+              <Search className="w-10 h-10 text-ocean-secondary" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+            <h3 className="text-lg font-semibold text-ocean-primary">
               Keine Einträge
             </h3>
-            <p className="text-sm text-slate-500 mt-2 max-w-[250px]">
-              Versuche deine Filter anzupassen oder scanne ein neues Wasser.
+            <p className="text-sm text-ocean-secondary mt-2 max-w-[260px]">
+              Noch nichts gescannt. Leg los und erfasse dein erstes Wasser.
             </p>
+            <Link
+              href="/scan"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-ocean-primary to-ocean-accent text-white font-semibold shadow-[0_8px_20px_rgba(14,165,233,0.3)] active:scale-95 transition"
+              onClick={() => hapticLight()}
+            >
+              <span>Jetzt scannen</span>
+              <Search className="w-4 h-4" />
+            </Link>
           </div>
         ) : (
           <div className="h-full flex flex-col overflow-hidden">
