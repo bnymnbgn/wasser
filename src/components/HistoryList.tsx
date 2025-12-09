@@ -302,6 +302,10 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
 
     const scoreResult = calculateScores(mergedValues, nextProfile);
     const insights = deriveWaterInsights(mergedValues);
+    const metricScoreMap = scoreResult.metrics.reduce<Record<string, number>>((acc, metric) => {
+      acc[metric.metric] = metric.score;
+      return acc;
+    }, {});
 
     setScans((prev) =>
       prev.map((s) =>
@@ -311,6 +315,7 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
             profile: nextProfile,
             score: scoreResult.totalScore,
             metricDetails: scoreResult.metrics,
+            metricScores: metricScoreMap,
             insights,
           }
           : s
