@@ -42,6 +42,7 @@
     "@mui/material": "^7.3.6",
     "@mui/material-nextjs": "^7.3.6",
     "@prisma/client": "^6.19.0",
+    "@tanstack/react-virtual": "^3.13.13",
     "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.35.6",
     "@zxing/browser": "^0.1.5",

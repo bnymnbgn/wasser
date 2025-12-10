@@ -561,7 +561,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-ocean-background text-ocean-primary pb-20 selection:bg-ocean-primary/20">
+    <main className="min-h-screen bg-ocean-background text-ocean-primary selection:bg-ocean-primary/20">
       <style>{`
         .perspective-1000 { perspective: 1000px; }
         .preserve-3d { transform-style: preserve-3d; }

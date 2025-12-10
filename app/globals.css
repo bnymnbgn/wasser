@@ -1,3 +1,25 @@
+/* Native feel: disable tap highlight, selection (except inputs), hide scrollbars */
+:root {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  overscroll-behavior-y: none;
+  background-color: var(--ocean-background);
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -508,5 +530,5 @@
 }
 
 main {
-  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  padding-bottom: calc(85px + env(safe-area-inset-bottom));
 }
