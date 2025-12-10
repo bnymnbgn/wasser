@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from '@/src/components/ThemeProvider';
 import { DatabaseProvider } from '@/src/contexts/DatabaseContext';
 import { ConsumptionProvider } from '@/src/contexts/ConsumptionContext';
-import BottomNav from '@/src/components/BottomNav';
 import { ComparisonProvider } from '@/src/contexts/ComparisonContext';
 import { ComparisonDrawer } from '@/src/components/ComparisonDrawer';
 import { LivingBackground } from '@/src/components/ui/LivingBackground';
@@ -38,11 +37,10 @@ export default function AppLayout({
         <DatabaseProvider>
           <ConsumptionProvider>
             <LivingBackground />
-            <div className="flex flex-col min-h-screen relative z-10 pb-24">
+            <div className="flex flex-col min-h-screen relative z-10">
               <div className="flex-1 flex flex-col">
                 {children}
               </div>
-              <BottomNav />
             </div>
             <ComparisonDrawer />
           </ConsumptionProvider>

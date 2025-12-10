@@ -209,14 +209,6 @@ function DashboardContent() {
             "transition duration-700 ease-out"
           )}
         >
-          <Link
-            href="/settings"
-            onClick={() => hapticLight()}
-            className="p-3 rounded-full bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all backdrop-blur-md"
-          >
-            <Settings className="w-5 h-5" />
-          </Link>
-
           <button
             onClick={() => {
               setShowProfileSheet(true);

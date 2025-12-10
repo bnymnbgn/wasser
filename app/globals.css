@@ -506,3 +506,7 @@
     display: none;
   }
 }
+
+main {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}

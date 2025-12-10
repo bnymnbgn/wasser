@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import ThemeRegistry from '@/src/components/ThemeRegistry/ThemeRegistry';
+import { MobileNav } from '@/src/components/MobileNav';
+import { AppContent } from '@/src/components/AppContent';
 
-// Minimal root layout - NO providers, NO app-specific logic
-// This keeps the landing page lightweight and SEO-friendly
 export const metadata: Metadata = {
   title: 'Wasserscan',
   description: 'Intelligente Wasserqualität-Analyse',
@@ -44,7 +45,14 @@ export default function RootLayout({
             `,
           }}
         />
-        {children}
+        <ThemeRegistry>
+          <AppContent>
+            <div className="min-h-screen relative pb-[calc(80px+env(safe-area-inset-bottom))]">
+              {children}
+            </div>
+          </AppContent>
+          <MobileNav />
+        </ThemeRegistry>
       </body>
     </html>
   );
