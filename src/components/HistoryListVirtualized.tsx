@@ -48,6 +48,7 @@ export function HistoryListVirtualized({ scans }: Props) {
       >
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
           const scan = scans[virtualRow.index];
+          if (!scan) return null;
           const tone = toneFromScore(scan.score);
           const toneClass =
             tone === 'success'

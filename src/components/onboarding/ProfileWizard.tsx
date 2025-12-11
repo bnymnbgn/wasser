@@ -25,6 +25,7 @@ import type { ProfileType } from "@/src/domain/types";
 import { useRouter } from "next/navigation";
 import { useDatabaseContext } from "@/src/contexts/DatabaseContext";
 import { calculateGoals } from "@/src/lib/userGoals";
+import TextField from "@mui/material/TextField";
 
 interface WizardStep {
   id: string;
@@ -629,24 +630,39 @@ function LabelInput({
   const num = Number(value);
   const invalid = value !== "" && (!Number.isFinite(num) || num <= 0);
   return (
-    <label
-      className={clsx(
-        "flex items-center gap-2 rounded-2xl border bg-ocean-surface p-3 text-sm transition-colors",
-        invalid ? "border-ocean-error/60" : "border-ocean-border"
-      )}
-    >
-      <Icon className="w-4 h-4 text-ocean-primary" />
-      <input
-        type="text"
-        inputMode="decimal"
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 text-xs text-ocean-secondary px-1">
+        <Icon className="w-4 h-4 text-ocean-primary" />
+        <span>{label}</span>
+        <span className="text-[11px] text-ocean-tertiary">({unit})</span>
+        {invalid && <span className="text-[10px] text-ocean-error ml-auto">&gt; 0</span>}
+      </div>
+      <TextField
+        variant="filled"
+        fullWidth
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 bg-transparent outline-none text-ocean-primary placeholder:text-ocean-tertiary"
+        inputMode="decimal"
         placeholder={label}
+        error={invalid}
+        InputProps={{
+          sx: {
+            backgroundColor: "rgba(255,255,255,0.04)",
+            borderRadius: 2,
+            "&:before, &:after": { borderBottom: "none !important" },
+            "& input": { color: "#e2e8f0" },
+          },
+        }}
+        sx={{
+          "& .MuiFilledInput-root": {
+            borderRadius: 2,
+          },
+          "& .MuiInputLabel-root": {
+            color: "#cbd5e1",
+          },
+        }}
       />
-      <span className="text-[11px] text-ocean-tertiary">{unit}</span>
-      {invalid && <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>}
-    </label>
+    </div>
   );
 }
 

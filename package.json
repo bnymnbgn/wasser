@@ -30,6 +30,7 @@
     "@capacitor-mlkit/barcode-scanning": "^7.3.0",
     "@capacitor-mlkit/text-recognition": "npm:@pantrist/capacitor-plugin-ml-kit-text-recognition@^7.0.0",
     "@capacitor/android": "^7.4.4",
+    "@capacitor/app": "^7.0.0",
     "@capacitor/camera": "^7.0.2",
     "@capacitor/core": "^7.4.4",
     "@capacitor/haptics": "^7.0.2",
@@ -61,6 +62,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^7.4.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",

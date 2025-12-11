@@ -8,7 +8,9 @@ export function useSystemUI() {
     if (Capacitor.isNativePlatform()) {
       const applySystemUI = async () => {
         try {
-          await StatusBar.setOverlaysWebView({ overlay: true });
+          if ((StatusBar as any).setOverlaysWebView) {
+            await (StatusBar as any).setOverlaysWebView({ overlay: true });
+          }
           await StatusBar.setStyle({ style: Style.Dark });
         } catch (e) {
           console.error('System UI Error:', e);

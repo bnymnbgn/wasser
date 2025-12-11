@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Paper from '@mui/material/Paper';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
-import { Home, ScanBarcode, History, Settings } from 'lucide-react';
+import { Home, ScanBarcode, History, Settings, Columns } from 'lucide-react';
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -14,7 +14,7 @@ export function MobileNav() {
     if (pathname === '/') return 0;
     if (pathname.includes('/scan')) return 1;
     if (pathname.includes('/history')) return 2;
-    if (pathname.includes('/profile')) return 3;
+    if (pathname.includes('/profile')) return 4;
     return 0;
   };
 
@@ -46,6 +46,9 @@ export function MobileNav() {
               router.push('/history');
               break;
             case 3:
+              window.dispatchEvent(new Event("open-comparison"));
+              break;
+            case 4:
               router.push('/profile');
               break;
           }
@@ -61,6 +64,7 @@ export function MobileNav() {
         <BottomNavigationAction label="Home" icon={<Home size={24} />} />
         <BottomNavigationAction label="Scan" icon={<ScanBarcode size={24} />} />
         <BottomNavigationAction label="Verlauf" icon={<History size={24} />} />
+        <BottomNavigationAction label="Vergleich" icon={<Columns size={24} />} />
         <BottomNavigationAction label="Profil" icon={<Settings size={24} />} />
       </BottomNavigation>
     </Paper>

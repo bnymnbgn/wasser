@@ -164,6 +164,7 @@ function DashboardContent() {
     if (!consumptions || consumptions.length === 0) return null;
     const sorted = [...consumptions].sort((a, b) => new Date(b.timestamp ?? "").getTime() - new Date(a.timestamp ?? "").getTime());
     const latest = sorted[0];
+    if (!latest) return null;
     const volume = latest.volumeMl ?? 0;
     const ts = latest.timestamp ? new Date(latest.timestamp) : null;
 

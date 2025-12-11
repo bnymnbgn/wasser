@@ -21,6 +21,13 @@ export function QuickAddControls({
   onSelectScan,
 }: DashboardControlsProps) {
   const primaryGradient = "bg-gradient-to-r from-ocean-primary to-ocean-accent text-white";
+  const selectedLabel =
+    selectedScan
+      ? ((selectedScan as any).productInfo?.brand ??
+        (selectedScan as any).waterBrand ??
+        selectedScan.barcode ??
+        "Scan")
+      : null;
   return (
     <div className="w-full flex flex-col gap-6 animate-in slide-in-from-bottom-4 duration-700 pb-6 px-4 sm:px-0">
       {/* Mengen hinzufügen */}
@@ -29,7 +36,7 @@ export function QuickAddControls({
           <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Menge hinzufügen</span>
           {selectedScan && (
             <span className="text-[10px] text-blue-200 font-medium animate-pulse">
-              {selectedScan.productInfo?.brand || "Scan"} aktiv
+              {selectedLabel || "Scan"} aktiv
             </span>
           )}
         </div>
@@ -112,9 +119,11 @@ export function QuickAddControls({
                 >
                   <div className={clsx("w-3 h-3 rounded-full shrink-0 shadow-sm", isActive ? "bg-white" : "bg-blue-400")} />
                   <div className="flex flex-col items-start min-w-0 text-left">
-                    <span className="text-xs font-bold truncate w-full block">{scan.productInfo?.brand || "Unbekannt"}</span>
+                    <span className="text-xs font-bold truncate w-full block">
+                      {(scan as any).productInfo?.brand ?? (scan as any).waterBrand ?? scan.barcode ?? "Unbekannt"}
+                    </span>
                     <span className={clsx("text-[10px] truncate w-full block", isActive ? "text-blue-200" : "text-slate-500")}>
-                      {scan.productInfo?.productName || "Wasser"}
+                      {(scan as any).productInfo?.productName ?? "Wasser"}
                     </span>
                   </div>
                 </button>

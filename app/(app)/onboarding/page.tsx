@@ -423,7 +423,10 @@ export default function OnboardingPage() {
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [quizResult, setQuizResult] = useState<ProfileType | null>(null);
-  const [seenCards, setSeenCards] = useState<Set<string>>(new Set([LEARN_CARDS[0].id]));
+  const [seenCards, setSeenCards] = useState<Set<string>>(() => {
+    const firstId = LEARN_CARDS[0]?.id;
+    return new Set(firstId ? [firstId] : []);
+  });
   const [cardFlipped, setCardFlipped] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -508,7 +511,8 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    const id = LEARN_CARDS[cardIndex].id;
+    const id = LEARN_CARDS[cardIndex]?.id;
+    if (!id) return;
     setCardFlipped(false);
     setSeenCards((prev) => {
       if (prev.has(id)) return prev;
@@ -522,6 +526,7 @@ export default function OnboardingPage() {
 
   const handleQuizSelect = (opt: { id: string; profile: ProfileType }) => {
     hapticLight();
+    if (!activeQuiz) return;
     setQuizAnswers((prev) => ({ ...prev, [activeQuiz.id]: opt.profile }));
     const nextIdx = quizIndex + 1;
     if (nextIdx < QUIZ.length) {
@@ -694,13 +699,15 @@ export default function OnboardingPage() {
                 ))}
               </div>
             </div>
-            <FlipCard
-              card={activeCard}
-              isActive
-              onNext={goNextCard}
-              onPrev={goPrevCard}
-              onFlipStateChange={setCardFlipped}
-            />
+            {activeCard && (
+              <FlipCard
+                card={activeCard}
+                isActive
+                onNext={goNextCard}
+                onPrev={goPrevCard}
+                onFlipStateChange={setCardFlipped}
+              />
+            )}
           </section>
 
           {/* 3. TABS */}
@@ -785,7 +792,7 @@ export default function OnboardingPage() {
                   {activeQuiz.options.map((opt) => (
                     <button
                       key={opt.id}
-                      onClick={() => handleQuizSelect(opt)}
+                      onClick={() => handleQuizSelect({ id: opt.id, profile: opt.profile as ProfileType })}
                       className="w-full text-left p-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 backdrop-blur-sm transition-all active:scale-[0.98] font-medium flex justify-between items-center group"
                     >
                       {opt.label}

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import TextField from "@mui/material/TextField";
 import type { WaterAnalysisValues } from "@/src/domain/types";
 
 interface ScanValidationModalProps {
@@ -47,46 +48,63 @@ export function ScanValidationModal({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="space-y-1">
-            <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Marke
-            </span>
-            <input
-              type="text"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              placeholder="z.B. Gerolsteiner"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/70 outline-none"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Produkt (Optional)
-            </span>
-            <input
-              type="text"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              placeholder="z.B. Naturell"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/70 outline-none"
-            />
-          </label>
+          <TextField
+            label="Marke"
+            variant="filled"
+            fullWidth
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            placeholder="z.B. Gerolsteiner"
+            InputProps={{
+              sx: {
+                backgroundColor: "rgba(255,255,255,0.05)",
+                borderRadius: 2,
+                "&:before, &:after": { borderBottom: "none !important" },
+                "& input": { color: "#e2e8f0" },
+              },
+            }}
+            InputLabelProps={{ shrink: true, sx: { color: "#94a3b8" } }}
+          />
+          <TextField
+            label="Produkt (Optional)"
+            variant="filled"
+            fullWidth
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            placeholder="z.B. Naturell"
+            InputProps={{
+              sx: {
+                backgroundColor: "rgba(255,255,255,0.05)",
+                borderRadius: 2,
+                "&:before, &:after": { borderBottom: "none !important" },
+                "& input": { color: "#e2e8f0" },
+              },
+            }}
+            InputLabelProps={{ shrink: true, sx: { color: "#94a3b8" } }}
+          />
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {FIELDS.map((field) => (
-            <label key={field} className="space-y-1">
-              <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                {field}
-              </span>
-              <input
-                type="number"
-                step="0.1"
-                value={values[field] ?? ""}
-                onChange={(e) => handleChange(field, e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 font-mono text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/70 outline-none"
-              />
-            </label>
+            <TextField
+              key={field}
+              label={field}
+              variant="filled"
+              fullWidth
+              type="number"
+              value={values[field] ?? ""}
+              onChange={(e) => handleChange(field, e.target.value)}
+              inputProps={{ step: "0.1", inputMode: "decimal" }}
+              InputProps={{
+                sx: {
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                  borderRadius: 2,
+                  "&:before, &:after": { borderBottom: "none !important" },
+                  "& input": { color: "#e2e8f0", fontFamily: "monospace" },
+                },
+              }}
+              InputLabelProps={{ shrink: true, sx: { color: "#94a3b8" } }}
+            />
           ))}
         </div>
 
@@ -111,4 +129,3 @@ export function ScanValidationModal({
     </div>
   );
 }
-

@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
 import {
   Flame,
   LineChart,
@@ -654,13 +656,35 @@ function FilterToolbar({
     <div className="mt-4 rounded-3xl border border-ocean-border ocean-surface backdrop-blur-xl shadow-lg p-3 transition-all">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-tertiary" />
-          <input
-            type="search"
-            defaultValue={searchTerm}
+          <TextField
+            variant="filled"
+            fullWidth
+            value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Suchen..."
-            className="w-full h-10 rounded-xl bg-ocean-background/50 pl-10 pr-4 text-sm text-ocean-primary outline-none focus:ring-2 focus:ring-sky-500/30 transition-all placeholder:text-ocean-tertiary"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search className="w-4 h-4 text-ocean-tertiary" />
+                </InputAdornment>
+              ),
+              sx: {
+                backgroundColor: "rgba(255,255,255,0.05)",
+                borderRadius: 2,
+                "&:before, &:after": { borderBottom: "none !important" },
+                "& input": { color: "#e2e8f0" },
+              },
+            }}
+            sx={{
+              "& .MuiFilledInput-root": {
+                borderRadius: 2,
+              },
+              "& .MuiInputBase-input::placeholder": {
+                color: "#94a3b8",
+                opacity: 1,
+              },
+            }}
+            size="small"
           />
         </div>
         <button

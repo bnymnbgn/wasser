@@ -6,6 +6,7 @@ import { calculateGoals } from '@/src/lib/userGoals';
 import { hapticLight, hapticMedium } from '@/lib/capacitor';
 import { scheduleHydrationReminders, cancelHydrationReminders } from '@/src/lib/notifications';
 import clsx from 'clsx';
+import TextField from '@mui/material/TextField';
 import {
     Moon,
     Sun,
@@ -194,45 +195,69 @@ export default function SettingsPage() {
                             </p>
                         )}
                         <div className="grid grid-cols-2 gap-2">
-                            <label className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
-                                <span>Gewicht (kg)</span>
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    className="flex-1 bg-transparent outline-none text-ocean-primary"
-                                    value={weight}
-                                    onChange={(e) => setWeight(e.target.value)}
-                                />
-                                {weight !== '' && (Number(weight) <= 0 || !Number.isFinite(Number(weight))) && (
-                                    <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>
-                                )}
-                            </label>
-                            <label className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
-                                <span>Größe (cm)</span>
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    className="flex-1 bg-transparent outline-none text-ocean-primary"
-                                    value={height}
-                                    onChange={(e) => setHeight(e.target.value)}
-                                />
-                                {height !== '' && (Number(height) <= 0 || !Number.isFinite(Number(height))) && (
-                                    <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>
-                                )}
-                            </label>
-                            <label className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
-                                <span>Alter</span>
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    className="flex-1 bg-transparent outline-none text-ocean-primary"
-                                    value={age}
-                                    onChange={(e) => setAge(e.target.value)}
-                                />
-                                {age !== '' && (Number(age) <= 0 || !Number.isFinite(Number(age))) && (
-                                    <span className="text-[10px] text-ocean-error ml-2">&gt; 0</span>
-                                )}
-                            </label>
+                            <TextField
+                                label="Gewicht (kg)"
+                                variant="filled"
+                                fullWidth
+                                value={weight}
+                                onChange={(e) => setWeight(e.target.value)}
+                                inputProps={{ inputMode: 'decimal' }}
+                                InputProps={{
+                                    sx: {
+                                        backgroundColor: 'rgba(255,255,255,0.05)',
+                                        borderRadius: 2,
+                                        '&:before, &:after': { borderBottom: 'none !important' },
+                                        '& input': { color: '#e2e8f0' },
+                                    },
+                                }}
+                                InputLabelProps={{ shrink: true, sx: { color: '#94a3b8' } }}
+                                error={weight !== '' && (Number(weight) <= 0 || !Number.isFinite(Number(weight)))}
+                                helperText={
+                                    weight !== '' && (Number(weight) <= 0 || !Number.isFinite(Number(weight))) ? '> 0' : ' '
+                                }
+                            />
+                            <TextField
+                                label="Größe (cm)"
+                                variant="filled"
+                                fullWidth
+                                value={height}
+                                onChange={(e) => setHeight(e.target.value)}
+                                inputProps={{ inputMode: 'decimal' }}
+                                InputProps={{
+                                    sx: {
+                                        backgroundColor: 'rgba(255,255,255,0.05)',
+                                        borderRadius: 2,
+                                        '&:before, &:after': { borderBottom: 'none !important' },
+                                        '& input': { color: '#e2e8f0' },
+                                    },
+                                }}
+                                InputLabelProps={{ shrink: true, sx: { color: '#94a3b8' } }}
+                                error={height !== '' && (Number(height) <= 0 || !Number.isFinite(Number(height)))}
+                                helperText={
+                                    height !== '' && (Number(height) <= 0 || !Number.isFinite(Number(height))) ? '> 0' : ' '
+                                }
+                            />
+                            <TextField
+                                label="Alter"
+                                variant="filled"
+                                fullWidth
+                                value={age}
+                                onChange={(e) => setAge(e.target.value)}
+                                inputProps={{ inputMode: 'decimal' }}
+                                InputProps={{
+                                    sx: {
+                                        backgroundColor: 'rgba(255,255,255,0.05)',
+                                        borderRadius: 2,
+                                        '&:before, &:after': { borderBottom: 'none !important' },
+                                        '& input': { color: '#e2e8f0' },
+                                    },
+                                }}
+                                InputLabelProps={{ shrink: true, sx: { color: '#94a3b8' } }}
+                                error={age !== '' && (Number(age) <= 0 || !Number.isFinite(Number(age)))}
+                                helperText={
+                                    age !== '' && (Number(age) <= 0 || !Number.isFinite(Number(age))) ? '> 0' : ' '
+                                }
+                            />
                             <div className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
                                 <span>Geschlecht</span>
                                 <select
@@ -354,6 +379,23 @@ export default function SettingsPage() {
                             </div>
                             {theme === 'dark' && <div className="w-2 h-2 rounded-full bg-ocean-accent shadow-[0_0_10px_var(--ocean-accent)]" />}
                         </button>
+                    </div>
+                </section>
+
+                {/* Legal Section */}
+                <section className="space-y-3">
+                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">Rechtliches</h2>
+                    <div className="ocean-card ocean-panel overflow-hidden divide-y divide-ocean-border">
+                        <Link
+                            href="/legal/privacy"
+                            className="flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <Shield className="w-5 h-5 text-ocean-primary" />
+                                <span className="text-ocean-primary">Datenschutzerklärung</span>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-ocean-tertiary" />
+                        </Link>
                     </div>
                 </section>
 
