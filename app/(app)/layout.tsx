@@ -4,7 +4,7 @@ import { DatabaseProvider } from '@/src/contexts/DatabaseContext';
 import { ConsumptionProvider } from '@/src/contexts/ConsumptionContext';
 import { ComparisonProvider } from '@/src/contexts/ComparisonContext';
 import { ComparisonDrawer } from '@/src/components/ComparisonDrawer';
-import { LivingBackground } from '@/src/components/ui/LivingBackground';
+import { AppBackgroundToggle } from '@/src/components/AppBackgroundToggle';
 
 // App-specific metadata (overrides root)
 export const metadata: Metadata = {
@@ -36,7 +36,7 @@ export default function AppLayout({
       <ComparisonProvider>
         <DatabaseProvider>
           <ConsumptionProvider>
-            <LivingBackground />
+            <AppBackgroundToggle />
             <div className="flex flex-col min-h-screen relative z-10">
               <div className="flex-1 flex flex-col">
                 {children}

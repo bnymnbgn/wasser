@@ -18,6 +18,19 @@ export function MobileNav() {
     return 0;
   };
 
+  const handleHome = React.useCallback(() => {
+    if (typeof window === 'undefined') {
+      router.push('/dashboard');
+      return;
+    }
+    const start = localStorage.getItem('wasserscan-start-screen');
+    if (start === 'scan') {
+      router.push('/scan');
+    } else {
+      router.push('/dashboard');
+    }
+  }, [router]);
+
   return (
     <Paper
       sx={{
@@ -37,7 +50,7 @@ export function MobileNav() {
         onChange={(_, newValue) => {
           switch (newValue) {
             case 0:
-              router.push('/');
+              handleHome();
               break;
             case 1:
               router.push('/scan');

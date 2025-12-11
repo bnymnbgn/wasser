@@ -9,6 +9,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
+import { Paper, Grid, Stack, Button, Chip, Divider, Box, Snackbar, Alert } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import {
+  Card,
+  CardActionArea,
+  CardContent,
+  IconButton,
+} from "@mui/material";
 import {
   Flame,
   LineChart,
@@ -26,6 +34,7 @@ import {
   Sparkles,
   Check,
   X,
+  ScanBarcode,
 } from "lucide-react";
 import { WaterScoreCard } from "./WaterScoreCard";
 import type { ScanResult, ProfileType } from "@/src/domain/types";
@@ -107,6 +116,7 @@ function MiniScoreRing({
 
 export default function HistoryList({ initialScans }: HistoryListProps) {
   const router = useRouter();
+  const theme = useTheme();
   const [scans, setScans] = useState<ScanResult[]>(initialScans);
   const [searchTerm, setSearchTerm] = useState("");
   const [profileFilter, setProfileFilter] = useState<"all" | ProfileType>("all");
@@ -130,16 +140,42 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
   const pullStartY = useRef<number | null>(null);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSearchChange = useDebouncedCallback((value: string) => {
     setSearchTerm(value);
   }, 300);
 
   useEffect(() => {
-    const storedFav = localStorage.getItem("history-favorites");
-    const storedHidden = localStorage.getItem("history-hidden");
-    if (storedFav) setFavorites(JSON.parse(storedFav));
-    if (storedHidden) setHidden(JSON.parse(storedHidden));
+    try {
+      const storedFav = localStorage.getItem("history-favorites");
+      const storedHidden = localStorage.getItem("history-hidden");
+      if (storedFav) setFavorites(JSON.parse(storedFav));
+      if (storedHidden) setHidden(JSON.parse(storedHidden));
+    } catch (err) {
+      console.warn("Failed to parse history preferences", err);
+    }
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "history-favorites" && event.newValue) {
+        try {
+          setFavorites(JSON.parse(event.newValue));
+        } catch (err) {
+          console.warn("Failed to sync favorites from storage", err);
+        }
+      }
+      if (event.key === "history-hidden" && event.newValue) {
+        try {
+          setHidden(JSON.parse(event.newValue));
+        } catch (err) {
+          console.warn("Failed to sync hidden from storage", err);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   useEffect(() => {
@@ -149,6 +185,19 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
   useEffect(() => {
     localStorage.setItem("history-hidden", JSON.stringify(hidden));
   }, [hidden]);
+
+  // Keep state in sync with incoming props
+  useEffect(() => {
+    setScans(initialScans);
+  }, [initialScans]);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current);
+      }
+    };
+  }, []);
 
   const stats = useMemo(() => buildStats(scans, hidden), [scans, hidden]);
 
@@ -168,6 +217,14 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
   }, [scans, hidden, profileFilter, dateFilter, scoreFilter, searchTerm, sortBy]);
 
   const groupedScans = useMemo(() => groupScans(filteredScans), [filteredScans]);
+  const favoriteItems = useMemo(
+    () => filteredScans.filter((s) => favorites[s.id]),
+    [filteredScans, favorites]
+  );
+  const regularItems = useMemo(
+    () => filteredScans.filter((s) => !favorites[s.id]),
+    [filteredScans, favorites]
+  );
 
   // Pagination Logic (Load more)
   const ITEMS_PER_PAGE = 5;
@@ -181,6 +238,14 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
   const showCount = useMemo(() => (page + 1) * ITEMS_PER_PAGE, [page]);
   const currentPageItems = useMemo(() => filteredScans.slice(0, showCount), [filteredScans, showCount]);
   const hasMore = filteredScans.length > currentPageItems.length;
+  const pageFavorites = useMemo(
+    () => currentPageItems.filter((s) => favorites[s.id]),
+    [currentPageItems, favorites]
+  );
+  const pageRegulars = useMemo(
+    () => currentPageItems.filter((s) => !favorites[s.id]),
+    [currentPageItems, favorites]
+  );
 
   const collapseToFirstPage = () => {
     setPage(0);
@@ -256,6 +321,7 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
       setUndoQueue(null);
     }, 5000);
 
+    undoTimerRef.current = timer;
     setUndoQueue({ scan, timer });
   };
 
@@ -365,22 +431,20 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
   const hasResults = filteredScans.length > 0;
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden text-slate-900 dark:text-slate-100">
-      {/* Header Area */}
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        position: "relative",
+        overflow: "hidden",
+        color: theme.palette.text.primary,
+        bgcolor: theme.palette.background.default,
+      }}
+    >
+      {/* Stats Header - Static */}
       <div className="flex-none z-10">
-        <StatsHeader stats={stats} />
-        <FilterToolbar
-          profileFilter={profileFilter}
-          setProfileFilter={setProfileFilter}
-          dateFilter={dateFilter}
-          setDateFilter={setDateFilter}
-          scoreFilter={scoreFilter}
-          setScoreFilter={setScoreFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          searchTerm={searchTerm}
-          onSearchChange={handleSearchChange}
-        />
+        <StatsHeader stats={stats} theme={theme} />
       </div>
 
       {/* Main Content Area (Paginated) */}
@@ -411,11 +475,25 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
             <div className="flex-1 relative">
               <div
                 ref={listRef}
-                className="px-4 pt-4 h-full overflow-y-auto scrollbar-hide"
+                className="h-full overflow-y-auto scrollbar-hide"
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
               >
+                {/* Sticky Filter Toolbar */}
+                <FilterToolbar
+                  profileFilter={profileFilter}
+                  setProfileFilter={setProfileFilter}
+                  dateFilter={dateFilter}
+                  setDateFilter={setDateFilter}
+                  scoreFilter={scoreFilter}
+                  setScoreFilter={setScoreFilter}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  searchTerm={searchTerm}
+                  onSearchChange={handleSearchChange}
+                  theme={theme}
+                />
                 <div
                   className="flex items-center justify-center text-[11px] text-ocean-secondary transition-all duration-150"
                   style={{
@@ -426,51 +504,17 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
                   {isRefreshing ? "Aktualisiere..." : "Zum Aktualisieren ziehen"}
                 </div>
                 <div
-                  className="space-y-4 pb-4 transition-transform duration-150"
+                  className="pb-4 px-4 transition-transform duration-150"
                   style={{ transform: `translateY(${pullDistance}px)` }}
                 >
-                  {(() => {
-                    const favoriteItems = currentPageItems.filter((s) => favorites[s.id]);
-                    const regularItems = currentPageItems.filter((s) => !favorites[s.id]);
-                    return (
+                  <>
+                    {/* Favoriten Section */}
+                    {pageFavorites.length > 0 && (
                       <>
-                        {favoriteItems.length > 0 && (
-                          <>
-                            <div className="px-1 mt-1 text-[11px] font-bold text-sky-600 flex items-center gap-1">
-                              <span role="img" aria-label="star">⭐</span> Favoriten
-                            </div>
-                            {favoriteItems.map((scan) => (
-                              <SwipeableRow
-                                key={scan.id}
-                                onFavorite={() => handleFavorite(scan)}
-                                onDelete={() => handleDelete(scan)}
-                                onSwipeStart={closeContextMenu}
-                                scan={scan}
-                                onMore={(s: any, x: any, y: any) => openContextMenu(s, x, y)}
-                                onShare={() => handleShare(scan)}
-                                onRescan={() => handleRescan(scan)}
-                                onEdit={() => handleEditDetails(scan)}
-                                expanded={expandedId === scan.id}
-                                onLongPress={handleLongPress}
-                              >
-                                <HistoryCard
-                                  scan={scan}
-                                  isExpanded={expandedId === scan.id}
-                                  onToggleExpand={() => {
-                                    setExpandedId((prev) => {
-                                      const next = prev === scan.id ? null : scan.id;
-                                      return next;
-                                    });
-                                  }}
-                                  isFavorite={Boolean(favorites[scan.id])}
-                                  onProfileChange={(p: ProfileType) => handleProfileSwitch(scan, p)}
-                                  onPrefillConsumption={handlePrefillConsumption}
-                                />
-                              </SwipeableRow>
-                            ))}
-                          </>
-                        )}
-                        {regularItems.map((scan) => (
+                        <div className="px-1 mt-1 text-[11px] font-bold text-sky-600 flex items-center gap-1">
+                          <span role="img" aria-label="star">⭐</span> Favoriten
+                        </div>
+                        {pageFavorites.map((scan) => (
                           <SwipeableRow
                             key={scan.id}
                             onFavorite={() => handleFavorite(scan)}
@@ -496,12 +540,62 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
                               isFavorite={Boolean(favorites[scan.id])}
                               onProfileChange={(p: ProfileType) => handleProfileSwitch(scan, p)}
                               onPrefillConsumption={handlePrefillConsumption}
+                              theme={theme}
                             />
                           </SwipeableRow>
                         ))}
                       </>
-                    );
-                  })()}
+                    )}
+
+                    {/* Time-grouped Sections */}
+                    {groupedScans.map((group) => {
+                      // Filter out favorites from each group to avoid duplicates
+                      const groupItems = group.items.filter((s) => !favorites[s.id]);
+                      // Only show items that are in the current page
+                      const visibleItems = groupItems.filter((s) =>
+                        currentPageItems.some((item) => item.id === s.id)
+                      );
+                      if (visibleItems.length === 0) return null;
+
+                      return (
+                        <div key={group.label}>
+                          <div className="px-1 mt-4 mb-2 text-[11px] font-bold text-ocean-secondary uppercase tracking-widest">
+                            {group.label}
+                          </div>
+                          {visibleItems.map((scan) => (
+                            <SwipeableRow
+                              key={scan.id}
+                              onFavorite={() => handleFavorite(scan)}
+                              onDelete={() => handleDelete(scan)}
+                              onSwipeStart={closeContextMenu}
+                              scan={scan}
+                              onMore={(s: any, x: any, y: any) => openContextMenu(s, x, y)}
+                              onShare={() => handleShare(scan)}
+                              onRescan={() => handleRescan(scan)}
+                              onEdit={() => handleEditDetails(scan)}
+                              expanded={expandedId === scan.id}
+                              onLongPress={handleLongPress}
+                            >
+                              <HistoryCard
+                                scan={scan}
+                                isExpanded={expandedId === scan.id}
+                                onToggleExpand={() => {
+                                  setExpandedId((prev) => {
+                                    const next = prev === scan.id ? null : scan.id;
+                                    return next;
+                                  });
+                                }}
+                                isFavorite={Boolean(favorites[scan.id])}
+                                onProfileChange={(p: ProfileType) => handleProfileSwitch(scan, p)}
+                                onPrefillConsumption={handlePrefillConsumption}
+                                theme={theme}
+                              />
+                            </SwipeableRow>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </>
                 </div>
               </div>
             </div>
@@ -531,26 +625,17 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
         )}
 
         {/* Undo Toast */}
-        <AnimatePresence>
-          {undoQueue && (
-            <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"
-            >
-              <div className="rounded-full bg-slate-900/90 dark:bg-slate-800/90 text-white backdrop-blur-md border border-slate-700 px-5 py-3 shadow-2xl flex items-center gap-4 text-sm">
-                <span>Scan entfernt</span>
-                <button
-                  onClick={undoDelete}
-                  className="text-emerald-400 font-bold hover:text-emerald-300"
-                >
-                  Rückgängig
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <Snackbar
+          open={Boolean(undoQueue)}
+          onClose={() => setUndoQueue(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          message="Scan entfernt"
+          action={
+            <Button color="success" size="small" onClick={undoDelete}>
+              Rückgängig
+            </Button>
+          }
+        />
 
         {/* Context Menu Portal */}
         {contextMenu && (
@@ -572,64 +657,62 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
           <DetailDialog scan={detailScan} onClose={() => setDetailScan(null)} />
         )}
       </div>
-    </div>
+    </Box>
   );
 }
 
-// --- REDESIGNED STATS HEADER (Bento Grid) ---
-function StatsHeader({ stats }: { stats: ReturnType<typeof buildStats> }) {
+// --- REDESIGNED STATS HEADER (MUI Paper/Grid) ---
+function StatsHeader({ stats, theme }: { stats: ReturnType<typeof buildStats>; theme: any }) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard
-        icon={<LineChart className="w-5 h-5 text-sky-500" />}
-        label="Gesamt"
-        value={stats.total.toString()}
-        description={`${stats.thisWeek} neu diese Woche`}
-        bgClass="bg-gradient-to-br from-sky-500/5 to-transparent dark:from-sky-500/10"
-      />
-      <StatCard
-        icon={<Sparkles className="w-5 h-5 text-emerald-500" />}
-        label="Ø Score"
-        value={`${stats.avgScore ?? "–"}`}
-        description="Qualität der Scans"
-        bgClass="bg-gradient-to-br from-emerald-500/5 to-transparent dark:from-emerald-500/10"
-      />
-      <StatCard
-        icon={<Target className="w-5 h-5 text-indigo-500" />}
-        label="Favorit"
-        value={stats.topProfile ? PROFILE_LABELS[stats.topProfile] : "–"}
-        description={`${stats.topCount} mal gescannt`}
-        bgClass="bg-gradient-to-br from-indigo-500/5 to-transparent dark:from-indigo-500/10"
-      />
-      <StatCard
-        icon={<Flame className="w-5 h-5 text-amber-500" />}
-        label="Streak"
-        value={String(stats.streak)}
-        unit="Tage"
-        description={stats.streak > 0 ? "Läuft bei dir!" : "Fang heute an"}
-        bgClass="bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-500/10"
-      />
-    </div>
+    <Box sx={{ p: 2, pb: 0 }}>
+      <Grid container spacing={1.5}>
+        <Grid item xs={6} sm={3}>
+          <StatCard
+            icon={<LineChart className="w-5 h-5 text-sky-500" />}
+            label="Gesamt"
+            value={stats.total.toString()}
+            description={`${stats.thisWeek} neu diese Woche`}
+          />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <StatCard
+            icon={<Sparkles className="w-5 h-5 text-emerald-500" />}
+            label="Ø Score"
+            value={`${stats.avgScore ?? "–"}`}
+            description="Qualität der Scans"
+          />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <StatCard
+            icon={<Target className="w-5 h-5 text-indigo-500" />}
+            label="Favorit"
+            value={stats.topProfile ? PROFILE_LABELS[stats.topProfile] : "–"}
+            description={`${stats.topCount} mal gescannt`}
+          />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <StatCard
+            icon={<Flame className="w-5 h-5 text-amber-500" />}
+            label="Streak"
+            value={String(stats.streak)}
+            unit="Tage"
+            description={stats.streak > 0 ? "Läuft bei dir!" : "Fang heute an"}
+          />
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 
 function StatCard({ icon, label, value, unit, description }: any) {
   return (
-    <div
-      className="relative rounded-2xl border border-ocean-border p-4"
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <div className="p-1.5 rounded-lg bg-white/10 shadow-sm">
-          {icon}
-        </div>
-        <span className="text-[10px] uppercase font-bold tracking-widest text-ocean-secondary">
-          {label}
-        </span>
-      </div>
+    <div className="bg-ocean-surface dark:bg-white/5 rounded-2xl p-3 shadow-sm">
+      <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+        <div className="p-1.5 rounded-lg bg-white/10 shadow-sm">{icon}</div>
+        <span className="text-[10px] uppercase font-bold tracking-widest text-ocean-secondary">{label}</span>
+      </Stack>
       <div className="flex items-baseline gap-1">
-        <span className="text-2xl font-bold text-ocean-primary">
-          {value}
-        </span>
+        <span className="text-2xl font-bold text-ocean-primary">{value}</span>
         {unit && <span className="text-xs font-medium text-ocean-secondary">{unit}</span>}
       </div>
       <div className="mt-1 text-[11px] text-ocean-tertiary leading-tight">{description}</div>
@@ -637,7 +720,7 @@ function StatCard({ icon, label, value, unit, description }: any) {
   );
 }
 
-// --- REDESIGNED FILTER BAR (Glassmorphism) ---
+// --- REDESIGNED FILTER BAR (MUI Paper/Stack) ---
 function FilterToolbar({
   profileFilter,
   setProfileFilter,
@@ -649,54 +732,78 @@ function FilterToolbar({
   setSortBy,
   searchTerm,
   onSearchChange,
-}: any) {
+  theme,
+}: {
+  profileFilter: string;
+  setProfileFilter: (p: any) => void;
+  dateFilter: string;
+  setDateFilter: (d: any) => void;
+  scoreFilter: string;
+  setScoreFilter: (s: any) => void;
+  sortBy: string;
+  setSortBy: (s: any) => void;
+  searchTerm: string;
+  onSearchChange: (val: string) => void;
+  theme: any;
+}) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="mt-4 rounded-3xl border border-ocean-border ocean-surface backdrop-blur-xl shadow-lg p-3 transition-all">
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <TextField
-            variant="filled"
-            fullWidth
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Suchen..."
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search className="w-4 h-4 text-ocean-tertiary" />
-                </InputAdornment>
-              ),
-              sx: {
-                backgroundColor: "rgba(255,255,255,0.05)",
-                borderRadius: 2,
-                "&:before, &:after": { borderBottom: "none !important" },
-                "& input": { color: "#e2e8f0" },
-              },
-            }}
-            sx={{
-              "& .MuiFilledInput-root": {
-                borderRadius: 2,
-              },
-              "& .MuiInputBase-input::placeholder": {
-                color: "#94a3b8",
-                opacity: 1,
-              },
-            }}
-            size="small"
-          />
-        </div>
-        <button
+    <Box
+      sx={{
+        p: 2,
+        position: "sticky",
+        top: 0,
+        zIndex: 20,
+        bgcolor: theme.palette.mode === "dark"
+          ? "rgba(15, 23, 42, 0.85)"
+          : "rgba(255, 255, 255, 0.85)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: 1,
+        borderColor: "divider",
+      }}
+    >
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
+        <TextField
+          variant="filled"
+          fullWidth
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Suchen..."
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search className="w-4 h-4 text-ocean-tertiary" />
+              </InputAdornment>
+            ),
+            sx: {
+              backgroundColor: theme.palette.surface.muted,
+              borderRadius: 999, // Pill shape
+              "&:before, &:after": { borderBottom: "none !important" },
+              "& input": { color: "#e2e8f0" },
+            },
+          }}
+          sx={{
+            "& .MuiFilledInput-root": {
+              borderRadius: 999, // Pill shape
+            },
+            "& .MuiInputBase-input::placeholder": {
+              color: "#94a3b8",
+              opacity: 1,
+            },
+          }}
+          size="small"
+        />
+        <Button
+          variant={expanded ? "contained" : "text"}
+          startIcon={<Filter className="w-4 h-4" />}
           onClick={() => setExpanded(!expanded)}
-          className={`h-10 w-10 flex items-center justify-center rounded-xl border transition-colors ${expanded
-            ? "bg-ocean-primary text-ocean-background border-ocean-primary"
-            : "bg-transparent border-ocean-border text-ocean-secondary"
-            }`}
+          sx={{ borderRadius: 999 }}
         >
-          {expanded ? <X className="w-5 h-5" /> : <Filter className="w-5 h-5" />}
-        </button>
-      </div>
+          Filter
+        </Button>
+      </Stack>
 
       <AnimatePresence>
         {expanded && (
@@ -706,213 +813,168 @@ function FilterToolbar({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="pt-4 space-y-4 pb-1">
-              <div className="space-y-1.5">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">
-                  Profil
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <FilterChip
-                    label="Alle"
-                    active={profileFilter === "all"}
-                    onClick={() => setProfileFilter("all")}
-                  />
+            <Box mt={2} p={1}>
+              <Stack spacing={2}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Profil</span>
+                  <FilterChip label="Alle" active={profileFilter === "all"} onClick={() => setProfileFilter("all")} />
                   {Object.entries(PROFILE_LABELS).map(([key, label]) => (
-                    <FilterChip
-                      key={key}
-                      label={label}
-                      active={profileFilter === key}
-                      onClick={() => setProfileFilter(key)}
-                    />
+                    <FilterChip key={key} label={label} active={profileFilter === key} onClick={() => setProfileFilter(key)} />
                   ))}
-                </div>
-              </div>
+                </Stack>
 
-              <div className="flex gap-4">
-                <div className="space-y-1.5 flex-1">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">
-                    Zeit
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <FilterChip
-                      label="Alle"
-                      active={dateFilter === "all"}
-                      onClick={() => setDateFilter("all")}
-                    />
-                    <FilterChip
-                      label="Woche"
-                      active={dateFilter === "week"}
-                      onClick={() => setDateFilter("week")}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5 flex-1">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">
-                    Score
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <FilterChip
-                      label="Alle"
-                      active={scoreFilter === "all"}
-                      onClick={() => setScoreFilter("all")}
-                    />
-                    <FilterChip
-                      label="Top"
-                      active={scoreFilter === "high"}
-                      onClick={() => setScoreFilter("high")}
-                    />
-                  </div>
-                </div>
-              </div>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center" flex={1}>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Zeit</span>
+                    <FilterChip label="Alle" active={dateFilter === "all"} onClick={() => setDateFilter("all")} />
+                    <FilterChip label="Woche" active={dateFilter === "week"} onClick={() => setDateFilter("week")} />
+                    <FilterChip label="Monat" active={dateFilter === "month"} onClick={() => setDateFilter("month")} />
+                  </Stack>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center" flex={1}>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Score</span>
+                    <FilterChip label="Alle" active={scoreFilter === "all"} onClick={() => setScoreFilter("all")} />
+                    <FilterChip label="80+" active={scoreFilter === "high"} onClick={() => setScoreFilter("high")} />
+                    <FilterChip label="50-80" active={scoreFilter === "mid"} onClick={() => setScoreFilter("mid")} />
+                    <FilterChip label="0-50" active={scoreFilter === "low"} onClick={() => setScoreFilter("low")} />
+                  </Stack>
+                </Stack>
 
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                <CustomSortDropdown value={sortBy} onChange={setSortBy} />
-              </div>
-            </div>
+                <Divider />
+
+                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                  <CustomSortDropdown value={sortBy} onChange={setSortBy} />
+                  <Button size="small" onClick={() => setExpanded(false)}>
+                    Schließen
+                  </Button>
+                </Stack>
+              </Stack>
+            </Box>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </Box>
   );
 }
 
 function FilterChip({ label, active, onClick }: any) {
   return (
-    <button
+    <Chip
+      label={label}
+      color={active ? "primary" : "default"}
+      variant={active ? "filled" : "outlined"}
+      size="small"
       onClick={onClick}
-      className={clsx(
-        "rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95",
-        active
-          ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-          : "bg-ocean-background/50 text-ocean-secondary hover:bg-ocean-background"
-      )}
-    >
-      {label}
-    </button>
+      sx={{
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: 0.4,
+      }}
+    />
   );
 }
 
 function ProfileChip({ label, active, onClick }: any) {
   return (
-    <button
+    <Chip
+      label={label}
+      color={active ? "primary" : "default"}
+      variant={active ? "filled" : "outlined"}
       onClick={onClick}
-      className={clsx(
-        "rounded-full px-3 py-1 text-xs font-semibold border transition active:scale-95",
-        active
-          ? "bg-sky-500 text-white border-sky-500"
-          : "bg-ocean-surface border-ocean-border text-ocean-secondary hover:text-ocean-primary"
-      )}
-    >
-      {label}
-    </button>
+      size="small"
+      sx={{ fontWeight: 700 }}
+    />
   );
 }
 
 // --- REDESIGNED CARD ---
-  function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileChange, onPrefillConsumption }: any) {
+function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileChange, onPrefillConsumption, theme }: any) {
   return (
-    <motion.div
-      className="group relative overflow-hidden ocean-surface border border-ocean-border/60 rounded-2xl"
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.2 }}
-    >
-      <button onClick={onToggleExpand} className="w-full text-left p-4">
-        <div className="flex items-center justify-between gap-4">
-          {/* Left: Icon & Text */}
-          <div className="flex items-center gap-4 flex-1 min-w-0">
-            {/* FIX: Hier wurden alle Hintergrund-Klassen entfernt! */}
-            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center text-sky-500">
-              <span className="text-3xl filter drop-shadow-sm">💧</span>
-              {isFavorite && (
-                <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-0.5 border-2 border-ocean-surface">
-                  <Star className="w-2.5 h-2.5 text-white fill-white" />
+    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
+      <div className="bg-transparent">
+        <CardActionArea onClick={onToggleExpand}>
+          <CardContent sx={{ pb: 1.5 }}>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative shrink-0">
+                  <MiniScoreRing score={scan.score} size={44} />
+                  {isFavorite && (
+                    <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-0.5 border-2 border-white dark:border-slate-900">
+                      <Star className="w-2.5 h-2.5 text-white fill-white" />
+                    </div>
+                  )}
                 </div>
-              )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h4 className="font-bold text-ocean-primary truncate text-base leading-tight">
-                    {scan.productInfo?.brand ?? "Unbekanntes Wasser"}
-                  </h4>
-                  {scan.productInfo?.productName && (
-                    <span className="text-xs text-ocean-tertiary truncate hidden sm:inline">
-                      · {scan.productInfo.productName}
-                  </span>
-                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h4 className="font-bold text-ocean-primary truncate text-base leading-tight">
+                      {scan.productInfo?.brand ?? "Unbekanntes Wasser"}
+                    </h4>
+                    {scan.productInfo?.productName && (
+                      <span className="text-xs text-ocean-tertiary truncate hidden sm:inline">
+                        · {scan.productInfo.productName}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-ocean-secondary/80 flex items-center gap-1.5">
+                    <span>{formatDate(new Date(scan.timestamp))}</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-ocean-border" />
+                    <span className="capitalize text-sky-600 dark:text-sky-400 font-medium">
+                      {PROFILE_LABELS[scan.profile as ProfileType] || scan.profile}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-xs text-ocean-secondary/80 flex items-center gap-1.5">
-                  <span>{formatDate(new Date(scan.timestamp))}</span>
-                  <span className="w-0.5 h-0.5 rounded-full bg-ocean-border" />
-                  <span className="capitalize text-sky-600 dark:text-sky-400 font-medium">
-                    {PROFILE_LABELS[scan.profile as ProfileType] || scan.profile}
-                  </span>
               </div>
+              <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} className="text-ocean-secondary shrink-0">
+                <ChevronDown className="h-5 w-5" />
+              </motion.div>
             </div>
-          </div>
+          </CardContent>
+        </CardActionArea>
 
-          {/* Right: Mini Score & Chevron */}
-          <div className="flex items-center gap-3">
-            <MiniScoreRing score={scan.score} size={44} />
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              className="text-sky-600 dark:text-sky-400"
-            >
-              <ChevronDown className="h-5 w-5" />
-            </motion.div>
-          </div>
-        </div>
-      </button>
-
-      {/* EXPANDED CONTENT */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-          >
-            <div className="border-t border-ocean-border bg-ocean-surface-elevated/50 p-4 space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {(["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"] as ProfileType[]).map(
-                  (p) => (
-                    <ProfileChip
-                      key={p}
-                      label={PROFILE_LABELS[p]}
-                      active={scan.profile === p}
-                      onClick={() => onProfileChange?.(p)}
-                    />
-                  )
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPrefillConsumption(scan);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-ocean-primary text-white text-sm font-semibold hover:scale-[1.01] active:scale-95 transition"
-                >
-                  + Konsum (500 ml)
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPrefillConsumption(scan, 330);
-                  }}
-                  className="px-4 py-2 rounded-xl border border-ocean-border text-sm font-semibold text-ocean-primary hover:bg-ocean-surface"
-                >
-                  + Konsum (330 ml)
-                </button>
-              </div>
-              <WaterScoreCard scanResult={scan} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        {/* EXPANDED CONTENT */}
+        <AnimatePresence>
+          {
+            isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+              >
+                <CardContent sx={{ borderTop: "1px solid", borderColor: theme?.palette?.surface?.border, bgcolor: theme?.palette?.surface?.card }}>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" mb={1}>
+                    {(["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"] as ProfileType[]).map((p) => (
+                      <ProfileChip key={p} label={PROFILE_LABELS[p]} active={scan.profile === p} onClick={() => onProfileChange?.(p)} />
+                    ))}
+                  </Stack>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPrefillConsumption(scan);
+                      }}
+                    >
+                      + Konsum (500 ml)
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPrefillConsumption(scan, 330);
+                      }}
+                    >
+                      + Konsum (330 ml)
+                    </Button>
+                  </Stack>
+                  <WaterScoreCard scanResult={scan} />
+                </CardContent>
+              </motion.div>
+            )
+          }
+        </AnimatePresence >
+      </div >
+    </motion.div >
   );
 }
 
@@ -1000,20 +1062,20 @@ function SwipeableRow({
   };
 
   return (
-    <div className="relative touch-pan-y select-none group overflow-hidden rounded-2xl" ref={rowRef}>
+    <div className="relative touch-pan-y select-none group overflow-hidden" ref={rowRef}>
       {/* Hintergrund-Aktionen im Apple-Mail-Stil */}
-      <div className="absolute inset-0 flex items-center justify-between px-3 rounded-2xl pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
         <div className="flex items-center gap-2 pointer-events-auto h-full">
           <button
             onClick={handleFavoriteClick}
-            className="flex items-center gap-2 h-full rounded-2xl bg-amber-500 text-white px-3 text-xs font-bold shadow-md"
+            className="flex items-center gap-2 h-full bg-amber-500 text-white px-4 text-xs font-bold"
           >
             <Star className="w-4 h-4 fill-white" />
             Favorit
           </button>
           <button
             onClick={handleMoreClick}
-            className="flex items-center gap-1 h-full rounded-2xl bg-slate-800 text-white px-3 text-xs font-bold shadow-md"
+            className="flex items-center gap-1 h-full bg-slate-700 text-white px-4 text-xs font-bold"
           >
             <Edit3 className="w-4 h-4" />
             …
@@ -1022,14 +1084,14 @@ function SwipeableRow({
         <div className="flex items-center gap-2 pointer-events-auto h-full">
           <button
             onClick={handleMoreClick}
-            className="flex items-center gap-1 h-full rounded-2xl bg-slate-800 text-white px-3 text-xs font-bold shadow-md"
+            className="flex items-center gap-1 h-full bg-slate-700 text-white px-4 text-xs font-bold"
           >
             <Share2 className="w-4 h-4" />
             …
           </button>
           <button
             onClick={handleDeleteClick}
-            className="flex items-center gap-2 h-full rounded-2xl bg-rose-500 text-white px-3 text-xs font-bold shadow-md"
+            className="flex items-center gap-2 h-full bg-rose-500 text-white px-4 text-xs font-bold"
           >
             <Trash2 className="w-4 h-4" />
             Löschen
@@ -1045,7 +1107,7 @@ function SwipeableRow({
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         // WICHTIG: Festen Hintergrund setzen!
-        className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-ocean-border overflow-hidden"
+        className="relative bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800"
       >
         {children}
 
@@ -1109,8 +1171,34 @@ function sortScans(a: ScanResult, b: ScanResult, sortBy: string) {
 
 function groupScans(scans: ScanResult[]) {
   if (!scans.length) return [];
-  // Einfache Gruppierung für Demo
-  return [{ label: "Aktuell", items: scans }];
+
+  const groups: { label: string; items: ScanResult[] }[] = [];
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const yesterdayStart = todayStart - 86400000;
+  const weekStart = todayStart - 6 * 86400000;
+
+  const buckets = {
+    today: [] as ScanResult[],
+    yesterday: [] as ScanResult[],
+    week: [] as ScanResult[],
+    older: [] as ScanResult[],
+  };
+
+  scans.forEach((s) => {
+    const t = new Date(s.timestamp).getTime();
+    if (t >= todayStart) buckets.today.push(s);
+    else if (t >= yesterdayStart) buckets.yesterday.push(s);
+    else if (t >= weekStart) buckets.week.push(s);
+    else buckets.older.push(s);
+  });
+
+  if (buckets.today.length) groups.push({ label: "Heute", items: buckets.today });
+  if (buckets.yesterday.length) groups.push({ label: "Gestern", items: buckets.yesterday });
+  if (buckets.week.length) groups.push({ label: "Diese Woche", items: buckets.week });
+  if (buckets.older.length) groups.push({ label: "Älter", items: buckets.older });
+
+  return groups;
 }
 
 function CustomSortDropdown({ value, onChange }: any) {
@@ -1141,7 +1229,23 @@ function formatDate(date: Date) {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center opacity-60">
+    <Paper
+      elevation={0}
+      sx={{
+        minHeight: "60vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        gap: 2,
+        p: 3,
+        borderRadius: 3,
+        borderColor: "divider",
+        borderStyle: "dashed",
+        opacity: 0.85,
+      }}
+    >
       <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-full mb-4">
         <Target className="w-10 h-10 text-slate-400" />
       </div>
@@ -1151,7 +1255,16 @@ function EmptyState() {
       <p className="text-sm text-slate-500 max-w-xs mt-2">
         Scanne dein erstes Wasser, um hier eine Historie zu sehen.
       </p>
-    </div>
+      <Button
+        href="/scan"
+        component={Link}
+        variant="contained"
+        startIcon={<ScanBarcode className="w-4 h-4" />}
+        sx={{ borderRadius: 999 }}
+      >
+        Scannen
+      </Button>
+    </Paper>
   );
 }
 

@@ -1,24 +1,36 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
-import { Camera, Scan, X, RotateCcw } from "lucide-react";
+import { IconButton, Slider, Alert, ButtonBase, Box, Button } from "@mui/material";
+import {
+  X,
+  ChevronUp,
+  Text as TextIcon,
+  Barcode as BarcodeIcon,
+  Flashlight,
+  FlashlightOff
+} from "lucide-react";
 import { Capacitor } from "@capacitor/core";
+import { Global } from "@emotion/react";
+// REMOVED: SwipeableDrawer and Box (Heavy MUI components)
+// import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+// import Box from "@mui/material/Box";
 
 import type { ProfileType, ScanResult, WaterAnalysisValues } from "@/src/domain/types";
 import { WaterScoreCard } from "@/src/components/WaterScoreCard";
-import { BarcodeScanner } from "@/src/components/BarcodeScanner";
-import { ImageOCRScanner } from "@/src/components/ImageOCRScanner";
-import { RippleButton } from "@/src/components/ui/RippleButton";
-import { LiquidLoader } from "@/src/components/ui/LiquidLoader";
+import { BarcodeScanner, BarcodeScannerHandle } from "@/src/components/BarcodeScanner";
+import { ImageOCRScanner, ImageOCRScannerHandle } from "@/src/components/ImageOCRScanner";
+import { ManualScanForm } from "@/src/components/ManualScanForm";
 import { SkeletonScoreCard } from "@/src/components/ui/SkeletonLoader";
-import { parseTextToAnalysis, validateValue } from "@/src/lib/ocrParsing";
+import { parseTextToAnalysis } from "@/src/lib/ocrParsing";
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/capacitor";
 import { processBarcodeLocally, processOCRLocally, getBarcodeInfo } from "@/src/lib/scanProcessor";
 import { WATER_METRIC_FIELDS } from "@/src/constants/waterMetrics";
 
+// Helper to create empty values
 type MetricKey = (typeof WATER_METRIC_FIELDS)[number]["key"];
 type ValueInputState = Record<MetricKey, string>;
 
@@ -54,541 +66,658 @@ export default function ScanPage() {
 
 function ScanPageContent() {
   const params = useSearchParams();
-  const router = useRouter();
   const defaultProfile = (params.get("profile") ?? "standard") as ProfileType;
   const initialModeParam = params.get("mode");
   const initialMode: Mode = initialModeParam === "barcode" ? "barcode" : "ocr";
 
   const [profile] = useState<ProfileType>(defaultProfile);
   const [mode, setMode] = useState<Mode>(initialMode);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [torchEnabled, setTorchEnabled] = useState(false);
+  const [focusPoint, setFocusPoint] = useState<{ x: number; y: number; id: number } | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [isTilted, setIsTilted] = useState(false);
+  const pinchState = useRef<{ startDistance: number; startZoom: number } | null>(null);
+  const [stability, setStability] = useState<"good" | "warning" | "bad">("good");
+  const motionRaf = useRef<number | null>(null);
+  const [lastResult, setLastResult] = useState<ScanResult | null>(null);
+  const [showBarcodeSwitchPrompt, setShowBarcodeSwitchPrompt] = useState(false);
+
+  // Initial values for the form (only updated when scanning happens)
+  const [pendingValues, setPendingValues] = useState<ValueInputState>(createEmptyValueState);
+  const [pendingBrand, setPendingBrand] = useState("");
+  const [pendingProduct, setPendingProduct] = useState("");
+  const [pendingBarcode, setPendingBarcode] = useState("");
 
   const [ocrText, setOcrText] = useState("");
-  const [barcode, setBarcode] = useState("");
-  const [brandName, setBrandName] = useState("");
-  const [productName, setProductName] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [valueInputs, setValueInputs] = useState<ValueInputState>(() =>
-    createEmptyValueState()
-  );
 
-  const { numericValues, invalidFields } = useMemo(() => {
-    const values: Partial<WaterAnalysisValues> = {};
-    const invalid: Partial<Record<MetricKey, boolean>> = {};
+  const ocrRef = useRef<ImageOCRScannerHandle>(null);
+  const barcodeRef = useRef<BarcodeScannerHandle>(null);
 
-    for (const field of WATER_METRIC_FIELDS) {
-      const raw = valueInputs[field.key];
-      if (!raw.trim()) continue;
-      const normalized = raw.replace(",", ".");
-      const parsed = Number(normalized);
-      if (Number.isFinite(parsed)) {
-        values[field.key] = parsed;
-      } else {
-        invalid[field.key] = true;
-      }
+  // --- Handlers ---
+
+  const handleShutterPress = useCallback(async () => {
+    await hapticMedium();
+    if (mode === "ocr") {
+      ocrRef.current?.capture();
+    } else {
+      barcodeRef.current?.startScan();
     }
+  }, [mode]);
 
-    return { numericValues: values, invalidFields: invalid };
-  }, [valueInputs]);
+  const onBarcodeDetected = useCallback(async (code: string) => {
+    setPendingBarcode(code);
+    await hapticSuccess();
+    setShowBarcodeSwitchPrompt(false);
+    handleBarcodeAutoSubmit(code);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const valueWarnings = useMemo(() => {
-    const map: Partial<Record<MetricKey, string>> = {};
-    Object.entries(numericValues).forEach(([metric, value]) => {
-      const result = validateValue(metric as MetricKey, value as number);
-      if (!result.valid && result.warning) {
-        map[metric as MetricKey] = result.warning;
+  const onTextExtracted = useCallback((text: string, confidence?: number, info?: { brand?: string; productName?: string }) => {
+    setOcrText(text);
+    if (text) {
+      const parsed = parseTextToAnalysis(text);
+      const nextValues = createEmptyValueState();
+      WATER_METRIC_FIELDS.forEach((field) => {
+        const maybe = parsed[field.key];
+        nextValues[field.key] = maybe !== undefined ? String(maybe) : "";
+      });
+
+      setPendingValues(nextValues);
+      setPendingBrand(info?.brand || "");
+      setPendingProduct(info?.productName || "");
+
+      hapticSuccess();
+      setIsDrawerOpen(true);
+    }
+  }, []);
+
+  async function handleBarcodeAutoSubmit(code: string) {
+    setLoading(true);
+    setResult(null);
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const info = await getBarcodeInfo(code);
+        if (info?.analysis && Object.keys(info.analysis).length > 0) {
+          const scanResult = await processBarcodeLocally(code, profile);
+          finalizeResult(scanResult);
+        } else {
+          setLoading(false);
+          setMode("ocr");
+          setPendingBarcode(code);
+          if (info?.source) {
+            setPendingBrand(info.source.brand);
+            setPendingProduct(info.source.productName);
+            if (info.analysis) {
+              const values: Partial<WaterAnalysisValues> = {};
+              WATER_METRIC_FIELDS.forEach(({ key }) => {
+                const val = (info.analysis as any)[key];
+                if (val !== null && val !== undefined) values[key as keyof WaterAnalysisValues] = val;
+              });
+              setPendingValues(fillValuesFromAnalysis(values));
+            }
+          }
+          setIsDrawerOpen(true);
+        }
+      } else {
+        const res = await fetch("/api/scan/barcode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ barcode: code, profile }),
+        });
+        if (!res.ok) throw new Error("Web API Error");
+        const data = await res.json();
+        finalizeResult(data);
       }
-    });
-    return map;
-  }, [numericValues]);
+    } catch (err) {
+      console.warn("Auto-submit failed, falling back to manual", err);
+      setLoading(false);
+      setMode("ocr");
+      setPendingBarcode(code);
+      setIsDrawerOpen(true);
+      await hapticError();
+    }
+  }
 
-  const hasAnyValues = Object.keys(numericValues).length > 0;
-  const hasInvalidInputs = Object.keys(invalidFields).length > 0;
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const handleManualSubmit = useCallback(async (data: {
+    brandName: string;
+    productName: string;
+    barcode: string;
+    numericValues: Partial<WaterAnalysisValues>;
+  }) => {
     setLoading(true);
     setResult(null);
 
     try {
       let scanResult: ScanResult;
 
-      // Use local SQLite for Capacitor builds, API for web builds
       if (Capacitor.isNativePlatform()) {
-        // Local processing for mobile app
-        if (mode === "barcode") {
-          // Check if we have data for this barcode
-          const info = await getBarcodeInfo(barcode);
-
-          if (info && info.analysis) {
-            // Check if analysis has missing metrics; if yes, switch to manual completion
-            const missingMetrics = WATER_METRIC_FIELDS.filter(
-              (field) =>
-                (info.analysis as any)?.[field.key] === null ||
-                (info.analysis as any)?.[field.key] === undefined
-            ).map((f) => f.label);
-
-            if (missingMetrics.length > 0) {
-              setLoading(false);
-              await hapticLight();
-
-              // Switch to manual mode and prefill known values
-              setMode("ocr");
-              setShowResults(false);
-              setResult(null);
-              setValueInputs(fillValuesFromAnalysis(info.analysis as any));
-              setBarcode(barcode);
-              setBrandName(info.source?.brand ?? "");
-              setProductName(info.source?.productName ?? "");
-              alert(
-                `Datenbank-Eintrag unvollständig (${missingMetrics.length} fehlend). Bitte fehlende Werte ergänzen.`
-              );
-              return;
-            } else {
-              // We have full data, proceed with standard scan
-              scanResult = await processBarcodeLocally(barcode, profile);
-            }
-          } else {
-            // Missing data (either no source or no analysis) -> Switch to Manual Mode
-            setLoading(false);
-            await hapticLight();
-
-            // Switch to OCR/Manual mode
-            setMode("ocr");
-
-            // Pre-fill data
-            setBarcode(barcode);
-            if (info?.source) {
-              setBrandName(info.source.brand);
-              setProductName(info.source.productName);
-              setValueInputs(fillValuesFromAnalysis(info.analysis as any));
-              // Show toast for missing values
-              alert("Bitte fehlende Wasserwerte ergänzen");
-            } else {
-              // Show toast for new product
-              alert("Produkt nicht gefunden. Bitte neu anlegen.");
-            }
-            return;
-          }
-        } else {
-          scanResult = await processOCRLocally(
-            ocrText,
-            profile,
-            numericValues,
-            brandName || undefined,
-            productName || undefined,
-            barcode || undefined
-          );
-        }
+        scanResult = await processOCRLocally(
+          ocrText,
+          profile,
+          data.numericValues,
+          data.brandName || undefined,
+          data.productName || undefined,
+          data.barcode || undefined
+        );
       } else {
-        // API processing for web app
-        const endpoint = mode === "ocr" ? "/api/scan/ocr" : "/api/scan/barcode";
-        const body =
-          mode === "ocr"
-            ? {
-              text: ocrText,
-              profile,
-              values: numericValues,
-              brand: brandName || undefined,
-              productName: productName || undefined,
-              barcode: barcode || undefined,
-            }
-            : { barcode, profile };
-
-        const res = await fetch(endpoint, {
+        const res = await fetch("/api/scan/ocr", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({
+            text: ocrText,
+            profile,
+            values: data.numericValues,
+            brand: data.brandName || undefined,
+            productName: data.productName || undefined,
+            barcode: data.barcode || undefined
+          }),
         });
-
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error ?? "Fehler beim Scannen");
+          const errData = await res.json();
+          throw new Error(errData.error ?? "Fehler");
         }
-
         scanResult = await res.json();
       }
 
-      setLoading(false);
-      await hapticSuccess();
-      setResult(scanResult);
-      setShowResults(true);
+      await finalizeResult(scanResult);
+      setIsDrawerOpen(false);
     } catch (err) {
       console.error(err);
       setLoading(false);
       await hapticError();
-      alert(err instanceof Error ? err.message : "Unerwarteter Fehler bei der Analyse");
+      alert(err instanceof Error ? err.message : "Fehler bei der Analyse");
     }
+  }, [ocrText, profile]);
+
+  async function finalizeResult(scanResult: ScanResult) {
+    setLoading(false);
+    await hapticSuccess();
+    setResult(scanResult);
+    setLastResult(scanResult);
+    setShowResults(true);
   }
 
-  const formDisabled =
-    loading ||
-    (mode === "ocr" ? !hasAnyValues || hasInvalidInputs : !barcode.trim());
+  const handleFocusTap = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setFocusPoint({ x, y, id: Date.now() });
+  }, []);
 
-  async function handleModeChange(nextMode: Mode) {
-    await hapticLight();
-    setMode(nextMode);
-    setResult(null);
-    setShowResults(false);
-    if (nextMode === "barcode") {
-      setValueInputs(createEmptyValueState());
-      setBrandName("");
-      setProductName("");
-      setOcrText("");
-    }
-    if (nextMode === "ocr") {
-      setBarcode("");
-    }
-  }
+  const clampZoom = (value: number) => Math.min(2.5, Math.max(1, value));
 
-  function applyTextParsing(text: string) {
-    if (!text.trim()) {
-      setValueInputs(createEmptyValueState());
-      return;
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      const first = e.touches.item(0);
+      const second = e.touches.item(1);
+      if (!first || !second) return;
+      const dx = first.clientX - second.clientX;
+      const dy = first.clientY - second.clientY;
+      const distance = Math.hypot(dx, dy);
+      pinchState.current = { startDistance: distance, startZoom: zoom };
     }
-    const parsed = parseTextToAnalysis(text);
-    const nextValues = createEmptyValueState();
-    WATER_METRIC_FIELDS.forEach((field) => {
-      const maybe = parsed[field.key];
-      nextValues[field.key] = maybe !== undefined ? String(maybe) : "";
-    });
-    setValueInputs(nextValues);
-  }
+  }, [zoom]);
 
-  function handleTextExtracted(text: string, confidence?: number, info?: { brand?: string; productName?: string }) {
-    setOcrText(text);
-    setResult(null);
-    setShowResults(false);
-    applyTextParsing(text);
-    if (info?.brand) setBrandName(info.brand);
-    if (info?.productName) setProductName(info.productName);
-  }
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2 && pinchState.current) {
+      const first = e.touches.item(0);
+      const second = e.touches.item(1);
+      if (!first || !second) return;
+      const dx = first.clientX - second.clientX;
+      const dy = first.clientY - second.clientY;
+      const distance = Math.hypot(dx, dy);
+      const scale = distance / pinchState.current.startDistance;
+      setZoom(clampZoom(pinchState.current.startZoom * scale));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    pinchState.current = null;
+  }, []);
+
+  const handleTilt = useCallback((event: DeviceOrientationEvent) => {
+    const gamma = event.gamma ?? 0;
+    const beta = event.beta ?? 0;
+    const tilted = Math.abs(gamma) > 18 || Math.abs(beta) > 65;
+    setIsTilted((prev) => (prev !== tilted ? tilted : prev));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.addEventListener === "undefined") return;
+    try {
+      window.addEventListener("deviceorientation", handleTilt, true);
+    } catch (err) {
+      console.warn("Device orientation not available:", err);
+    }
+    return () => {
+      try {
+        window.removeEventListener("deviceorientation", handleTilt, true);
+      } catch {
+        // ignore
+      }
+    };
+  }, [handleTilt]);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    setShowBarcodeSwitchPrompt(false);
+    if (mode === "barcode" && !isDrawerOpen && !loading) {
+      timer = setTimeout(() => setShowBarcodeSwitchPrompt(true), 5000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [mode, isDrawerOpen, loading]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.addEventListener === "undefined") return;
+
+    const handleMotion = (event: DeviceMotionEvent) => {
+      if (motionRaf.current) return;
+      motionRaf.current = window.requestAnimationFrame(() => {
+        motionRaf.current = null;
+        const ax = event.accelerationIncludingGravity?.x ?? 0;
+        const ay = event.accelerationIncludingGravity?.y ?? 0;
+        const az = event.accelerationIncludingGravity?.z ?? 0;
+        const magnitude = Math.sqrt(ax * ax + ay * ay + az * az);
+        // Heuristic thresholds for handheld steadiness
+        if (magnitude < 1.5) {
+          setStability((prev) => (prev === "good" ? prev : "good"));
+        } else if (magnitude < 3.5) {
+          setStability((prev) => (prev === "warning" ? prev : "warning"));
+        } else {
+          setStability((prev) => (prev === "bad" ? prev : "bad"));
+        }
+      });
+    };
+
+    try {
+      window.addEventListener("devicemotion", handleMotion, true);
+    } catch (err) {
+      console.warn("Device motion not available:", err);
+    }
+
+    return () => {
+      if (motionRaf.current) {
+        cancelAnimationFrame(motionRaf.current);
+        motionRaf.current = null;
+      }
+      try {
+        window.removeEventListener("devicemotion", handleMotion, true);
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
 
   return (
-    <main className="relative min-h-screen bg-ocean-background text-ocean-primary">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-10 -left-16 h-72 w-72 rounded-full ocean-primary/10 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full ocean-accent/15 blur-[140px]" />
+    <main className="fixed inset-0 bg-black text-white flex flex-col z-50">
+
+      {/* Camera Viewfinder Area */}
+      <div className="relative flex-1 bg-slate-900 rounded-b-[32px] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 z-20 p-6 pt-safe-top flex justify-between items-start bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
+          <div>
+            <h1 className="text-lg font-bold drop-shadow-md">Wasser scannen</h1>
+            <p className="text-xs text-white/70 drop-shadow-md">Profil: {profile}</p>
+          </div>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <IconButton
+              onClick={() => setTorchEnabled((prev) => !prev)}
+              aria-label="Taschenlampe umschalten"
+              sx={{
+                backgroundColor: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" },
+                color: "white",
+              }}
+              size="small"
+            >
+              {torchEnabled ? <Flashlight className="w-5 h-5" /> : <FlashlightOff className="w-5 h-5" />}
+            </IconButton>
+            <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[10px] font-bold uppercase tracking-widest">
+              {mode === 'ocr' ? 'Kamera' : 'Barcode'}
+            </div>
+          </div>
+        </div>
+
+        {/* Scanner Components - UNMOUNTED when drawer is open for max performance */}
+        {!isDrawerOpen ? (
+          <div
+            className="flex-1 relative flex items-center justify-center"
+            onClick={handleFocusTap}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div
+              className="transition-transform duration-150"
+              style={{ transform: `scale(${zoom})`, transformOrigin: "center center" }}
+            >
+              <ImageOCRScanner ref={ocrRef} onTextExtracted={onTextExtracted} flashMode={torchEnabled ? "on" : "auto"} />
+              <BarcodeScanner ref={barcodeRef} onDetected={onBarcodeDetected} torchEnabled={torchEnabled} />
+            </div>
+
+            {focusPoint && (
+              <div
+                key={focusPoint.id}
+                className="pointer-events-none absolute w-24 h-24 rounded-full border-2 border-white/70 animate-[ping_0.6s_ease-out]"
+                style={{
+                  left: focusPoint.x - 48,
+                  top: focusPoint.y - 48,
+                }}
+                onAnimationEnd={() => setFocusPoint(null)}
+              />
+            )}
+
+            {/* Viewfinder Overlay */}
+            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+              <div className="w-64 h-64 border border-white/20 rounded-[32px] relative">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-[24px]" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-[24px]" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-[24px]" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-[24px]" />
+
+                {/* Crosshair */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-white/30">
+                  <div className="absolute top-1/2 w-full h-[1px] bg-current" />
+                  <div className="absolute left-1/2 h-full w-[1px] bg-current" />
+                </div>
+              </div>
+              <p className="mt-8 text-sm font-medium text-white/60 bg-black/40 px-4 py-2 rounded-full backdrop-blur-sm">
+                {mode === 'ocr' ? 'Etikett im Rahmen platzieren' : 'Barcode scannen'}
+              </p>
+            </div>
+
+            {/* Zoom Slider */}
+            <div className="pointer-events-auto absolute right-4 bottom-4 flex items-center gap-2 bg-black/40 border border-white/10 rounded-full px-3 py-2 backdrop-blur-sm">
+              <span className="text-[10px] uppercase font-bold text-white/60">Zoom</span>
+              <Slider
+                size="small"
+                min={1}
+                max={2.5}
+                step={0.05}
+                value={zoom}
+                onChange={(_, value) => setZoom(clampZoom(value as number))}
+                sx={{
+                  width: 100,
+                  color: "white",
+                  "& .MuiSlider-thumb": { boxShadow: "0 0 0 4px rgba(255,255,255,0.15)" },
+                }}
+              />
+            </div>
+
+            {/* Tilt hint */}
+            <AnimatePresence>
+              {isTilted && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="pointer-events-none absolute top-6 left-1/2 -translate-x-1/2 min-w-[220px]"
+                >
+                  <Alert
+                    severity="info"
+                    variant="filled"
+                    sx={{
+                      backgroundColor: "rgba(15,118,110,0.8)",
+                      color: "white",
+                      alignItems: "center",
+                      ".MuiAlert-icon": { color: "white" },
+                    }}
+                  >
+                    Halte das Gerät gerade für bessere OCR
+                  </Alert>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Barcode switch prompt */}
+            <AnimatePresence>
+              {showBarcodeSwitchPrompt && mode === "barcode" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 12 }}
+                  className="pointer-events-auto absolute left-1/2 -translate-x-1/2 bottom-6"
+                >
+                  <div className="bg-black/70 border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm shadow-lg space-y-2">
+                    <div className="text-xs text-white/80 font-medium">Kein Barcode erkannt?</div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => { setMode("ocr"); setShowBarcodeSwitchPrompt(false); }}
+                        sx={{ color: "white", borderColor: "rgba(255,255,255,0.2)" }}
+                      >
+                        OCR nutzen
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => { setIsDrawerOpen(true); setMode("ocr"); setShowBarcodeSwitchPrompt(false); }}
+                        sx={{ backgroundColor: "rgba(255,255,255,0.15)", color: "white", boxShadow: "none", "&:hover": { backgroundColor: "rgba(255,255,255,0.25)" } }}
+                      >
+                        Manuell eingeben
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <div className="flex-1 bg-slate-900 border-b border-white/5 flex items-center justify-center">
+            <p className="text-white/20 text-sm font-medium">Kamera pausiert</p>
+          </div>
+        )}
       </div>
 
-      <div className="relative z-10 mx-auto max-w-2xl px-4 py-8 safe-area-top pb-[calc(var(--bottom-nav-height)+48px)]">
-        {/* Header */}
-        <motion.header
-          className="mb-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+      {/* Bottom Controls Area */}
+      <div className="h-44 bg-black flex flex-col items-center justify-end pb-safe-bottom relative">
+        <button
+          onClick={() => setIsDrawerOpen(true)}
+          className="w-full py-2 flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors active:scale-95"
         >
-          <p className="text-[11px] uppercase tracking-[0.4em] text-ocean-tertiary">
-            Analyse
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ocean-primary">Wasser scannen</h1>
-          <p className="text-sm text-ocean-secondary">
-            Profil&nbsp;
-            <span className="font-medium text-ocean-accent">{profile}</span>
-          </p>
-        </motion.header>
+          <ChevronUp className="w-5 h-5 animate-bounce" />
+          <span className="text-[10px] font-bold uppercase tracking-widest">Manuelle Eingabe</span>
+        </button>
 
-        {/* Mode Tabs */}
-        <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="ocean-panel flex gap-2 p-2">
-            <button
-              type="button"
-              onClick={() => handleModeChange("ocr")}
-              className={clsx(
-                "relative flex-1 overflow-hidden rounded-2xl py-3 text-sm font-semibold transition",
-                mode === "ocr"
-                  ? "bg-gradient-to-r from-water-primary to-water-accent text-ocean-primary shadow-glow"
-                  : "text-ocean-secondary hover:bg-ocean-surface-elevated"
-              )}
+        {lastResult && (
+          <div className="absolute left-6 bottom-16">
+            <ButtonBase
+              onClick={() => setShowResults(true)}
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "2px solid rgba(255,255,255,0.2)",
+                backgroundColor: "rgba(255,255,255,0.06)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              <div className="relative z-10 flex items-center justify-center gap-2">
-                <Camera className="h-5 w-5" />
-                Etikett
+              <div className="text-center text-[10px] leading-tight text-white/80 px-1">
+                <div className="font-bold text-white line-clamp-1">{lastResult.productInfo?.brand ?? "Scan"}</div>
+                <div className="text-white/70">{lastResult.score ? `${Math.round(lastResult.score)}` : "–"}</div>
               </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeChange("barcode")}
-              className={clsx(
-                "relative flex-1 overflow-hidden rounded-2xl py-3 text-sm font-semibold transition",
-                mode === "barcode"
-                  ? "bg-gradient-to-r from-water-primary to-water-accent text-ocean-primary shadow-glow"
-                  : "text-ocean-secondary hover:bg-ocean-surface-elevated"
-              )}
-            >
-              <div className="relative z-10 flex items-center justify-center gap-2">
-                <Scan className="h-5 w-5" />
-                Barcode
-              </div>
-            </button>
+            </ButtonBase>
           </div>
-        </motion.div>
+        )}
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <AnimatePresence mode="wait">
-            {mode === "ocr" ? (
-              <motion.div
-                key="ocr"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="space-y-4"
-              >
-                {/* OCR Scanner */}
-                <ImageOCRScanner onTextExtracted={handleTextExtracted} />
-
-                {/* Brand and Barcode */}
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="ocean-panel grid gap-3 p-4 sm:grid-cols-2"
-                >
-                  <label className="block">
-                    <span className="mb-2 block text-[11px] uppercase tracking-[0.3em] text-ocean-secondary">
-                      Marke / Quelle
-                    </span>
-                    <input
-                      className="w-full rounded-2xl border border-ocean-border ocean-panel px-4 py-3 text-sm text-ocean-primary placeholder-ocean-tertiary outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/20"
-                      value={brandName}
-                      onChange={(e) => {
-                        setBrandName(e.target.value);
-                        setResult(null);
-                      }}
-                      placeholder="z. B. Gerolsteiner"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="mb-2 block text-[11px] uppercase tracking-[0.3em] text-ocean-secondary">
-                      Produkt (Optional)
-                    </span>
-                    <input
-                      className="w-full rounded-2xl border border-ocean-border ocean-panel px-4 py-3 text-sm text-ocean-primary placeholder-ocean-tertiary outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/20"
-                      value={productName}
-                      onChange={(e) => {
-                        setProductName(e.target.value);
-                        setResult(null);
-                      }}
-                      placeholder="z. B. Naturell"
-                    />
-                  </label>
-                  <label className="block sm:col-span-2">
-                    <span className="mb-2 block text-[11px] uppercase tracking-[0.3em] text-ocean-secondary">
-                      Barcode (optional)
-                    </span>
-                    <input
-                      className="w-full rounded-2xl border border-ocean-border ocean-panel px-4 py-3 text-sm text-ocean-primary placeholder-ocean-tertiary outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/20"
-                      value={barcode}
-                      onChange={(e) => {
-                        setBarcode(e.target.value);
-                        setResult(null);
-                      }}
-                      placeholder="z. B. 4008501011009"
-                      inputMode="numeric"
-                    />
-                  </label>
-                </motion.div>
-
-                {/* Values Grid */}
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="ocean-panel p-5"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-base font-medium text-ocean-primary">Mineralwerte</h3>
-                      <p className="text-xs text-ocean-secondary">Erkannt aus OCR oder manuell anpassen</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await hapticLight();
-                        setValueInputs(createEmptyValueState());
-                        setResult(null);
-                      }}
-                      className="flex items-center gap-1 text-xs font-medium text-ocean-accent transition hover:text-ocean-primary"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      Zurücksetzen
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {WATER_METRIC_FIELDS.map((field) => {
-                      const value = valueInputs[field.key];
-                      const warning = valueWarnings[field.key];
-                      const invalid = invalidFields[field.key];
-                      const unit = "unit" in field ? field.unit : undefined;
-
-                      return (
-                        <div
-                          key={field.key}
-                          className={clsx(
-                            "rounded-2xl border-2 p-3 transition-all",
-                            invalid
-                              ? "border-ocean-error/50 ocean-error-bg"
-                              : warning
-                                ? "border-ocean-warning/50 ocean-warning-bg"
-                                : "border-ocean-border ocean-surface-elevated"
-                          )}
-                        >
-                          <label className="block space-y-2">
-                            <span className="block text-[10px] uppercase tracking-[0.3em] text-ocean-secondary">
-                              {field.label}
-                            </span>
-                            <div className="relative">
-                              <input
-                                value={value}
-                                onChange={(e) => {
-                                  setValueInputs((prev) => ({
-                                    ...prev,
-                                    [field.key]: e.target.value,
-                                  }));
-                                  setResult(null);
-                                }}
-                                className={clsx(
-                                  "w-full rounded-2xl border border-ocean-border bg-transparent px-3 py-2 text-base font-semibold text-ocean-primary placeholder-ocean-tertiary outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/25",
-                                  invalid ? "ocean-error" : ""
-                                )}
-                                placeholder={unit ? `0 ${unit}` : "0"}
-                                inputMode="decimal"
-                              />
-                              {unit && (
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-ocean-secondary">
-                                  {unit}
-                                </span>
-                              )}
-                            </div>
-                            {warning && (
-                              <span className="text-[10px] ocean-warning">{warning}</span>
-                            )}
-                          </label>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="barcode"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
-              >
-                {/* Manual Barcode Input */}
-                <div className="ocean-panel p-5">
-                  <label className="block space-y-3">
-                    <span className="text-[11px] uppercase tracking-[0.3em] text-ocean-secondary">
-                      Barcode eingeben
-                    </span>
-                    <input
-                      className="block w-full rounded-2xl border border-ocean-border ocean-panel px-5 py-4 text-base font-mono text-ocean-primary placeholder-ocean-tertiary outline-none transition focus:border-water-primary/60 focus:ring-2 focus:ring-water-primary/25"
-                      value={barcode}
-                      onChange={(e) => setBarcode(e.target.value)}
-                      placeholder="z. B. 4008501011009"
-                      inputMode="numeric"
-                    />
-                  </label>
-                </div>
-
-                {/* Barcode Scanner */}
-                <BarcodeScanner
-                  onDetected={async (code) => {
-                    await hapticSuccess();
-                    setBarcode(code);
-                    setResult(null);
-                  }}
-                />
-
-                {/* Example Barcodes */}
-                <div className="ocean-panel p-4">
-                  <h3 className="mb-3 text-sm font-medium text-ocean-secondary">Beispiel-Barcodes</h3>
-                  <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await hapticLight();
-                        setBarcode("4008501011009");
-                      }}
-                      className="w-full rounded-2xl border border-ocean-border ocean-surface-elevated p-3 text-left transition hover:border-water-accent/40"
-                    >
-                      <code className="block text-sm font-mono text-ocean-accent">
-                        4008501011009
-                      </code>
-                      <p className="mt-1 text-xs text-ocean-secondary">Gerolsteiner Naturell</p>
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Submit Button */}
-          <RippleButton
-            type="submit"
-            disabled={formDisabled}
-            variant="primary"
-            size="lg"
-            className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => !formDisabled && hapticMedium()}
+        <div className="w-full flex items-center justify-around px-8 pb-8 pt-4">
+          <button
+            onClick={() => { setMode("barcode"); hapticLight(); }}
+            className={clsx("p-3 rounded-full transition-all", mode === "barcode" ? "bg-white text-black" : "bg-white/10 text-white/50")}
           >
-            {loading ? (
-              <div className="flex items-center justify-center gap-3">
-                <LiquidLoader className="w-6 h-6" color="bg-ocean-primary" />
-                Analysiere...
-              </div>
-            ) : (
-              "Wasser analysieren"
-            )}
-          </RippleButton>
-        </form>
+            <BarcodeIcon size={24} />
+          </button>
 
-        {/* Results Modal */}
-        <AnimatePresence>
-          {showResults && result && (
+          <ButtonBase
+            onClick={handleShutterPress}
+            sx={{
+              position: "relative",
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              borderWidth: 4,
+              borderStyle: "solid",
+              borderColor:
+                stability === "good"
+                  ? "rgba(16,185,129,0.9)"
+                  : stability === "warning"
+                  ? "rgba(251,191,36,0.9)"
+                  : "rgba(248,113,113,0.9)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "transform 120ms ease, border-color 200ms ease",
+              "&:active": { transform: "scale(0.96)" },
+              backgroundColor: "transparent",
+            }}
+          >
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                backgroundColor: "white",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 8,
+                  borderRadius: "50%",
+                  backgroundColor:
+                    stability === "good"
+                      ? "rgba(16,185,129,0.15)"
+                      : stability === "warning"
+                      ? "rgba(251,191,36,0.15)"
+                      : "rgba(248,113,113,0.15)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                }}
+              />
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  backgroundColor:
+                    stability === "good"
+                      ? "rgb(16,185,129)"
+                      : stability === "warning"
+                      ? "rgb(251,191,36)"
+                      : "rgb(248,113,113)",
+                  boxShadow:
+                    stability === "good"
+                      ? "0 0 12px rgba(16,185,129,0.6)"
+                      : stability === "warning"
+                      ? "0 0 12px rgba(251,191,36,0.6)"
+                      : "0 0 12px rgba(248,113,113,0.6)",
+                }}
+              />
+            </Box>
+          </ButtonBase>
+
+          <button
+            onClick={() => { setMode("ocr"); hapticLight(); }}
+            className={clsx("p-3 rounded-full transition-all", mode === "ocr" ? "bg-white text-black" : "bg-white/10 text-white/50")}
+          >
+            <TextIcon size={24} />
+          </button>
+        </div>
+      </div>
+
+      {/* Light-weight Custom Drawer using Animation (replaces MUI) */}
+      <AnimatePresence>
+        {isDrawerOpen && (
+          <>
+            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-end p-4 md:items-center md:justify-center bg-black/70 backdrop-blur"
-              onClick={() => setShowResults(false)}
-            >
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-t-[32px] border border-ocean-border ocean-panel-strong text-ocean-primary shadow-glass md:rounded-[32px]"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Modal Header */}
-                <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-[32px] border-b border-ocean-border ocean-panel-strong p-5">
-                  <h2 className="text-xl font-semibold text-ocean-primary">Analyse-Ergebnis</h2>
-                  <button
-                    onClick={() => setShowResults(false)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-ocean-border ocean-surface-elevated transition hover:border-ocean-border"
-                  >
-                    <X className="h-5 w-5 text-ocean-secondary" />
-                  </button>
-                </div>
+              onClick={() => setIsDrawerOpen(false)}
+              className="fixed inset-0 z-50 bg-black/60"
+            />
 
-                {/* Modal Content */}
-                <div className="p-5 pb-safe-bottom text-ocean-primary">
-                  <WaterScoreCard scanResult={result} />
-                </div>
-              </motion.div>
+            {/* Sheet */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-white/10 rounded-t-[32px] h-[90vh] flex flex-col p-6 pb-safe-bottom shadow-2xl"
+            >
+              <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6 shrink-0" />
+
+              <div className="flex items-center justify-between mb-6 shrink-0">
+                <h2 className="text-xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                  Manuelle Eingabe
+                </h2>
+                <button
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <X size={20} className="text-white/70" />
+                </button>
+              </div>
+
+              <ManualScanForm
+                initialBrand={pendingBrand}
+                initialProduct={pendingProduct}
+                initialBarcode={pendingBarcode}
+                initialValues={pendingValues}
+                loading={loading}
+                onSubmit={handleManualSubmit}
+              />
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Results Overlay */}
+      <AnimatePresence>
+        {showResults && result && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-end md:items-center md:justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setShowResults(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25 }}
+              className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-[32px] overflow-hidden max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 z-10">
+                <h3 className="font-bold text-white">Ergebnis</h3>
+                <button onClick={() => setShowResults(false)} className="p-2 bg-slate-800 rounded-full"><X size={16} /></button>
+              </div>
+              <div className="p-4">
+                <WaterScoreCard scanResult={result} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

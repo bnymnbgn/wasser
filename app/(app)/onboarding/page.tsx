@@ -582,7 +582,7 @@ export default function OnboardingPage() {
         <nav className="px-6 pt-12 pb-4">
           <div className="flex items-center justify-between">
             <Link
-              href="/"
+              href="/dashboard"
               onClick={hapticLight}
               className="p-2 -ml-2 rounded-full hover:bg-ocean-surface-elevated transition"
             >

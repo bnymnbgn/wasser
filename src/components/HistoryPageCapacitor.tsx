@@ -5,7 +5,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { sqliteService } from '@/lib/sqlite';
 import HistoryList from '@/src/components/HistoryList';
-import { HistoryListVirtualized } from '@/src/components/HistoryListVirtualized';
 import type { ScanResult as DomainScanResult } from '@/src/domain/types';
 import { calculateScores } from '@/src/domain/scoring';
 import { deriveWaterInsights } from '@/src/domain/waterInsights';
@@ -202,7 +201,7 @@ export default function HistoryPageCapacitor() {
         </header>
 
         <div className="flex-1 min-h-0 relative">
-          <HistoryListVirtualized scans={scans} />
+          <HistoryList initialScans={scans} />
         </div>
       </div>
     </main>
