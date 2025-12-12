@@ -41,18 +41,7 @@ import type { ScanResult, ProfileType } from "@/src/domain/types";
 import { calculateScores } from "@/src/domain/scoring";
 import { deriveWaterInsights } from "@/src/domain/waterInsights";
 import { hapticLight } from "@/lib/capacitor";
-
-const PROFILE_LABELS: Record<ProfileType, string> = {
-  standard: "Standard",
-  baby: "Baby",
-  sport: "Sport",
-  blood_pressure: "Blutdruck",
-  coffee: "Kaffee",
-  kidney: "Nieren",
-  pregnancy: "Schwangerschaft",
-  seniors: "Senioren",
-  diabetes: "Diabetes",
-};
+import { PROFILE_LABELS } from "@/src/domain/profiles";
 
 type SortOption = "newest" | "best" | "worst" | "brand";
 type DateFilter = "all" | "week" | "month";

@@ -33,7 +33,7 @@ import {
 import { VisualMetricBar } from "@/src/components/ui/VisualMetricBar";
 import { TasteRadar } from "@/src/components/ui/TasteRadar";
 import { ScoreExplanation, type ImpactFactor } from "@/src/components/ScoreExplanation";
-import { PROFILE_TARGETS } from "@/src/constants/profileTargets";
+import { PROFILE_TARGETS } from "@/src/domain/profiles";
 import { ScoreSection } from "@/src/components/WaterScoreCard/ScoreSection";
 import { MineralGrid } from "@/src/components/WaterScoreCard/MineralGrid";
 

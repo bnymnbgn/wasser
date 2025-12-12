@@ -2,12 +2,12 @@
 
 import { motion } from "framer-motion";
 import clsx from "clsx";
-import { PROFILE_CHEATSHEET, type ProfileId } from "@/src/domain/profileCheatsheet";
+import { PROFILE_CHEATSHEET, PROFILE_IDS, type ProfileId } from "@/src/domain/profiles";
 import type { ProfileType } from "@/src/domain/types";
 import { hapticLight } from "@/lib/capacitor";
 import { User, Baby, Zap, Heart, Coffee, Shield, PersonStanding, UserRound, Syringe } from "lucide-react";
 
-const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney", "pregnancy", "seniors", "diabetes"];
+const PROFILE_ORDER = PROFILE_IDS;
 
 const PROFILE_PRESENTATION: Record<
   ProfileId,

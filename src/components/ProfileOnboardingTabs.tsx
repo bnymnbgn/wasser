@@ -8,38 +8,17 @@ import Tab from "@mui/material/Tab";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import { useTheme } from "@mui/material/styles";
-import { PROFILE_CHEATSHEET, type ProfileId } from "@/src/domain/profileCheatsheet";
+import { PROFILE_CHEATSHEET, PROFILE_ICONS, PROFILE_IDS, type ProfileId } from "@/src/domain/profiles";
 import { hapticLight } from "@/lib/capacitor";
 import {
-  User,
-  Baby,
-  Zap,
-  Heart,
-  Coffee,
-  Shield,
   AlertTriangle,
   ChevronDown,
   ChevronUp,
   Droplet,
   Info,
-  PersonStanding,
-  UserRound,
-  Syringe,
 } from "lucide-react";
 
-const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney", "pregnancy", "seniors", "diabetes"];
-
-const PROFILE_ICONS: Record<ProfileId, React.ElementType> = {
-  standard: User,
-  baby: Baby,
-  sport: Zap,
-  blood_pressure: Heart,
-  coffee: Coffee,
-  kidney: Shield,
-  pregnancy: PersonStanding,
-  seniors: UserRound,
-  diabetes: Syringe,
-};
+const PROFILE_ORDER = PROFILE_IDS;
 
 const IMPORTANCE_COLORS: Record<string, { bg: string; text: string }> = {
   "kritisch": { bg: 'error.light', text: 'error.dark' },
