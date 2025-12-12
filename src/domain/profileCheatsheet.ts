@@ -555,6 +555,268 @@ export const PROFILE_CHEATSHEET = {
       },
     ],
   },
+  pregnancy: {
+    id: "pregnancy",
+    label: "Schwangerschaft",
+    shortDescription:
+      "Strenge Kriterien ähnlich Baby-Profil, plus erhöhter Calcium- und Magnesiumbedarf für die Schwangerschaft.",
+    whenToUse:
+      "Wenn du schwanger bist und ein optimales Wasser für dich und dein ungeborenes Kind suchst.",
+    scoringFocus: [
+      { metric: "nitrat", label: "Nitrat", weight: 0.9, tone: "critical" },
+      { metric: "natrium", label: "Natrium", weight: 0.8, tone: "critical" },
+      { metric: "calcium", label: "Calcium", weight: 0.7, tone: "positive" },
+      { metric: "magnesium", label: "Magnesium", weight: 0.7, tone: "positive" },
+      { metric: "fluorid", label: "Fluorid", weight: 0.5, tone: "avoid" },
+    ],
+    metrics: [
+      {
+        metric: "nitrate",
+        label: "Nitrat",
+        importance: "sehr hoch",
+        explanation:
+          "Für Schwangere ist ein niedriger Nitratgehalt kritisch. Nitrat kann die Plazentaschranke passieren.",
+        hints: [
+          "Werte unter 10 mg/L werden sehr positiv bewertet (wie beim Baby-Profil).",
+          "Höhere Werte erhöhen das Risiko.",
+        ],
+      },
+      {
+        metric: "sodium",
+        label: "Natrium",
+        importance: "sehr hoch",
+        explanation:
+          "Niedrige Natriumwerte helfen bei Wassereinlagerungen und Schwangerschafts-Bluthochdruck.",
+        hints: [
+          "Werte unter 20 mg/L sind optimal.",
+          "Kann Wassereinlagerungen reduzieren.",
+        ],
+      },
+      {
+        metric: "calcium",
+        label: "Calcium",
+        importance: "hoch",
+        explanation:
+          "Calcium ist in der Schwangerschaft wichtig für die Knochenentwicklung des Kindes und den Erhalt der mütterlichen Knochen.",
+        hints: [
+          "Höhere Werte (100-200 mg/L) sind in diesem Profil positiv.",
+          "Calciumreiches Wasser ergänzt die Ernährung gut.",
+        ],
+      },
+      {
+        metric: "magnesium",
+        label: "Magnesium",
+        importance: "hoch",
+        explanation:
+          "Magnesium hilft gegen Wadenkrämpfe und kann vorzeitige Wehen verhindern.",
+        hints: [
+          "Werte von 50-80 mg/L sind ideal.",
+          "Besonders wichtig im 2. und 3. Trimester.",
+        ],
+      },
+      {
+        metric: "fluoride",
+        label: "Fluorid",
+        importance: "mittel",
+        explanation:
+          "Fluorid sollte moderat sein für die Zahnentwicklung des Ungeborenen.",
+        hints: [
+          "Werte unter 1,0 mg/L sind empfehlenswert.",
+        ],
+      },
+      {
+        metric: "bicarbonate",
+        label: "Hydrogencarbonat",
+        importance: "mittel",
+        explanation:
+          "Hydrogencarbonat kann bei Sodbrennen helfen - ein häufiges Problem in der Schwangerschaft.",
+        hints: [
+          "Höhere Werte (>600 mg/L) können bei Sodbrennen angenehm sein.",
+        ],
+      },
+      {
+        metric: "sulfate",
+        label: "Sulfat",
+        importance: "niedrig",
+        explanation:
+          "Moderate Sulfatwerte. Höhere Werte können bei Verstopfung helfen (mit Arzt besprechen).",
+        hints: [
+          "Unter 200 mg/L unbedenklich.",
+        ],
+      },
+    ],
+  },
+  seniors: {
+    id: "seniors",
+    label: "Senioren",
+    shortDescription:
+      "Ausgewogene Mineralversorgung für Knochengesundheit und altersgerechte Hydration.",
+    whenToUse:
+      "Für Menschen ab 60+, die auf Knochengesundheit, Herzfunktion und ausreichende Flüssigkeitszufuhr achten.",
+    scoringFocus: [
+      { metric: "calcium", label: "Calcium", weight: 0.8, tone: "positive" },
+      { metric: "magnesium", label: "Magnesium", weight: 0.8, tone: "positive" },
+      { metric: "bicarbonate", label: "Hydrogencarbonat", weight: 0.6, tone: "positive" },
+      { metric: "natrium", label: "Natrium", weight: 0.5, tone: "avoid" },
+      { metric: "kalium", label: "Kalium", weight: 0.4, tone: "moderate" },
+    ],
+    metrics: [
+      {
+        metric: "calcium",
+        label: "Calcium",
+        importance: "sehr hoch",
+        explanation:
+          "Calcium ist entscheidend für die Knochengesundheit im Alter und zur Osteoporose-Prävention.",
+        hints: [
+          "Werte von 100-150 mg/L sind optimal für Senioren.",
+          "Calciumreiches Wasser kann die Ernährung gut ergänzen.",
+        ],
+      },
+      {
+        metric: "magnesium",
+        label: "Magnesium",
+        importance: "sehr hoch",
+        explanation:
+          "Magnesium unterstützt Herzgesundheit, Muskelentspannung und reduziert Wadenkrämpfe.",
+        hints: [
+          "Werte von 50-100 mg/L sind ideal.",
+          "Wichtig für Herzrhythmus und Schlafqualität.",
+        ],
+      },
+      {
+        metric: "bicarbonate",
+        label: "Hydrogencarbonat",
+        importance: "hoch",
+        explanation:
+          "Hydrogencarbonat hilft bei Verdauungsproblemen und Sodbrennen - beides häufig im Alter.",
+        hints: [
+          "Werte von 300-600 mg/L sind angenehm für den Magen.",
+        ],
+      },
+      {
+        metric: "sodium",
+        label: "Natrium",
+        importance: "mittel",
+        explanation:
+          "Natriumarm bevorzugt, da viele Senioren Bluthochdruck haben.",
+        hints: [
+          "Unter 50 mg/L ist empfehlenswert.",
+          "Bei Herzmedikation besonders wichtig.",
+        ],
+      },
+      {
+        metric: "potassium",
+        label: "Kalium",
+        importance: "mittel",
+        explanation:
+          "Moderate Kaliumwerte sind im Alter wichtig, besonders bei eingeschränkter Nierenfunktion.",
+        hints: [
+          "Unter 10 mg/L unbedenklich.",
+        ],
+      },
+      {
+        metric: "sulfate",
+        label: "Sulfat",
+        importance: "niedrig",
+        explanation:
+          "Moderate Sulfatwerte. Höhere Werte können bei Verstopfung helfen, aber Durchfall begünstigen.",
+        hints: [
+          "Unter 200 mg/L für normale Verdauung.",
+        ],
+      },
+      {
+        metric: "nitrate",
+        label: "Nitrat",
+        importance: "niedrig",
+        explanation:
+          "Niedrige Nitratwerte bevorzugt für allgemeine Gesundheit.",
+        hints: [
+          "Unter 25 mg/L empfohlen.",
+        ],
+      },
+    ],
+  },
+  diabetes: {
+    id: "diabetes",
+    label: "Diabetes",
+    shortDescription:
+      "Magnesiumreiche, natriumarme Versorgung zur Unterstützung der Insulinsensitivität.",
+    whenToUse:
+      "Für Menschen mit Diabetes Typ 1 oder Typ 2, die ihre Mineralstoffversorgung optimieren möchten.",
+    scoringFocus: [
+      { metric: "magnesium", label: "Magnesium", weight: 0.9, tone: "positive" },
+      { metric: "bicarbonate", label: "Hydrogencarbonat", weight: 0.6, tone: "positive" },
+      { metric: "calcium", label: "Calcium", weight: 0.5, tone: "positive" },
+      { metric: "natrium", label: "Natrium", weight: 0.6, tone: "avoid" },
+      { metric: "kalium", label: "Kalium", weight: 0.4, tone: "moderate" },
+    ],
+    metrics: [
+      {
+        metric: "magnesium",
+        label: "Magnesium",
+        importance: "sehr hoch",
+        explanation:
+          "Magnesium ist besonders wichtig bei Diabetes - es unterstützt die Insulinsensitivität und Muskelgesundheit.",
+        hints: [
+          "Werte von 50-100 mg/L sind optimal.",
+          "Diabetiker haben oft niedrigere Magnesiumspiegel.",
+          "Kann Wadenkrämpfe reduzieren.",
+        ],
+      },
+      {
+        metric: "bicarbonate",
+        label: "Hydrogencarbonat",
+        importance: "hoch",
+        explanation:
+          "Hydrogencarbonat unterstützt den Säure-Basen-Haushalt, der bei Diabetes oft gestört ist.",
+        hints: [
+          "Werte von 300-800 mg/L sind empfehlenswert.",
+          "Macht Wasser bekömmlicher.",
+        ],
+      },
+      {
+        metric: "calcium",
+        label: "Calcium",
+        importance: "mittel",
+        explanation:
+          "Calcium ist wichtig für Knochen - Diabetes erhöht das Osteoporoserisiko.",
+        hints: [
+          "Werte von 80-150 mg/L sind gut.",
+        ],
+      },
+      {
+        metric: "sodium",
+        label: "Natrium",
+        importance: "mittel",
+        explanation:
+          "Natriumarm bevorzugt, da Diabetes das Herz-Kreislauf-Risiko erhöht.",
+        hints: [
+          "Unter 50 mg/L empfehlenswert.",
+          "Besonders wichtig bei Bluthochdruck.",
+        ],
+      },
+      {
+        metric: "potassium",
+        label: "Kalium",
+        importance: "niedrig",
+        explanation:
+          "Bei gesunder Nierenfunktion moderate Werte ok, bei Niereneinschränkung niedrig halten.",
+        hints: [
+          "Bei diabetischer Nephropathie: unter 10 mg/L.",
+        ],
+      },
+      {
+        metric: "nitrate",
+        label: "Nitrat",
+        importance: "niedrig",
+        explanation:
+          "Keine besonderen Vorteile bei Diabetes - niedrig halten.",
+        hints: [
+          "Unter 25 mg/L empfohlen.",
+        ],
+      },
+    ],
+  },
 } as const;
 
 export type ProfileId = keyof typeof PROFILE_CHEATSHEET;

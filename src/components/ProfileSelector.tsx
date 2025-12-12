@@ -5,9 +5,9 @@ import clsx from "clsx";
 import { PROFILE_CHEATSHEET, type ProfileId } from "@/src/domain/profileCheatsheet";
 import type { ProfileType } from "@/src/domain/types";
 import { hapticLight } from "@/lib/capacitor";
-import { User, Baby, Zap, Heart, Coffee, Shield } from "lucide-react";
+import { User, Baby, Zap, Heart, Coffee, Shield, PersonStanding, UserRound, Syringe } from "lucide-react";
 
-const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"];
+const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney", "pregnancy", "seniors", "diabetes"];
 
 const PROFILE_PRESENTATION: Record<
   ProfileId,
@@ -60,6 +60,27 @@ const PROFILE_PRESENTATION: Record<
     gradientTo: "#14b8a6", // teal-500
     color: "bg-sky-600",
     badge: "Schonend",
+  },
+  pregnancy: {
+    icon: <PersonStanding className="w-6 h-6" />,
+    gradientFrom: "#a855f7", // purple-500
+    gradientTo: "#ec4899", // pink-500
+    color: "bg-purple-500",
+    badge: "Mutter & Kind",
+  },
+  seniors: {
+    icon: <UserRound className="w-6 h-6" />,
+    gradientFrom: "#14b8a6", // teal-500
+    gradientTo: "#06b6d4", // cyan-500
+    color: "bg-teal-500",
+    badge: "60+",
+  },
+  diabetes: {
+    icon: <Syringe className="w-6 h-6" />,
+    gradientFrom: "#f97316", // orange-500
+    gradientTo: "#f59e0b", // amber-500
+    color: "bg-orange-500",
+    badge: "Diabetes",
   },
 };
 

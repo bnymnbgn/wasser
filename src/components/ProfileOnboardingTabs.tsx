@@ -1,183 +1,298 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Chip from "@mui/material/Chip";
+import Collapse from "@mui/material/Collapse";
+import { useTheme } from "@mui/material/styles";
 import { PROFILE_CHEATSHEET, type ProfileId } from "@/src/domain/profileCheatsheet";
-import clsx from "clsx";
 import { hapticLight } from "@/lib/capacitor";
-import { ProfileWeightChart } from "@/src/components/onboarding/ProfileWeightChart";
-import { MetricLearningCard } from "@/src/components/ui/MetricLearningCard";
+import {
+  User,
+  Baby,
+  Zap,
+  Heart,
+  Coffee,
+  Shield,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Droplet,
+  Info,
+  PersonStanding,
+  UserRound,
+  Syringe,
+} from "lucide-react";
 
-const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"];
+const PROFILE_ORDER: ProfileId[] = ["standard", "baby", "sport", "blood_pressure", "coffee", "kidney", "pregnancy", "seniors", "diabetes"];
 
-// Profile Icons (same as ProfileSelector)
-const PROFILE_ICONS: Record<ProfileId, JSX.Element> = {
-  standard: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  ),
-  baby: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  sport: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-  ),
-  blood_pressure: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-    </svg>
-  ),
-  coffee: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 8h1a3 3 0 010 6h-1m-2 5H8a3 3 0 01-3-3V7h13v2M8 3h8M9 3v2M15 3v2" />
-    </svg>
-  ),
-  kidney: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4c-1.657 0-3 1.343-3 3v10a3 3 0 006 0v-3a2 2 0 00-2-2H6m11-8c1.657 0 3 1.343 3 3v10a3 3 0 01-6 0v-3a2 2 0 012-2h2" />
-    </svg>
-  ),
+const PROFILE_ICONS: Record<ProfileId, React.ElementType> = {
+  standard: User,
+  baby: Baby,
+  sport: Zap,
+  blood_pressure: Heart,
+  coffee: Coffee,
+  kidney: Shield,
+  pregnancy: PersonStanding,
+  seniors: UserRound,
+  diabetes: Syringe,
+};
+
+const IMPORTANCE_COLORS: Record<string, { bg: string; text: string }> = {
+  "kritisch": { bg: 'error.light', text: 'error.dark' },
+  "sehr hoch": { bg: 'error.light', text: 'error.dark' },
+  "hoch": { bg: 'warning.light', text: 'warning.dark' },
+  "mittel": { bg: 'info.light', text: 'info.dark' },
+  "niedrig": { bg: 'action.selected', text: 'text.secondary' },
 };
 
 export function ProfileOnboardingTabs() {
+  const theme = useTheme();
   const [active, setActive] = useState<ProfileId>("standard");
-
+  const [expandedMetric, setExpandedMetric] = useState<string | null>(null);
   const activeProfile = PROFILE_CHEATSHEET[active];
 
-  const handleTabChange = async (id: ProfileId) => {
-    await hapticLight();
-    setActive(id);
+  const handleTabChange = (_: React.SyntheticEvent, newValue: ProfileId) => {
+    hapticLight();
+    setActive(newValue);
+    setExpandedMetric(null);
   };
 
+  const toggleMetric = (metricId: string) => {
+    hapticLight();
+    setExpandedMetric(expandedMetric === metricId ? null : metricId);
+  };
+
+  const ActiveIcon = PROFILE_ICONS[active];
+
   return (
-    <div className="space-y-6">
+    <Box>
+      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary', mb: 2 }}>
+        Profile im Detail
+      </Typography>
+
       {/* Tabs */}
-      <div className="flex gap-2 p-1.5 bg-md-surface-container dark:bg-md-dark-surface-container rounded-md-lg overflow-x-auto">
+      <Tabs
+        value={active}
+        onChange={handleTabChange}
+        variant="scrollable"
+        scrollButtons={false}
+        sx={{
+          minHeight: 40,
+          mb: 3,
+          '& .MuiTab-root': {
+            minHeight: 40,
+            textTransform: 'none',
+            fontWeight: 500,
+            fontSize: 13,
+            px: 1.5,
+            minWidth: 'auto',
+          },
+          '& .MuiTabs-indicator': {
+            height: 3,
+            borderRadius: 1.5,
+          }
+        }}
+      >
         {PROFILE_ORDER.map((id) => {
           const p = PROFILE_CHEATSHEET[id];
-          const isActive = id === active;
-
+          const Icon = PROFILE_ICONS[id];
           return (
-            <motion.button
+            <Tab
               key={id}
-              type="button"
-              onClick={() => handleTabChange(id)}
-              className={clsx(
-                "relative flex items-center gap-2 px-3 py-2 rounded-md-md text-sm font-medium whitespace-nowrap transition-all touch-manipulation",
-                isActive
-                  ? "text-white"
-                  : "text-md-onSurface-variant dark:text-md-dark-onSurface-variant"
-              )}
-              whileTap={{ scale: 0.97 }}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute inset-0 bg-md-primary dark:bg-md-dark-primary rounded-md-md shadow-elevation-2"
-                  initial={false}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 30,
-                  }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-2">
-                {PROFILE_ICONS[id]}
-                <span className="hidden sm:inline">{p.label}</span>
-              </span>
-            </motion.button>
+              value={id}
+              icon={<Icon className="w-4 h-4" />}
+              iconPosition="start"
+              label={p.label.split(' ')[0]}
+            />
           );
         })}
-      </div>
+      </Tabs>
 
-      {/* Profile Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={active}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-4"
-        >
-          {/* Profile Overview Card */}
-          <div className="md-card p-4 md:p-5">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 rounded-md-md bg-md-primary-container dark:bg-md-dark-primary-container text-md-onPrimary-container dark:text-md-dark-onPrimary-container">
-                {PROFILE_ICONS[active]}
-              </div>
-              <div className="flex-1">
-                <h2 className="text-lg md:text-xl font-bold tracking-tight text-md-onSurface dark:text-md-dark-onSurface mb-2">
-                  {activeProfile.label}
-                </h2>
-                <p className="text-sm text-md-onSurface dark:text-md-dark-onSurface leading-relaxed">
-                  {activeProfile.shortDescription}
-                </p>
-                <p className="mt-2 text-xs text-md-onSurface-variant dark:text-md-dark-onSurface-variant leading-relaxed">
-                  {activeProfile.whenToUse}
-                </p>
-              </div>
-            </div>
+      {/* Profile Header */}
+      <Box sx={{
+        p: 2,
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 2,
+        mb: 2
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+          <Box sx={{
+            width: 48,
+            height: 48,
+            borderRadius: 2,
+            bgcolor: 'primary.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <ActiveIcon className="w-6 h-6 text-white" />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              {activeProfile.label}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
+              {activeProfile.shortDescription}
+            </Typography>
+          </Box>
+        </Box>
 
-            {/* Scoring Focus & Warning */}
-            <div className="grid gap-3 md:grid-cols-2">
-              {/* Scoring Focus */}
-              <div className="p-3 rounded-md-lg bg-md-surface-containerHigh dark:bg-md-dark-surface-containerHigh">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4 text-md-primary dark:text-md-dark-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-md-onSurface-variant dark:text-md-dark-onSurface-variant">
-                    Bewertungsfokus
-                  </div>
-                </div>
-                <ProfileWeightChart items={activeProfile.scoringFocus as any} />
-              </div>
+        <Box sx={{ p: 1.5, bgcolor: 'action.hover', borderRadius: 1.5 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+            <strong>Wann nutzen:</strong> {activeProfile.whenToUse}
+          </Typography>
+        </Box>
+      </Box>
 
-              {/* Warning */}
-              <div className="p-3 rounded-md-lg bg-md-warning-container dark:bg-md-dark-warning-container">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4 text-md-onWarning-container dark:text-md-dark-onWarning-container" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-md-onWarning-container dark:text-md-dark-onWarning-container">
-                    Wichtig
-                  </div>
-                </div>
-                <p className="text-xs text-md-onWarning-container dark:text-md-dark-onWarning-container leading-relaxed">
-                  Die Bewertungen ersetzen keine medizinische Beratung und orientieren
-                  sich an typischen Richtbereichen. Sie sollen dir helfen, Etiketten
-                  besser einzuordnen – nicht, Diagnosen zu stellen.
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* Scoring Focus */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', display: 'block', mb: 1 }}>
+          Bewertungsfokus
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          {activeProfile.scoringFocus.map((item) => (
+            <Chip
+              key={item.metric}
+              label={`${item.label}: ${Math.round(item.weight * 100)}%`}
+              size="small"
+              color={item.tone === 'critical' ? 'error' : item.tone === 'positive' ? 'success' : 'default'}
+              variant="outlined"
+              sx={{ fontSize: 11 }}
+            />
+          ))}
+        </Box>
+      </Box>
 
-          {/* Metrics Details */}
-          <div className="md-card p-4 md:p-5">
-            <h3 className="text-base font-bold mb-4 text-md-onSurface dark:text-md-dark-onSurface flex items-center gap-2">
-              <svg className="w-5 h-5 text-md-primary dark:text-md-dark-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Wichtige Werte in diesem Profil
-            </h3>
+      {/* Warning */}
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 1.5,
+        p: 2,
+        bgcolor: 'warning.main',
+        borderRadius: 2,
+        mb: 3,
+      }}>
+        <AlertTriangle className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+        <Typography variant="caption" sx={{ color: 'white', lineHeight: 1.6 }}>
+          <strong>Wichtig:</strong> Die Bewertungen ersetzen keine medizinische Beratung und orientieren
+          sich an typischen Richtbereichen. Sie helfen, Etiketten besser einzuordnen.
+        </Typography>
+      </Box>
 
-            <div className="grid gap-3 md:grid-cols-2">
-              {activeProfile.metrics.map((metric) => (
-                <MetricLearningCard key={metric.metric} metric={metric} />
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </div>
+      {/* Metrics Details */}
+      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', display: 'block', mb: 1.5 }}>
+        Wichtige Werte im Detail
+      </Typography>
+
+      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+        {activeProfile.metrics.map((metric, index) => {
+          const isExpanded = expandedMetric === metric.metric;
+          const importanceStyle = IMPORTANCE_COLORS[metric.importance] || IMPORTANCE_COLORS['mittel'];
+
+          return (
+            <Box key={metric.metric}>
+              {/* Metric Header - Clickable */}
+              <Box
+                onClick={() => toggleMetric(metric.metric)}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  p: 2,
+                  cursor: 'pointer',
+                  bgcolor: isExpanded ? 'action.selected' : 'background.paper',
+                  borderBottom: index < activeProfile.metrics.length - 1 ? 1 : 0,
+                  borderColor: 'divider',
+                  '&:active': { bgcolor: 'action.selected' }
+                }}
+              >
+                <Box sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 1.5,
+                  bgcolor: isExpanded ? 'primary.main' : 'action.hover',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Droplet className="w-4 h-4" style={{ color: isExpanded ? 'white' : theme.palette.text.secondary }} />
+                </Box>
+
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 14 }}>
+                    {metric.label}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>
+                    {metric.metric}
+                  </Typography>
+                </Box>
+
+                <Chip
+                  label={metric.importance}
+                  size="small"
+                  sx={{
+                    bgcolor: importanceStyle?.bg ?? 'action.hover',
+                    color: importanceStyle?.text ?? 'text.primary',
+                    fontSize: 10,
+                    height: 22,
+                    textTransform: 'capitalize'
+                  }}
+                />
+
+                {isExpanded ? (
+                  <ChevronUp className="w-4 h-4" style={{ color: theme.palette.text.secondary }} />
+                ) : (
+                  <ChevronDown className="w-4 h-4" style={{ color: theme.palette.text.secondary }} />
+                )}
+              </Box>
+
+              {/* Expanded Content */}
+              <Collapse in={isExpanded}>
+                <Box sx={{
+                  p: 2,
+                  bgcolor: 'action.hover',
+                  borderBottom: index < activeProfile.metrics.length - 1 ? 1 : 0,
+                  borderColor: 'divider'
+                }}>
+                  {/* Explanation */}
+                  <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6, mb: 2 }}>
+                    {metric.explanation}
+                  </Typography>
+
+                  {/* Hints */}
+                  {Array.isArray((metric as any).hints) && (metric as any).hints.length > 0 && (
+                    <Box>
+                      {(metric as any).hints.map((hint: string, hintIndex: number) => (
+                        <Box
+                          key={hintIndex}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 1,
+                            mb: hintIndex < (metric as any).hints.length - 1 ? 1 : 0
+                          }}
+                        >
+                          <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.palette.primary.main }} />
+                          <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
+                            {hint}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+              </Collapse>
+            </Box>
+          );
+        })}
+      </Box>
+    </Box>
   );
 }
-
- 

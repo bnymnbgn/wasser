@@ -1,11 +1,15 @@
 'use client';
 
 import { useTheme } from '@/src/components/ThemeProvider';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { useDatabaseContext } from '@/src/contexts/DatabaseContext';
 import { calculateGoals } from '@/src/lib/userGoals';
 import { hapticLight, hapticMedium } from '@/lib/capacitor';
 import { scheduleHydrationReminders, cancelHydrationReminders } from '@/src/lib/notifications';
-import clsx from 'clsx';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import {
     Moon,
@@ -19,16 +23,18 @@ import {
     ArrowLeft,
     Database,
     Scan,
-    Mail
+    Mail,
+    Check,
+    Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { ProfileSelector } from '@/src/components/ProfileSelector';
 import type { ProfileType } from '@/src/domain/types';
-import { Sparkles } from 'lucide-react';
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
+    const muiTheme = useMuiTheme();
     const { clearHistory, getStorageStats, userProfile, saveUserProfile } = useDatabaseContext();
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [profile, setProfile] = useState<ProfileType>('standard');
@@ -50,7 +56,6 @@ export default function SettingsPage() {
         loadStats();
     }, [getStorageStats]);
 
-    // Reset inline error hint when all numbers are valid
     useEffect(() => {
         const w = Number(weight);
         const h = Number(height);
@@ -151,409 +156,225 @@ export default function SettingsPage() {
         hapticLight();
     };
 
+    // Reusable list item style
+    const listItemSx = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        px: 2,
+        py: 1.5,
+        borderBottom: 1,
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
+        '&:active': { bgcolor: 'action.selected' }
+    };
+
+    // Section header style
+    const sectionHeaderSx = {
+        px: 2,
+        py: 1,
+        bgcolor: 'background.default'
+    };
+
     return (
-        <main className="min-h-screen pb-24">
+        <Box component="main" sx={{ minHeight: '100vh', pb: 12, bgcolor: 'background.default' }}>
             {/* Header */}
-            <header className="sticky top-0 z-10 bg-ocean-background/80 backdrop-blur-xl border-b border-ocean-border">
-                <div className="flex items-center px-4 h-[var(--top-bar-height)]">
-                    <Link
-                        href="/dashboard"
-                        className="p-2 -ml-2 text-ocean-secondary hover:text-ocean-primary transition-colors"
-                        onClick={() => hapticLight()}
-                    >
+            <Box sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.default', borderBottom: 1, borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', px: 2, height: 56 }}>
+                    <IconButton component={Link} href="/dashboard" onClick={() => hapticLight()} sx={{ color: 'text.secondary', ml: -1 }}>
                         <ArrowLeft className="w-6 h-6" />
-                    </Link>
-                    <h1 className="ml-2 text-lg font-semibold text-ocean-primary">Einstellungen</h1>
-                </div>
-            </header>
+                    </IconButton>
+                    <Typography variant="h6" sx={{ ml: 1, fontWeight: 600, color: 'text.primary' }}>Einstellungen</Typography>
+                </Box>
+            </Box>
 
-            <div className="p-4 space-y-6 max-w-2xl mx-auto">
-                {/* Profile Section */}
-                <section className="space-y-3">
-                    <div className="flex items-center justify-between px-1">
-                        <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary">Profil</h2>
-                        <Link
-                            href="/profile-setup"
-                            className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-ocean-accent hover:text-ocean-primary transition-colors"
+            {/* PROFILE */}
+            <Box sx={sectionHeaderSx}>
+                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontWeight: 500 }}>Profil</Typography>
+            </Box>
+            <Box sx={{ px: 2, py: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+                <ProfileSelector value={profile} onChange={handleProfileChange} />
+            </Box>
+            <Box
+                component={Link}
+                href="/profile-setup"
+                onClick={() => hapticLight()}
+                sx={{ ...listItemSx, textDecoration: 'none' }}
+            >
+                <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sparkles className="w-4 h-4 text-white" />
+                </Box>
+                <Typography sx={{ flex: 1, color: 'text.primary', fontSize: 15 }}>Profil-Wizard starten</Typography>
+                <ChevronRight className="w-5 h-5" style={{ color: muiTheme.palette.text.secondary }} />
+            </Box>
+
+            {/* BODY DATA */}
+            <Box sx={{ ...sectionHeaderSx, mt: 2 }}>
+                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontWeight: 500 }}>Körperdaten</Typography>
+            </Box>
+            {showBodyErrors && (
+                <Box sx={{ px: 2, py: 1, bgcolor: 'error.main' }}>
+                    <Typography variant="caption" sx={{ color: 'white' }}>Bitte positive Werte eintragen.</Typography>
+                </Box>
+            )}
+            <Box sx={{ px: 2, py: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
+                    <TextField label="Gewicht (kg)" variant="outlined" size="small" fullWidth value={weight} onChange={(e) => setWeight(e.target.value)} inputProps={{ inputMode: 'decimal' }} />
+                    <TextField label="Größe (cm)" variant="outlined" size="small" fullWidth value={height} onChange={(e) => setHeight(e.target.value)} inputProps={{ inputMode: 'decimal' }} />
+                    <TextField label="Alter" variant="outlined" size="small" fullWidth value={age} onChange={(e) => setAge(e.target.value)} inputProps={{ inputMode: 'decimal' }} />
+                    <TextField label="Geschlecht" variant="outlined" size="small" fullWidth select value={gender} onChange={(e) => setGender(e.target.value as any)} SelectProps={{ native: true }}>
+                        <option value="male">Männlich</option>
+                        <option value="female">Weiblich</option>
+                        <option value="other">Andere</option>
+                    </TextField>
+                </Box>
+                <TextField label="Aktivität" variant="outlined" size="small" fullWidth select value={activity} onChange={(e) => setActivity(e.target.value as any)} SelectProps={{ native: true }} sx={{ mb: 1.5 }}>
+                    <option value="sedentary">Sitzend</option>
+                    <option value="moderate">Moderat</option>
+                    <option value="active">Aktiv</option>
+                    <option value="very_active">Sehr aktiv</option>
+                </TextField>
+                <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleSaveBodyData}
+                    disabled={!weight || !height || !age || Number(weight) <= 0 || Number(height) <= 0 || Number(age) <= 0}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, py: 1.25 }}
+                >
+                    Ziele berechnen & speichern
+                </Button>
+            </Box>
+
+            {/* REMINDERS */}
+            <Box sx={{ ...sectionHeaderSx, mt: 2 }}>
+                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontWeight: 500 }}>Erinnerungen</Typography>
+            </Box>
+            <Box sx={{ px: 2, py: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5, fontSize: 13 }}>Wie oft möchtest du ans Trinken erinnert werden?</Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
+                    {[0, 30, 60, 90, 120, 180].map((min) => (
+                        <Button
+                            key={min}
+                            variant={reminderInterval === min ? "contained" : "outlined"}
+                            size="small"
+                            onClick={() => handleReminderChange(min)}
+                            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 500, fontSize: 13 }}
                         >
-                            <Sparkles className="w-3 h-3" />
-                            <span>Wizard starten</span>
-                        </Link>
-                    </div>
-                    <div className="ocean-card ocean-panel overflow-hidden p-4">
-                        <ProfileSelector value={profile} onChange={handleProfileChange} />
-                    </div>
-                </section>
+                            {min === 0 ? "Aus" : `${min} min`}
+                        </Button>
+                    ))}
+                </Box>
+            </Box>
 
-                {/* Body Data Section */}
-                <section className="space-y-3">
-                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">Körperdaten</h2>
-                    <div className="ocean-card ocean-panel overflow-hidden p-4 space-y-3">
-                        {showBodyErrors && (
-                            <p className="text-xs text-ocean-error mb-1">
-                                Bitte positive Werte eintragen, bevor du speicherst.
-                            </p>
-                        )}
-                        <div className="grid grid-cols-2 gap-2">
-                            <TextField
-                                label="Gewicht (kg)"
-                                variant="filled"
-                                fullWidth
-                                value={weight}
-                                onChange={(e) => setWeight(e.target.value)}
-                                inputProps={{ inputMode: 'decimal' }}
-                                InputProps={{
-                                    sx: {
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        borderRadius: 2,
-                                        '&:before, &:after': { borderBottom: 'none !important' },
-                                        '& input': { color: '#e2e8f0' },
-                                    },
-                                }}
-                                InputLabelProps={{ shrink: true, sx: { color: '#94a3b8' } }}
-                                error={weight !== '' && (Number(weight) <= 0 || !Number.isFinite(Number(weight)))}
-                                helperText={
-                                    weight !== '' && (Number(weight) <= 0 || !Number.isFinite(Number(weight))) ? '> 0' : ' '
-                                }
-                            />
-                            <TextField
-                                label="Größe (cm)"
-                                variant="filled"
-                                fullWidth
-                                value={height}
-                                onChange={(e) => setHeight(e.target.value)}
-                                inputProps={{ inputMode: 'decimal' }}
-                                InputProps={{
-                                    sx: {
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        borderRadius: 2,
-                                        '&:before, &:after': { borderBottom: 'none !important' },
-                                        '& input': { color: '#e2e8f0' },
-                                    },
-                                }}
-                                InputLabelProps={{ shrink: true, sx: { color: '#94a3b8' } }}
-                                error={height !== '' && (Number(height) <= 0 || !Number.isFinite(Number(height)))}
-                                helperText={
-                                    height !== '' && (Number(height) <= 0 || !Number.isFinite(Number(height))) ? '> 0' : ' '
-                                }
-                            />
-                            <TextField
-                                label="Alter"
-                                variant="filled"
-                                fullWidth
-                                value={age}
-                                onChange={(e) => setAge(e.target.value)}
-                                inputProps={{ inputMode: 'decimal' }}
-                                InputProps={{
-                                    sx: {
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        borderRadius: 2,
-                                        '&:before, &:after': { borderBottom: 'none !important' },
-                                        '& input': { color: '#e2e8f0' },
-                                    },
-                                }}
-                                InputLabelProps={{ shrink: true, sx: { color: '#94a3b8' } }}
-                                error={age !== '' && (Number(age) <= 0 || !Number.isFinite(Number(age)))}
-                                helperText={
-                                    age !== '' && (Number(age) <= 0 || !Number.isFinite(Number(age))) ? '> 0' : ' '
-                                }
-                            />
-                            <div className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
-                                <span>Geschlecht</span>
-                                <select
-                                    className="flex-1 bg-transparent outline-none text-ocean-primary"
-                                    value={gender}
-                                    onChange={(e) => setGender(e.target.value as any)}
-                                >
-                                    <option value="male">Männlich</option>
-                                    <option value="female">Weiblich</option>
-                                    <option value="other">Anderes</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-sm text-ocean-secondary">
-                            <span>Aktivität</span>
-                            <select
-                                className="flex-1 bg-transparent outline-none text-ocean-primary"
-                                value={activity}
-                                onChange={(e) => setActivity(e.target.value as any)}
-                            >
-                                <option value="sedentary">Sitzend</option>
-                                <option value="moderate">Moderat</option>
-                                <option value="active">Aktiv</option>
-                                <option value="very_active">Sehr aktiv</option>
-                            </select>
-                        </div>
-                        <div className="flex items-start gap-3 rounded-xl border border-ocean-border bg-ocean-surface px-3 py-2 text-[11px] text-ocean-secondary">
-                            <Info className="w-5 h-5 mt-[2px] text-ocean-primary flex-shrink-0" />
-                            <p>
-                                Sitzend: Schreibtisch/kaum Bewegung · Moderat: 1–2x Sport/Woche · Aktiv: fast täglich Bewegung · Sehr aktiv: intensives Training/Handwerk.
-                            </p>
-                        </div>
-                        <button
-                            onClick={handleSaveBodyData}
-                            disabled={
-                                !weight ||
-                                !height ||
-                            !age ||
-                            Number(weight) <= 0 ||
-                            Number(height) <= 0 ||
-                            Number(age) <= 0
-                        }
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-ocean-primary to-ocean-accent text-white font-semibold"
-                    >
-                        Ziele berechnen & speichern
-                    </button>
-                </div>
-                </section>
+            {/* APPEARANCE */}
+            <Box sx={{ ...sectionHeaderSx, mt: 2 }}>
+                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontWeight: 500 }}>Erscheinungsbild</Typography>
+            </Box>
+            {(['system', 'light', 'dark'] as const).map((t) => (
+                <Box
+                    key={t}
+                    component="button"
+                    onClick={() => handleThemeChange(t)}
+                    sx={{ ...listItemSx, width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
+                    <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.primary' }}>
+                        {t === 'system' && <Monitor className="w-4 h-4" />}
+                        {t === 'light' && <Sun className="w-4 h-4" />}
+                        {t === 'dark' && <Moon className="w-4 h-4" />}
+                    </Box>
+                    <Typography sx={{ flex: 1, color: 'text.primary', fontSize: 15 }}>{t === 'system' ? 'System' : t === 'light' ? 'Hell' : 'Dunkel'}</Typography>
+                    {theme === t && <Check className="w-5 h-5" style={{ color: muiTheme.palette.primary.main }} />}
+                </Box>
+            ))}
 
-                {/* Hydration Reminders */}
-                <section className="space-y-3">
-                    <div className="flex items-center justify-between px-1">
-                        <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary">Erinnerungen</h2>
-                        <span className="text-[10px] text-ocean-secondary">Lokale Push</span>
-                    </div>
-                    <div className="ocean-card ocean-panel overflow-hidden p-4 space-y-3">
-                        <p className="text-sm text-ocean-secondary">
-                            Stelle ein, wie oft du ans Trinken erinnert werden möchtest. Wir planen Benachrichtigungen für die nächsten 8 Stunden.
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {[0, 30, 60, 90, 120, 180].map((min) => (
-                                <button
-                                    key={min}
-                                    onClick={() => handleReminderChange(min)}
-                                    className={clsx(
-                                        "px-3 py-2 rounded-xl border text-sm font-semibold transition",
-                                        reminderInterval === min
-                                            ? "bg-gradient-to-r from-ocean-primary to-ocean-accent text-white border-ocean-primary"
-                                            : "bg-ocean-surface text-ocean-secondary border-ocean-border hover:border-ocean-primary/40"
-                                    )}
-                                >
-                                    {min === 0 ? "Aus" : `${min} min`}
-                                </button>
-                            ))}
-                        </div>
-                        <p className="text-[11px] text-ocean-tertiary">
-                            Hinweise: Bitte Benachrichtigungen erlauben. Änderungen überschreiben bestehende Reminder.
-                        </p>
-                    </div>
-                </section>
+            {/* APP BEHAVIOR */}
+            <Box sx={{ ...sectionHeaderSx, mt: 2 }}>
+                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontWeight: 500 }}>App-Verhalten</Typography>
+            </Box>
+            <Box sx={listItemSx}>
+                <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.primary' }}>
+                    <Scan className="w-4 h-4" />
+                </Box>
+                <Typography sx={{ flex: 1, color: 'text.primary', fontSize: 15 }}>Start-Screen</Typography>
+                <Box sx={{ display: 'flex', bgcolor: 'action.hover', borderRadius: 2, p: 0.5 }}>
+                    <Button size="small" variant={startScreen === 'dashboard' ? 'contained' : 'text'} onClick={() => handleStartScreenChange('dashboard')} sx={{ borderRadius: 1.5, textTransform: 'none', minWidth: 70, fontSize: 12, px: 1.5 }}>Dashboard</Button>
+                    <Button size="small" variant={startScreen === 'scan' ? 'contained' : 'text'} onClick={() => handleStartScreenChange('scan')} sx={{ borderRadius: 1.5, textTransform: 'none', minWidth: 60, fontSize: 12, px: 1.5 }}>Scanner</Button>
+                </Box>
+            </Box>
 
-                {/* Appearance Section */}
-                <section className="space-y-3">
-                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">Erscheinungsbild</h2>
-                    <div className="ocean-card ocean-panel overflow-hidden">
-                        <button
-                            onClick={() => handleThemeChange('system')}
-                            className="w-full flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors border-b border-ocean-border last:border-0"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
-                                    <Monitor className="w-5 h-5" />
-                                </div>
-                                <span className="text-ocean-primary">System</span>
-                            </div>
-                            {theme === 'system' && <div className="w-2 h-2 rounded-full bg-ocean-accent shadow-[0_0_10px_var(--ocean-accent)]" />}
-                        </button>
-                        <button
-                            onClick={() => handleThemeChange('light')}
-                            className="w-full flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors border-b border-ocean-border last:border-0"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
-                                    <Sun className="w-5 h-5" />
-                                </div>
-                                <span className="text-ocean-primary">Hell</span>
-                            </div>
-                            {theme === 'light' && <div className="w-2 h-2 rounded-full bg-ocean-accent shadow-[0_0_10px_var(--ocean-accent)]" />}
-                        </button>
-                        <button
-                            onClick={() => handleThemeChange('dark')}
-                            className="w-full flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
-                                    <Moon className="w-5 h-5" />
-                                </div>
-                                <span className="text-ocean-primary">Dunkel</span>
-                            </div>
-                            {theme === 'dark' && <div className="w-2 h-2 rounded-full bg-ocean-accent shadow-[0_0_10px_var(--ocean-accent)]" />}
-                        </button>
-                    </div>
-                </section>
+            {/* DATA & STORAGE */}
+            <Box sx={{ ...sectionHeaderSx, mt: 2 }}>
+                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontWeight: 500 }}>Daten & Speicher</Typography>
+            </Box>
+            <Box sx={listItemSx}>
+                <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.primary' }}>
+                    <Database className="w-4 h-4" />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ color: 'text.primary', fontSize: 15 }}>Speicher</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{storageStats.count} Scans ({Math.round(storageStats.sizeBytes / 1024)} KB)</Typography>
+                </Box>
+            </Box>
+            {!showClearConfirm ? (
+                <Box
+                    component="button"
+                    onClick={() => setShowClearConfirm(true)}
+                    sx={{ ...listItemSx, width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
+                    <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'error.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Trash2 className="w-4 h-4 text-white" />
+                    </Box>
+                    <Typography sx={{ flex: 1, color: 'error.main', fontSize: 15 }}>Verlauf löschen</Typography>
+                    <ChevronRight className="w-5 h-5" style={{ color: muiTheme.palette.text.secondary }} />
+                </Box>
+            ) : (
+                <Box sx={{ px: 2, py: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'error.main' }}>
+                    <Typography sx={{ color: 'white', mb: 1.5, fontWeight: 500, fontSize: 15 }}>Wirklich alle Daten löschen?</Typography>
+                    <Box sx={{ display: 'flex', gap: 1.5 }}>
+                        <Button variant="contained" onClick={handleClearHistory} sx={{ flex: 1, bgcolor: 'white', color: 'error.main', textTransform: 'none', '&:hover': { bgcolor: 'grey.100' } }}>Ja, löschen</Button>
+                        <Button variant="outlined" onClick={() => setShowClearConfirm(false)} sx={{ flex: 1, borderColor: 'white', color: 'white', textTransform: 'none' }}>Abbrechen</Button>
+                    </Box>
+                </Box>
+            )}
 
-                {/* Legal Section */}
-                <section className="space-y-3">
-                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">Rechtliches</h2>
-                    <div className="ocean-card ocean-panel overflow-hidden divide-y divide-ocean-border">
-                        <Link
-                            href="/legal/privacy"
-                            className="flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors"
-                        >
-                            <div className="flex items-center gap-3">
-                                <Shield className="w-5 h-5 text-ocean-primary" />
-                                <span className="text-ocean-primary">Datenschutzerklärung</span>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-ocean-tertiary" />
-                        </Link>
-                    </div>
-                </section>
+            {/* ABOUT */}
+            <Box sx={{ ...sectionHeaderSx, mt: 2 }}>
+                <Typography variant="caption" sx={{ textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', fontWeight: 500 }}>Über</Typography>
+            </Box>
+            <Box sx={listItemSx}>
+                <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Info className="w-4 h-4 text-white" />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ color: 'text.primary', fontSize: 15 }}>Version</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>1.0.0 (Build 24)</Typography>
+                </Box>
+            </Box>
+            {[
+                { href: 'mailto:feedback@wasserscan.app', icon: Mail, label: 'Feedback senden', external: true },
+                { href: '/privacy', icon: Shield, label: 'Datenschutzerklärung', external: false },
+                { href: 'https://github.com/st4b/wasser', icon: Github, label: 'GitHub', external: true },
+            ].map((item) => (
+                <Box
+                    key={item.href}
+                    component={item.external ? 'a' : Link}
+                    href={item.href}
+                    target={item.external ? '_blank' : undefined}
+                    rel={item.external ? 'noopener noreferrer' : undefined}
+                    sx={{ ...listItemSx, textDecoration: 'none' }}
+                >
+                    <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.primary' }}>
+                        <item.icon className="w-4 h-4" />
+                    </Box>
+                    <Typography sx={{ flex: 1, color: 'text.primary', fontSize: 15 }}>{item.label}</Typography>
+                    <ChevronRight className="w-5 h-5" style={{ color: muiTheme.palette.text.secondary }} />
+                </Box>
+            ))}
 
-                {/* Data Section */}
-                <section className="space-y-3">
-                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">Daten & Speicher</h2>
-                    <div className="ocean-card ocean-panel overflow-hidden">
-                        {/* Storage Stats */}
-                        <div className="p-4 border-b border-ocean-border flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
-                                    <Database className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <span className="block text-ocean-primary">Speicherbelegung</span>
-                                    <span className="text-xs text-ocean-secondary">
-                                        {storageStats.count} Scans ({Math.round(storageStats.sizeBytes / 1024)} KB)
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {!showClearConfirm ? (
-                            <button
-                                onClick={() => setShowClearConfirm(true)}
-                                className="w-full flex items-center justify-between p-4 hover:bg-ocean-error-bg/10 transition-colors group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-full bg-ocean-error-bg text-ocean-error group-hover:scale-110 transition-transform">
-                                        <Trash2 className="w-5 h-5" />
-                                    </div>
-                                    <div className="text-left">
-                                        <span className="block text-ocean-error font-medium">Verlauf löschen</span>
-                                        <span className="text-xs text-ocean-secondary">Entfernt alle gespeicherten Scans</span>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-5 h-5 text-ocean-tertiary" />
-                            </button>
-                        ) : (
-                            <div className="p-4 bg-ocean-error-bg/20">
-                                <p className="text-sm text-ocean-primary mb-3 font-medium">Wirklich alle Daten löschen?</p>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={handleClearHistory}
-                                        className="flex-1 py-2 px-4 bg-ocean-error text-white rounded-xl text-sm font-semibold shadow-lg shadow-ocean-error/20 active:scale-95 transition-transform"
-                                    >
-                                        Ja, löschen
-                                    </button>
-                                    <button
-                                        onClick={() => setShowClearConfirm(false)}
-                                        className="flex-1 py-2 px-4 bg-ocean-surface-elevated text-ocean-primary border border-ocean-border rounded-xl text-sm font-medium active:scale-95 transition-transform"
-                                    >
-                                        Abbrechen
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </section>
-
-                {/* App Behavior Section */}
-                <section className="space-y-3">
-                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">App-Verhalten</h2>
-                    <div className="ocean-card ocean-panel overflow-hidden">
-                        <div className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
-                                    <Scan className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <span className="block text-ocean-primary">Start-Screen</span>
-                                    <span className="text-xs text-ocean-secondary">App startet im {startScreen === 'dashboard' ? 'Dashboard' : 'Scanner'}</span>
-                                </div>
-                            </div>
-                            <div className="flex bg-ocean-surface-elevated rounded-lg p-1 border border-ocean-border">
-                                <button
-                                    onClick={() => handleStartScreenChange('dashboard')}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${startScreen === 'dashboard'
-                                        ? 'bg-ocean-accent text-white shadow-sm'
-                                        : 'text-ocean-secondary hover:text-ocean-primary'
-                                        }`}
-                                >
-                                    Dashboard
-                                </button>
-                                <button
-                                    onClick={() => handleStartScreenChange('scan')}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${startScreen === 'scan'
-                                        ? 'bg-ocean-accent text-white shadow-sm'
-                                        : 'text-ocean-secondary hover:text-ocean-primary'
-                                        }`}
-                                >
-                                    Scanner
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* About Section */}
-                <section className="space-y-3">
-                    <h2 className="text-xs uppercase tracking-wider text-ocean-tertiary px-1">Über</h2>
-                    <div className="ocean-card ocean-panel overflow-hidden">
-                        <div className="p-4 border-b border-ocean-border flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-gradient-to-r from-ocean-primary to-ocean-accent text-white shadow-[0_0_18px_-6px_rgba(14,165,233,0.8)] border border-white/10">
-                                    <Info className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <span className="block text-ocean-primary">Version</span>
-                                    <span className="text-xs text-ocean-secondary">1.0.0 (Build 24)</span>
-                                </div>
-                            </div>
-                        </div>
-                        <a
-                            href="mailto:feedback@wasserscan.app?subject=Feedback%20Wasserscan%20App"
-                            className="w-full flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors border-b border-ocean-border"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
-                                    <Mail className="w-5 h-5" />
-                                </div>
-                                <span className="text-ocean-primary">Feedback senden</span>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-ocean-tertiary" />
-                        </a>
-                        <Link
-                            href="/privacy"
-                            className="w-full flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors border-b border-ocean-border"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
-                                    <Shield className="w-5 h-5" />
-                                </div>
-                                <span className="text-ocean-primary">Datenschutzerklärung</span>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-ocean-tertiary" />
-                        </Link>
-                        <a
-                            href="https://github.com/st4b/wasser"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full flex items-center justify-between p-4 hover:bg-ocean-surface-hover transition-colors"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-ocean-surface-elevated text-ocean-primary">
-                                    <Github className="w-5 h-5" />
-                                </div>
-                                <span className="text-ocean-primary">GitHub</span>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-ocean-tertiary" />
-                        </a>
-                    </div>
-                </section>
-
-                <div className="text-center pt-8 pb-4">
-                    <p className="text-xs text-ocean-tertiary">Made with 💧 by Wasserscan</p>
-                </div>
-            </div>
-        </main>
+            {/* Footer */}
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Made with 💧 by Wasserscan</Typography>
+            </Box>
+        </Box>
     );
 }

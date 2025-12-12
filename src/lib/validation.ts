@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Profil-Typen als Enum
  */
-export const ProfileSchema = z.enum(['standard', 'baby', 'sport', 'blood_pressure']);
+export const ProfileSchema = z.enum(['standard', 'baby', 'sport', 'blood_pressure', 'coffee', 'kidney', 'pregnancy', 'seniors', 'diabetes']);
 
 export type ProfileType = z.infer<typeof ProfileSchema>;
 

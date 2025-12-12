@@ -9,7 +9,7 @@ import { LivingBackground } from "@/src/components/ui/LivingBackground";
 export function AppBackgroundToggle() {
   const pathname = usePathname();
 
-  if (pathname?.startsWith("/scan") || pathname?.startsWith("/history")) {
+  if (pathname?.startsWith("/scan") || pathname?.startsWith("/history") || pathname?.startsWith("/settings") || pathname?.startsWith("/profile") || pathname?.startsWith("/dashboard") || pathname?.startsWith("/onboarding")) {
     return null;
   }
 

@@ -132,14 +132,7 @@ export function WaterScoreCircle({
       className={`relative flex items-center justify-center ${className}`}
       style={{ width: size, height: size }}
     >
-      {/* Äußerer Glow-Container (Farbe basierend auf Status) */}
-      <div
-        className="absolute inset-0 rounded-full blur-3xl transition-opacity duration-1000"
-        style={{
-          background: `radial-gradient(circle, ${statusColors.glow}40 0%, transparent 70%)`,
-          opacity: isAnimating ? 0.6 : 0,
-        }}
-      />
+
 
       <svg
         width={size}
@@ -250,24 +243,13 @@ export function WaterScoreCircle({
               />
             ))}
 
-          {/* Swirl Shine */}
-          <motion.circle
-            cx={radius}
-            cy={radius}
-            r={innerRadius}
-            fill="url(#shineGradient)"
-            style={{ originX: "50%", originY: "50%" }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-            className="mix-blend-overlay opacity-40"
-          />
+
         </g>
 
         {/* 3. Glas-Reflexion */}
         <path
-          d={`M ${radius - innerRadius * 0.7} ${radius - innerRadius * 0.7} Q ${radius} ${
-            radius - innerRadius * 0.9
-          } ${radius + innerRadius * 0.7} ${radius - innerRadius * 0.7}`}
+          d={`M ${radius - innerRadius * 0.7} ${radius - innerRadius * 0.7} Q ${radius} ${radius - innerRadius * 0.9
+            } ${radius + innerRadius * 0.7} ${radius - innerRadius * 0.7}`}
           fill="none"
           stroke="white"
           strokeWidth="6"
@@ -275,8 +257,8 @@ export function WaterScoreCircle({
           className="opacity-20 mix-blend-screen filter blur-sm"
         />
 
-        {/* 4. Äußerer Ring Glow (Farbe = Status) - JETZT STATISCH */}
-        <motion.circle
+        {/* 4. Äußerer Ring (Farbe = Status) */}
+        <circle
           cx={radius}
           cy={radius}
           r={radius - strokeWidth}
@@ -284,8 +266,6 @@ export function WaterScoreCircle({
           stroke={statusColors.glow}
           strokeWidth={2}
           strokeLinecap="round"
-          style={{ rotate: -90, originX: "50%", originY: "50%" }}
-          filter="url(#glowFilter)"
         />
 
         {/* 5. Spritzer-Partikel (Farbe = Helles Wasserblau) */}

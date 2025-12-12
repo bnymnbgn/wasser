@@ -38,7 +38,6 @@ export function ProMineralCard({
   targets,
   symbol,
 }: ProMineralCardProps) {
-  const [hover, setHover] = useState(false);
   const displayUnit = unit.trim();
   const displaySymbol = symbol ?? CHEMICAL_SYMBOLS[metric] ?? "";
 
@@ -64,31 +63,27 @@ export function ProMineralCard({
       ? score >= 80
         ? "success"
         : score >= 50
-        ? "warning"
-        : "error"
+          ? "warning"
+          : "error"
       : isOptimal
-      ? "success"
-      : isWarning
-      ? "error"
-      : "warning";
+        ? "success"
+        : isWarning
+          ? "error"
+          : "warning";
 
   const statusBadge =
     statusTone === "success"
       ? { icon: <Check className="w-3 h-3" />, text: "Ideal", className: "text-ocean-success bg-ocean-success/10" }
       : statusTone === "warning"
-      ? { icon: <AlertTriangle className="w-3 h-3" />, text: "Okay", className: "text-ocean-warning bg-ocean-warning/10" }
-      : { icon: <AlertTriangle className="w-3 h-3" />, text: "Abweichung", className: "text-ocean-error bg-ocean-error/10" };
+        ? { icon: <AlertTriangle className="w-3 h-3" />, text: "Okay", className: "text-ocean-warning bg-ocean-warning/10" }
+        : { icon: <AlertTriangle className="w-3 h-3" />, text: "Abweichung", className: "text-ocean-error bg-ocean-error/10" };
 
   return (
-    <div
-      className="rounded-2xl border border-ocean-border/60 bg-ocean-surface p-3 transition-all hover:border-ocean-border hover:ocean-card-elevated"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
+    <div className="py-4 border-b border-slate-100 dark:border-slate-800">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-semibold tracking-[0.08em] text-ocean-secondary">
+            <span className="text-xs font-semibold tracking-wide text-ocean-secondary">
               {label}
             </span>
           </div>
@@ -96,11 +91,11 @@ export function ProMineralCard({
             <span className="text-xl font-bold tabular-nums text-ocean-primary leading-tight">
               {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </span>
-            {displayUnit && <span className="text-[11px] text-ocean-tertiary">{displayUnit}</span>}
+            {displayUnit && <span className="text-xs text-ocean-tertiary">{displayUnit}</span>}
           </div>
         </div>
         {targets && (
-          <div className="flex items-center gap-1 text-[11px] text-ocean-tertiary">
+          <div className="flex items-center gap-1 text-xs text-ocean-tertiary">
             <Info className="w-3 h-3" />
             Ziel: {targets.optimalMin}–{targets.optimalMax} {displayUnit}
           </div>
@@ -119,31 +114,30 @@ export function ProMineralCard({
             style={{ left: `${posValue}%`, transform: "translate(-50%, -50%)" }}
           >
             <div
-              className={`h-4 w-4 rounded-full border-2 border-ocean-surface ${
-                statusTone === "success"
-                  ? "bg-ocean-success"
-                  : statusTone === "warning"
+              className={`h-4 w-4 rounded-full border-2 border-ocean-surface ${statusTone === "success"
+                ? "bg-ocean-success"
+                : statusTone === "warning"
                   ? "bg-ocean-warning"
                   : "bg-ocean-error"
-              }`}
+                }`}
             />
           </div>
 
-          <div className="absolute top-full left-0 mt-1 text-[9px] text-ocean-tertiary font-medium">0</div>
-          <div className="absolute top-full right-0 mt-1 text-[9px] text-ocean-tertiary font-medium">
+          <div className="absolute top-full left-0 mt-1 text-xs text-ocean-tertiary font-medium">0</div>
+          <div className="absolute top-full right-0 mt-1 text-xs text-ocean-tertiary font-medium">
             {Math.round(displayMax)}+
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge.className}`}>
+          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge.className}`}>
             {statusBadge.icon}
             {statusBadge.text}
           </div>
           {score != null && (
-            <span className="text-[10px] text-ocean-secondary font-mono">Score {score.toFixed(0)}</span>
+            <span className="text-xs text-ocean-secondary font-mono">Score {score.toFixed(0)}</span>
           )}
-          <span className="ml-auto text-[10px] text-ocean-tertiary">
+          <span className="ml-auto text-xs text-ocean-tertiary">
             {displaySymbol}
           </span>
         </div>

@@ -151,7 +151,7 @@ function scoreSodium(na: number | undefined, profile: ProfileType): MetricScore 
   }
 
   let score: number;
-  if (profile === "baby" || profile === "blood_pressure" || profile === "kidney") {
+  if (profile === "baby" || profile === "pregnancy" || profile === "blood_pressure" || profile === "kidney") {
     score = stepBands(
       na,
       [
@@ -187,7 +187,7 @@ function scoreSodium(na: number | undefined, profile: ProfileType): MetricScore 
   return {
     metric: "sodium",
     score,
-    weight: profile === "baby" || profile === "blood_pressure" ? 2 : 1,
+    weight: profile === "baby" || profile === "pregnancy" || profile === "blood_pressure" ? 2 : 1,
     explanation,
   };
 }
@@ -206,7 +206,7 @@ function scoreNitrate(no3: number | undefined, profile: ProfileType): MetricScor
   }
 
   let score: number;
-  if (profile === "baby") {
+  if (profile === "baby" || profile === "pregnancy") {
     score = stepBands(
       no3,
       [
@@ -240,7 +240,7 @@ function scoreNitrate(no3: number | undefined, profile: ProfileType): MetricScor
   return {
     metric: "nitrate",
     score,
-    weight: profile === "baby" ? 2 : 1,
+    weight: profile === "baby" || profile === "pregnancy" ? 2 : 1,
     explanation,
   };
 }
@@ -290,7 +290,7 @@ function scoreCalcium(ca: number | undefined, profile: ProfileType): MetricScore
   return {
     metric: "calcium",
     score,
-    weight: profile === "sport" ? 1.5 : 1,
+    weight: profile === "sport" || profile === "pregnancy" || profile === "seniors" ? 1.5 : 1,
     explanation,
   };
 }
@@ -321,7 +321,7 @@ function scoreMagnesium(mg: number | undefined, profile: ProfileType): MetricSco
   return {
     metric: "magnesium",
     score,
-    weight: profile === "sport" ? 1.5 : 1,
+    weight: profile === "sport" || profile === "pregnancy" || profile === "seniors" || profile === "diabetes" ? 1.5 : 1,
     explanation,
   };
 }
@@ -384,10 +384,10 @@ function scoreSodiumPotassiumRatio(
       profile === "blood_pressure"
         ? 1.8
         : profile === "kidney"
-        ? 1.8
-        : profile === "sport"
-        ? 1.2
-        : 0.8,
+          ? 1.8
+          : profile === "sport"
+            ? 1.2
+            : 0.8,
     explanation,
   };
 }
@@ -800,7 +800,7 @@ function scoreFluoride(
   fluoridationContext: "fluoridated" | "natural" = "natural"
 ): MetricScore {
   let weight =
-    profile === "baby" ? 1.5 : fluoridationContext === "fluoridated" ? 1.0 : 0.6;
+    profile === "baby" ? 1.5 : profile === "pregnancy" ? 1.2 : fluoridationContext === "fluoridated" ? 1.0 : 0.6;
 
   // FIX: Weight 0 bei fehlenden Daten
   if (f == null || f === 0) {
@@ -829,6 +829,21 @@ function scoreFluoride(
     } else {
       score = 20;
       explanation += "Deutlich zu hoch – vermeiden (WHO/EFSA).";
+    }
+  } else if (profile === "pregnancy") {
+    // Schwangerschaft: etwas weniger streng als Baby, aber dennoch vorsichtig
+    if (f <= 0.5) {
+      score = 100;
+      explanation += "Optimal für Schwangerschaft – sehr niedrig.";
+    } else if (f <= 1.0) {
+      score = 80;
+      explanation += "Akzeptabel in der Schwangerschaft.";
+    } else if (f <= 1.5) {
+      score = 50;
+      explanation += "Etwas erhöht – bei viel Konsum bedenken.";
+    } else {
+      score = 20;
+      explanation += "Zu hoch für die Schwangerschaft.";
     }
   } else {
     if (fluoridationContext === "fluoridated") {

@@ -22,45 +22,40 @@ export function ScoreSection({
   onToggleComparison,
 }: ScoreSectionProps) {
   return (
-    <div className="ocean-panel-strong rounded-ocean-xl relative overflow-hidden p-6 flex flex-col items-center gap-4">
-      <motion.div
-        className="absolute top-0 z-0 opacity-20 scale-150 blur-3xl bg-ocean-primary/30 w-32 h-32 rounded-full"
-      />
+    <div className="py-6 flex flex-col items-center gap-4 border-b border-slate-100 dark:border-slate-800">
       <WaterScoreCircle
         value={score ?? 0}
-        size={200}
-        strokeWidth={14}
+        size={180}
+        strokeWidth={12}
         showValue={true}
-        className="z-10 drop-shadow-2xl"
-        delay={0.7}
+        className="z-10"
+        delay={0.3}
       />
 
-      <div className="text-center z-10 space-y-3 w-full">
+      <div className="text-center z-10 space-y-2 w-full">
         <div
-          className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold ${
-            scoreColor === "success"
-              ? "ocean-success-bg ocean-success"
+          className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${scoreColor === "success"
+              ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
               : scoreColor === "warning"
-              ? "ocean-warning-bg ocean-warning"
-              : "ocean-error-bg ocean-error"
-          }`}
+                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                : "bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"
+            }`}
         >
           {scoreLabel(score)}
         </div>
-        <p className="text-base text-ocean-secondary">
+        <p className="text-sm text-ocean-secondary">
           Profil: <span className="font-semibold text-ocean-primary">{profile}</span>
         </p>
         <button
           type="button"
           onClick={onToggleComparison}
-          className={`w-full max-w-xs inline-flex items-center justify-center gap-2.5 rounded-xl px-4 py-3.5 text-sm font-semibold transition-all active:scale-[0.98] ${
-            isInComparison
-              ? "ocean-success-bg ocean-success border-2 border-ocean-success/50"
-              : "ocean-card text-ocean-secondary border-2 border-ocean-border hover:ocean-card-elevated"
-          }`}
+          className={`inline-flex items-center gap-1.5 text-sm transition-colors ${isInComparison
+              ? "text-emerald-600 dark:text-emerald-400 font-medium"
+              : "text-sky-600 dark:text-sky-400"
+            }`}
         >
-          <Columns className="w-5 h-5" />
-          {isInComparison ? "Im Vergleich ✓" : "Zum Vergleich hinzufügen"}
+          <Columns className="w-4 h-4" />
+          {isInComparison ? "Im Vergleich ✓" : "Zum Vergleich"}
         </button>
       </div>
     </div>

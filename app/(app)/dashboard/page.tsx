@@ -18,6 +18,9 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 
 const PROFILE_META: Record<
   ProfileType,
@@ -199,39 +202,42 @@ function DashboardContent() {
 
   return (
     <main className="flex-1 w-full flex flex-col relative overflow-hidden text-slate-200 selection:bg-blue-500/30">
-      <div
-        className={clsx(
-          "fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] pointer-events-none transition-colors duration-1000",
-          PROFILE_META[profile].bg.replace("/10", "/20")
-        )}
-      />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-900/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 mx-auto w-full max-w-md h-full flex flex-col pb-6 flex-1">
-        <header
-          className={clsx(
-            "flex items-center justify-between px-6 pt-6 pb-2",
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4",
-            "transition duration-700 ease-out"
-          )}
+        {/* Android-style Toolbar */}
+        <Box
+          component="header"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            py: 1.5,
+            bgcolor: 'background.default',
+          }}
         >
-          <button
+          <IconButton
             onClick={() => {
               setShowProfileSheet(true);
               hapticLight();
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition-all backdrop-blur-md group"
+            sx={{ color: 'text.secondary' }}
           >
-            <div className={clsx("p-1.5 rounded-full", PROFILE_META[profile].bg)}>
-              {(() => {
-                const Icon = PROFILE_META[profile].icon;
-                return <Icon className={clsx("w-4 h-4", PROFILE_META[profile].accent)} />;
-              })()}
-            </div>
-            <span className="text-xs font-semibold pr-1">{PROFILE_META[profile].label}</span>
-            <ChevronDown className="w-3 h-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
-          </button>
-        </header>
+            {(() => {
+              const Icon = PROFILE_META[profile].icon;
+              return <Icon className="w-6 h-6" />;
+            })()}
+          </IconButton>
+          <Box sx={{ flex: 1 }} />
+          <IconButton
+            component={Link}
+            href="/settings"
+            onClick={() => hapticLight()}
+            sx={{ color: 'text.secondary' }}
+          >
+            <Settings className="w-6 h-6" />
+          </IconButton>
+        </Box>
 
         <div className="flex-1 flex flex-col items-center justify-center relative -mt-4 min-h-[300px]">
           <div
@@ -271,12 +277,7 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* Compact Nutrient Pills */}
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2">
-              <NutrientPill label="Ca" value={nutrients[0]?.value ?? 0} bgColor="bg-cyan-500/20" textColor="text-cyan-300" />
-              <NutrientPill label="Mg" value={nutrients[1]?.value ?? 0} bgColor="bg-emerald-500/20" textColor="text-emerald-300" />
-              <NutrientPill label="Na" value={nutrients[2]?.value ?? 0} bgColor="bg-amber-500/20" textColor="text-amber-300" />
-            </div>
+
           </div>
         </div>
 
@@ -302,6 +303,22 @@ function DashboardContent() {
             }}
           />
         </div>
+
+        {/* Mineralstoffe - Native List Style */}
+        <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>Calcium</Typography>
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: 'text.primary' }}>{nutrients[0]?.value ?? 0} mg</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>Magnesium</Typography>
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: 'text.primary' }}>{nutrients[1]?.value ?? 0} mg</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5 }}>
+            <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>Natrium</Typography>
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: 'text.primary' }}>{nutrients[2]?.value ?? 0} mg</Typography>
+          </Box>
+        </Box>
       </div>
 
       {showProfileSheet && (

@@ -62,7 +62,7 @@ export function MobileNav() {
               window.dispatchEvent(new Event("open-comparison"));
               break;
             case 4:
-              router.push('/profile');
+              window.dispatchEvent(new Event("open-profile"));
               break;
           }
         }}

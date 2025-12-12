@@ -1,438 +1,263 @@
-# Wasserscan (Web-App)
+# Wasserscan - UI/UX Redesign Briefing für Senior App Designer
 
-Eine Next.js-Webanwendung zur Bewertung von Trinkwasser-Qualität auf Basis von Etikett-Daten und Barcodes.
-Die App erlaubt:
+## 🎯 Projektübersicht
 
-- Eingabe von **Etikett-Text** (MVP statt echter OCR)
-- Scan von **Barcodes** per Webcam oder manueller Eingabe
-- Bewertung nach verschiedenen **Profilen** (Standard, Baby, Sport, Blutdrucksensibel)
-- Speicherung der Scans in einer **PostgreSQL**-Datenbank
-- Anzeige eines **Verlaufs** mit bisherigen Scans
-- Erklärung, **wie** und **warum** bewertet wird (Onboarding / Profile-Guide)
+**Wasserscan** ist eine progressive Web-App (PWA) mit Capacitor-basierter Android-App für die Analyse von Trinkwasser-Qualität. Die App kombiniert moderne Technologien wie OCR, Barcode-Scanning und KI-basierte Bewertung, um Nutzern detaillierte Einblicke in ihre Wasserqualität zu geben.
 
-> **Hinweis:**
-> Die App ersetzt keine medizinische Beratung. Bewertungen orientieren sich an typischen Richtbereichen und dienen als Hilfestellung zur Einordnung von Etiketten.
+### Kernfunktionen
+- **OCR-Scanning**: Extrahiert Mineralstoff-Informationen von Wasseretiketten
+- **Barcode-Scanning**: Zugriff auf Produktinformationen und Analysedaten
+- **Profil-basierte Bewertung**: Personalisierte Wasserempfehlungen (Standard, Baby, Sport, Blutdruck, Barista, Niere)
+- **Hydratation-Tracking**: Verfolgung des täglichen Wasserkonsums mit visueller Flaschen-Darstellung
+- **Mineralstoff-Analyse**: Detaillierte Aufschlüsselung von Calcium, Magnesium, Natrium etc.
+
+## 🎨 Aktuelles Design-System
+
+### Farbpalette: Ocean Dark Theme
+```css
+/* Primäre Farben */
+--ocean-primary: #0EA5E9
+--ocean-primary-light: #38BDF8  
+--ocean-primary-dark: #0284C7
+--ocean-accent: #38BDF8
+
+/* Oberflächen */
+--ocean-background: #0B1120
+--ocean-surface: #151F32
+--ocean-surface-elevated: #1E2A3D
+--ocean-surface-hover: #1A2840
+
+/* Text */
+--ocean-text-primary: #FFFFFF
+--ocean-text-secondary: #CBD5E1
+--ocean-text-tertiary: #94A3B8
+
+/* Status */
+--ocean-success: #10B981
+--ocean-warning: #F59E0B
+--ocean-error: #EF4444
+```
+
+### Typografie
+- **Primär**: Inter, system-ui, sans-serif
+- **Display**: Space Grotesk, Inter, system-ui, sans-serif
+
+### Border Radius System
+```css
+--ocean-sm: 12px
+--ocean-md: 16px  
+--ocean-lg: 24px
+--ocean-xl: 32px
+--ocean-2xl: 48px
+```
+
+## 📱 Aktuelle UI-Elemente & Optimierungspotenzial
+
+### 1. Scan-Interface (Höchste Priorität)
+**Aktueller Status**: Funktional aber visuell verbesserungswürdig
+
+**Elemente:**
+- **Kamera-Viewfinder**: Schwarzer Bildschirm mit weißem Rahmen und Fokus-Overlay
+- **Modus-Switcher**: Barcode vs OCR mit Icon-Buttons
+- **Zoom-Slider**: Vertikaler Slider rechts
+- **Stabilitäts-Indikator**: Farbcodierter Auslöser (Grün/Gelb/Rot)
+- **Tilt-Warning**: Alert bei schräger Haltung
+- **Ergebnis-Overlay**: Modal mit WaterScoreCard
+
+**Optimierungsbedarf:**
+- **Visuelles Feedback**: Verbesserte Animationen für Scan-Erfolg/Misserfolg
+- **Fokus-Animation**: Ansprechendere Fokus-Visualisierung statt einfachem Ping-Effekt
+- **Stabilitäts-Indikator**: Modernere Darstellung als farbiger Kreis
+- **Mode-Transition**: Sanftere Übergänge zwischen OCR und Barcode
+- **Loading States**: Premium-Loading-Animation statt einfachem Spinner
+
+### 2. Dashboard (Mittlere Priorität)
+**Aktueller Status**: Gut strukturiert, aber visuell ausbaufähig
+
+**Elemente:**
+- **Wasser-Flasche**: Zentrale Visualisierung mit Füllstand
+- **Quick-Add-Buttons**: Volumen-Buttons (200ml, 300ml, 500ml)
+- **Mineralstoff-Anzeige**: Native Listen-Ansicht
+- **Profil-Switcher**: Bottom-Sheet mit Grid-Layout
+- **Custom-Volume-Drawer**: MUI-basierter Drawer
+
+**Optimierungsbedarf:**
+- **Flaschen-Animation**: Realistischere Wasser-Animation mit Wellen-Effekt
+- **Bubble-Effects**: Sanfte Blasen-Animation in der Flasche
+- **Progress-Visualization**: Kreativere Darstellung des Hydratations-Fortschritts
+- **Micro-Interactions**: Haptisches Feedback bei Konsum-Erfassung
+- **Profile-Icons**: Ansprechendere Icons mit Animation
+
+### 3. WaterScoreCard (Hohe Priorität)
+**Aktueller Status**: Informativ aber visuell überladen
+
+**Elemente:**
+- **Score-Kreis**: Zentraler Score mit Farbverlauf
+- **Mineral-Grid**: Raster mit allen Mineralstoffen
+- **Taste-Radar**: Geschmacks-Profil Radar-Chart
+- **Score-Erklärung**: Ausklappbare Details
+
+**Optimierungsbedarf:**
+- **Score-Animation**: Zähl-Animation beim Erscheinen
+- **Mineral-Icons**: Einzigartige Icons für jeden Mineralstoff
+- **Taste-Visualisierung**: Ansprechendere Radar-Darstellung
+- **Color-Coding**: Konsistenteres Farbsystem für Bewertungen
+- **Hierarchy**: Bessere visuelle Hierarchie der Informationen
+
+### 4. Navigation & Transitions
+**Aktueller Status**: Standard-MUI BottomNavigation
+
+**Optimierungsbedarf:**
+- **Custom Navigation**: Einzigartiges Navigation-Design
+- **Page-Transitions**: Sanfte Übergänge zwischen Screens
+- **Gesture-Support**: Swipe-Gesten für Navigation
+- **Active-State-Animations**: Lebendige Aktiv-Indikatoren
+
+## 🚀 Design-Ziele für Redesign
+
+### 1. Premium-Wasser-Feeling
+- **Visual Metaphor**: Wasser-Elemente durchgehend integrieren
+- **Glass-Morphism**: Durchscheinende, wasserähnliche Oberflächen
+- **Fluid-Animations**: Fließende, wasserige Bewegungen
+- **Premium-Aesthetics**: Hochwertiges, medizinisches Erscheinungsbild
+
+### 2. Intuitive UX
+- **Zero-Friction Scanning**: Minimalistischer Scan-Flow
+- **Contextual Guidance**: Kontextabhängige Hilfen
+- **Progressive Disclosure**: Stufenweise Informationsfreigabe
+- **Accessibility**: Hohe Kontraste und große Touch-Targets
+
+### 3. Emotional Design
+- **Delight-Moments**: Überraschende, angenehme Interaktionen
+- **Achievement-System**: Gamification-Elemente für Motivation
+- **Personal Connection**: Individualisierbare Elemente
+- **Micro-Animations**: Kleine, bemerkenswerte Details
+
+## 🎯 Spezifische Design-Anforderungen
+
+### Scan-Experience (Priority 1)
+```
+VISION: "Premium Medical Scanner"
+- HoloLens-ähnliches Interface mit transparenten Overlays
+- Real-time visual feedback für Fokus und Stabilität
+- Minimalistisches Design mit maximaler Funktionalität
+- Smooth transitions zwischen Scan-Modi
+- Haptisches Feedback für erfolgreiche Scans
+```
+
+### Dashboard Hydration (Priority 2)
+```
+VISION: "Living Water Bottle"
+- Realistische Wasser-Physik in der Flasche
+- Dynamische Blasen und Wellen-Animationen
+- Ambientes Licht, das sich mit Tageszeit ändert
+- Smooth level transitions
+- Premium glass effects
+```
+
+### Score Visualization (Priority 3)
+```
+VISION: "Water Quality DNA"
+- DNA-Strang-ähnliche Visualisierung der Mineralstoffe
+- Farbverläufe, die die Wasserqualität widerspiegeln
+- Interactive element details on hover/tap
+- Smooth data transitions
+- Scientific yet approachable aesthetics
+```
+
+## 🔧 Technische Constraints
+
+### Performance
+- **60fps Animations**: Keine Performance-Einbußen
+- **Lazy Loading**: Optimale Ladezeiten
+- **Memory Management**: Keine Memory-Leaks durch Animationen
+- **Battery Efficient**: Minimale Auswirkungen auf Batterie
+
+### Platform
+- **PWA**: Offline-fähig und installierbar
+- **Capacitor**: Native Android-Integration
+- **Responsive**: Von 320px bis 2560px Breite
+- **Cross-Browser**: Chrome, Safari, Firefox, Edge
+
+### Framework
+- **Next.js 14**: App Router Architektur
+- **Tailwind CSS**: Utility-first Styling
+- **Framer Motion**: Animations-Bibliothek
+- **Material-UI**: Component Library (reduziert nutzen)
+
+## 🎨 Deliverables
+
+### 1. Design System Overhaul
+- [ ] Vollständiges Color-System mit CSS-Custom-Properties
+- [ ] Typography-Scale mit responsive Breakpoints
+- [ ] Icon-Set für Wasser- und Gesundheits-Kontext
+- [ ] Animation-System mit Timing und Easing
+- [ ] Component-Library in Figma/Sketch
+
+### 2. Key Screen Redesigns
+- [ ] Scan-Interface (3 Modi: OCR, Barcode, Manual)
+- [ ] Dashboard mit Hydration-Tracking
+- [ ] WaterScoreCard mit allen Details
+- [ ] History/Analytics-Ansicht
+- [ ] Onboarding-Flow
+
+### 3. Interaction Design
+- [ ] Micro-Animations für alle Interaktionen
+- [ ] Page-Transition-System
+- [ ] Loading-State-Animations
+- [ ] Error-State-Visualisierungen
+- [ ] Success/Feedback-Animations
+
+### 4. Motion Guidelines
+- [ ] Animations-Prinzipien dokumentieren
+- [ ] Performance-Guidelines für Animationen
+- [ ] Accessibility-Best-Practices für Bewegung
+- [ ] Responsive-Animation-Breakpoints
+
+## 📋 Success Criteria
+
+### Quantitativ
+- **Ladezeit**: < 3 Sekunden auf 3G
+- **Animation Performance**: 60fps auf Mid-Range Devices
+- **Accessibility Score**: 95+ Lighthouse Score
+- **User Engagement**: +25% Scan-Completion-Rate
+
+### Qualitativ
+- **User Feedback**: "Premium" und "Intuitiv" in Tests
+- **Visual Appeal**: Moderne, professionelle Ästhetik
+- **Brand Consistency**: Durchgängiges Wasser-Thema
+- **Emotional Response**: Freude und Vertrauen bei Nutzern
+
+## 🚀 Next Steps
+
+1. **Design Audit**: Aktuelle UI detailliert analysieren
+2. **User Research**: Zielgruppen-Interviews für Pain-Points
+3. **Concept Development**: 3 Design-Konzepte entwickeln
+4. **Prototyping**: Interaktive Prototypen in Figma
+5. **User Testing**: Konzepte mit echten Nutzern testen
+6. **Implementation**: Entwicklung in enger Zusammenarbeit
 
 ---
 
-## Inhalt
+## 💡 Inspiration & Referenzen
 
-1. [Features](#features)
-2. [Tech-Stack](#tech-stack)
-3. [Architektur & Struktur](#architektur--struktur)
-4. [Datenmodell](#datenmodell)
-5. [Scoring-Modell & Profile](#scoring-modell--profile)
-6. [Setup & Installation](#setup--installation)
-7. [Entwicklung & Scripts](#entwicklung--scripts)
-8. [Docker-Betrieb](#docker-betrieb)
-9. [API-Übersicht](#api-übersicht)
-10. [Frontend-Routen](#frontend-routen)
-11. [Weiterentwicklung](#weiterentwicklung)
+### Apps für Inspiration
+- **Apple Health**: Premium Medical Design
+- **Calm**: Sanfte Animationen und Transitions
+- **Strava**: Gamification und Achievements
+- **MyFitnessPal**: Intuitive Daten-Eingabe
 
----
+### Design-Trends
+- **Glass Morphism**: Transparente, verschwommene Elemente
+- **3D Icons**: Tiefe und Dimension in UI-Elementen
+- **Gradient Mesh**: Komplexe Farbverläufe
+- **Micro-Interactions**: Kleine, bedeutungsvolle Animationen
 
-## Features
-
-- **Profile / Zielgruppen**
-  - `Standard` – für gesunde Erwachsene ohne besondere Anforderungen
-  - `Baby/Kleinkind` – strengere Bewertung für Nitrat & Natrium
-  - `Sport` – Fokus auf Magnesium, Calcium, Hydrogencarbonat, Mineralisation
-  - `Blutdrucksensibel` – starke Gewichtung von Natrium
-
-- **Eingabewege**
-  - Etikett-Text (MVP) – z. B.:
-    > `pH: 7.3, Kalzium: 80 mg/l, Magnesium: 25 mg/l, Natrium: 10 mg/l, Nitrat: 5 mg/l`
-  - Barcode:
-    - manuelle Eingabe (EAN/GTIN)
-    - Webcam-Scan mit `@zxing/browser` (Video-Stream im Browser)
-
-- **Bewertung**
-  - Scoring 0–100 (Gesamt)
-  - Teil-Scores pro Metrik (pH, Natrium, Nitrat, Calcium, Magnesium, Hydrogencarbonat, Gesamtmineralisation)
-  - Profilabhängige Gewichtungen
-  - Erklärtexte pro Metrik (für Tooltips / Onboarding)
-
-- **Persistenz & Verlauf**
-  - Speicherung jedes Scans in PostgreSQL via Prisma
-  - Anzeige eines Verlaufs mit Datum, Profil, Score & Detailkarte
-
-- **Onboarding / Erklärung**
-  - Seite `/onboarding` mit Tabs für jedes Profil
-  - Cheat-Sheet, welche Werte in welchem Profil wichtig sind
+### Wasser-Visualisierung
+- **Aquarium Apps**: Realistische Wasser-Animationen
+- **Weather Apps**: Flüssige Übergänge und States
+- **Meditation Apps**: Sanfte, beruhigende Bewegungen
 
 ---
 
-## Tech-Stack
-
-- **Frontend / Backend**
-  - [Next.js](https://nextjs.org/) (App Router, TypeScript)
-  - React 18
-  - TypeScript
-  - Tailwind CSS
-
-- **Domain & Daten**
-  - Prisma ORM
-  - PostgreSQL (Docker)
-  - Domänen-Layer unter `src/domain/*`
-
-- **Scanner & UX**
-  - `@zxing/browser` für Webcam-Barcodes
-  - `clsx` für Klassennamen-Handling
-
----
-
-## Architektur & Struktur
-
-Wichtige Verzeichnisse:
-
-```text
-.
-├── app/
-│   ├── page.tsx              # Startseite (Profilwahl, Links zu Scan/History)
-│   ├── scan/
-│   │   └── page.tsx          # Scan-Seite (Etikett-Text + Barcode + Webcam)
-│   ├── history/
-│   │   └── page.tsx          # Verlauf vergangener Scans
-│   ├── onboarding/
-│   │   └── page.tsx          # Erklärseite zu Profilen & Metriken
-│   └── api/
-│       ├── scan/
-│       │   ├── ocr/
-│       │   │   └── route.ts  # POST /api/scan/ocr – Text→Parsing→Scoring→DB
-│       │   └── barcode/
-│       │       └── route.ts  # POST /api/scan/barcode – Mock-Lookup→Scoring→DB
-│       └── history/
-│           └── route.ts      # GET /api/history – letzte Scans
-│
-├── src/
-│   ├── lib/
-│   │   └── prisma.ts         # PrismaClient-Singleton
-│   ├── domain/
-│   │   ├── types.ts          # Domain-Typen (Profile, WaterAnalysis, ScanResult, ...)
-│   │   ├── scoring.ts        # Scoring-Modell pro Profil & Metrik
-│   │   ├── mappers.ts        # Prisma <-> Domain Mapping
-│   │   └── profileCheatsheet.ts # Cheat-Sheet für Onboarding & ProfileSelector
-│   └── components/
-│       ├── ProfileSelector.tsx       # Profilwahl auf Startseite
-│       ├── ProfileOnboardingTabs.tsx # Tabs in /onboarding
-│       ├── WaterScoreCard.tsx        # Anzeige eines einzelnen Bewertungsergebnisses
-│       └── BarcodeScanner.tsx        # Webcam-Komponente für Barcodes
-│
-├── prisma/
-│   └── schema.prisma         # Prisma-Schema (WaterSource, WaterAnalysis, ScanResult)
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
-```
-
----
-
-## Datenmodell
-
-### Prisma-Modelle (vereinfacht)
-
-**WaterSource**
-- Marke, Produktname, optional Barcode
-
-**WaterAnalysis**
-- Analyse-Werte (pH, Ca, Mg, Na, Nitrat, HCO₃⁻, TDS)
-- Quelle (Hersteller, Behörde, User, API), Datum, Zuordnung zu WaterSource
-
-**ScanResult**
-- Zeitpunkt, Profil
-- optional Barcode
-- extrahierte Werte aus Text (ocrParsedValues)
-- Gesamt-Score & metrische Scores
-- optional Verknüpfung zu WaterSource & WaterAnalysis (Barcode-Fall)
-
-Prisma-Schema liegt vollständig in `prisma/schema.prisma`.
-
----
-
-## Scoring-Modell & Profile
-
-Die Scoring-Logik ist in `src/domain/scoring.ts` implementiert.
-
-### Prinzipien
-
-- **Input**: `WaterAnalysisValues` (Teilwerte, alle optional)
-- **Output**:
-  - `totalScore` (0–100)
-  - Liste von `MetricScore`:
-    - `metric` (z. B. "sodium")
-    - `score` (0–100)
-    - `weight` (Einfluss auf Gesamtscore)
-    - `explanation` (Text für UI / Tooltips)
-
-- **Scoring** wird profilabhängig berechnet:
-  - z. B. `baby` → hohe Gewichte für Nitrat & Natrium
-  - `sport` → hohe Gewichte für Calcium, Magnesium, Hydrogencarbonat
-  - `blood_pressure` → Natrium sehr stark gewichtet
-
-### Profile & Cheatsheet
-
-Die Profilbeschreibungen stehen zentral in:
-
-```typescript
-// src/domain/profileCheatsheet.ts
-export const PROFILE_CHEATSHEET = {
-  standard: { ... },
-  baby: { ... },
-  sport: { ... },
-  blood_pressure: { ... },
-} as const;
-```
-
-Darin sind pro Profil definiert:
-
-- `label`, `shortDescription`, `whenToUse`
-- `scoringFocus` (Bullets zur Gewichtung)
-- `metrics`: Name, Wichtigkeit ("sehr hoch" / "hoch" / "mittel" / "niedrig"), Erklärung, Hinweise
-
-Die Onboarding-Seite (`/onboarding`) und der `ProfileSelector` nutzen dieses Cheat-Sheet direkt, um Texte konsistent auszugeben.
-
----
-
-## Setup & Installation
-
-### Voraussetzungen
-
-- Node.js (empfohlen 20+ oder 22+)
-- npm oder pnpm
-- Docker (für DB & optional Web-Build)
-
-### 1. Repository klonen
-```bash
-git clone <DEIN-REPO-URL> wasserscan-app
-cd wasserscan-app
-```
-
-### 2. Abhängigkeiten installieren
-```bash
-npm install
-```
-
-### 3. Umgebungsvariablen
-
-Erstelle eine `.env.local` im Projektroot, z. B.:
-
-```bash
-DATABASE_URL="postgres://waterapp:waterapp@localhost:5434/waterdb"
-```
-
-Der Port `5434` entspricht der Standardeinstellung in `docker-compose.yml`.
-
-### 4. Datenbank starten (Docker)
-```bash
-docker compose up db -d
-```
-
-Dies startet nur den PostgreSQL-Container.
-
-### 5. Prisma initialisieren & migrieren
-
-Falls noch nicht geschehen:
-
-```bash
-npx prisma generate
-npx prisma migrate dev --name init
-```
-
-Dadurch werden die Tabellen angelegt.
-
-### 6. Entwicklungserver starten
-```bash
-npm run dev
-```
-
-Die App ist jetzt erreichbar unter:
-
-http://localhost:3000
-
----
-
-## Entwicklung & Scripts
-
-Wichtige npm-Scripts:
-
-```bash
-# Lokaler Dev-Server mit Hot Reload
-npm run dev
-
-# Produktions-Build
-npm run build
-
-# Produktions-Start (nutzt .next)
-npm start
-
-# Prisma: Migrations & DB
-npx prisma migrate dev
-npx prisma studio    # einfache Web-Oberfläche zur DB-Inspektion
-
-# OpenFoodFacts-Seed (erstellt Wasserquellen + Analysen)
-DATABASE_URL=postgres://... npm run seed:openfoodfacts
-
-> **Hinweis:** Der Seed holt sich standardmäßig 3 Seiten (je 100 Produkte) aus der
-> OpenFoodFacts-API (`categories_tags_en=waters`). Über Umgebungsvariablen lässt
-> sich das anpassen:
-> - `OFF_MAX_PAGES` – Anzahl der Seiten (Default: `3`)
-> - `OFF_PAGE_SIZE` – Produkte pro API-Call (Default: `100`)
-> - `OFF_BASE_URL` – alternativ ein anderer OFF-Spiegel
-```
-
----
-
-## Docker-Betrieb
-
-### Full-Stack per Docker Compose
-
-`docker-compose.yml` enthält zwei Services:
-
-- `web` – Next.js-App (Build & Run im Container)
-- `db` – PostgreSQL 16-alpine
-
-Start:
-
-```bash
-docker compose up --build
-```
-
-Die App läuft anschließend unter:
-
-http://localhost:3000
-
-Die DB ist intern unter `db:5432` erreichbar.
-Im Container wird `DATABASE_URL=postgres://waterapp:waterapp@db:5432/waterdb` verwendet.
-
-### Nur DB per Docker (für lokale Entwicklung)
-```bash
-docker compose up db -d
-npm run dev
-```
-
----
-
-## API-Übersicht
-
-### POST /api/scan/ocr
-
-**Body (JSON)**:
-```json
-{
-  "text": "pH: 7.3, Kalzium: 80 mg/l, Magnesium: 25 mg/l, Natrium: 10 mg/l, Nitrat: 5 mg/l",
-  "profile": "baby"
-}
-```
-
-**Funktion**:
-- regexbasiertes Parsing des Etikett-Textes in Wasserwerte
-- Scoring basierend auf Profil
-- Speicherung als ScanResult in DB
-
-**Response (JSON, Domain-ScanResult)**:
-- `id`, `timestamp`, `profile`, `score`, `metricScores`, `ocrParsedValues`, …
-
-### POST /api/scan/barcode
-
-**Body (JSON)**:
-```json
-{
-  "barcode": "1234567890123",
-  "profile": "standard"
-}
-```
-
-**Funktion (MVP)**:
-- Mock-"Lookup" auf Basis des Barcodes
-- Erzeugung einer WaterSource + WaterAnalysis
-- Scoring & Speicherung als ScanResult
-
-**Ziel**:
-- Später Anbindung an Open Food Facts / Hersteller-APIs
-
-### GET /api/history
-
-**Funktion**:
-- Liefert die letzten ~50 ScanResult-Einträge aus der DB
-- Verwendung: aktuell vor allem durch die `/history`-Page (Server Component)
-
----
-
-## Frontend-Routen
-
-### `/`
-- Profil-Auswahl (`ProfileSelector`)
-- Links zu:
-  - Scan starten → `/scan`
-  - Verlauf ansehen → `/history`
-  - Profil-Guide → `/onboarding` (optional verlinkbar)
-
-### `/scan`
-- Modus-Toggle:
-  - **Etikett-Text**:
-    - Textarea für Label-Text
-    - POST nach `/api/scan/ocr`
-  - **Barcode**:
-    - Textfeld für EAN/GTIN
-    - Webcam-Scanner (`BarcodeScanner`) füllt den Wert
-    - POST nach `/api/scan/barcode`
-- Anzeige einer `WaterScoreCard` mit Score + Werten
-
-### `/history`
-- Liste der letzten Scans
-- Pro Eintrag:
-  - Datum/Zeit
-  - Profil
-  - Score-Badge
-  - Detailkarte mit `WaterScoreCard`
-
-### `/onboarding`
-- Info-Seite:
-  - Headline + Kontext
-  - `ProfileOnboardingTabs` mit Tabs für standard, baby, sport, blood_pressure
-  - Erklärungen zu jedem Profil & jeder Metrik
-
----
-
-## Weiterentwicklung
-
-Einige mögliche nächste Schritte:
-
-### ✅ Echte OCR (IMPLEMENTIERT)
-- ✅ Native ML Kit Text Recognition für Android (Google ML Kit) und iOS (Apple Vision Framework)
-- ✅ Tesseract.js als Web-Fallback
-- ✅ Upload und Kamera-Aufnahme von Etikett-Fotos
-
-**Android Setup erforderlich:**
-Für die native OCR auf Android benötigst du eine `google-services.json` Datei:
-
-1. Gehe zu [Firebase Console](https://console.firebase.google.com/)
-2. Erstelle ein neues Projekt oder wähle ein bestehendes
-3. Klicke auf "Android-App hinzufügen"
-4. Package Name: `de.wasserscan` (muss mit `android/app/AndroidManifest.xml` übereinstimmen)
-5. Lade die `google-services.json` herunter
-6. Speichere sie in `android/app/google-services.json`
-7. Führe `npx cap sync android` aus
-
-**iOS Setup:**
-Keine zusätzliche Konfiguration erforderlich - Apple Vision Framework ist bereits verfügbar.
-
-### Echte Barcode-Daten
-- Anbindung an Open Food Facts API
-- Optionale Verbindung zu Hersteller-APIs oder GS1 (falls verfügbar)
-
-### User-Accounts
-- Authentifizierung (z. B. NextAuth)
-- Personalisierte Profile / Präferenzen
-- Synchronisierte Verläufe
-
-### Mehr Metriken
-- z. B. Sulfat, Chlorid, Kalium, Fluorid
-
-### Internationalisierung (i18n)
-- Mehrsprachiges UI (DE/EN)
-- Anpassung von Grenzwerten/Empfehlungen an Länderregulationen
-
-### Erweiterte Visualisierung
-- Diagramme (Radarchart, Balken) für Profil-Vergleiche
-- Vergleich mehrerer Wässer nebeneinander
+*Dieses Briefing soll als Grundlage für ein ganzheitliches UI/UX Redesign dienen. Der Fokus liegt auf der Schaffung einer premium, vertrauensvollen und emotional ansprechenden Experience, die die komplexe Technologie hinter der App zugänglich und delightful macht.*

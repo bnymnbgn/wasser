@@ -32,7 +32,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const value = payload[0].value;
         const description = TASTE_DESCRIPTIONS[label] || '';
         return (
-            <div className="ocean-card p-3 text-xs shadow-xl border border-ocean-border bg-ocean-surface/95 backdrop-blur-sm z-50">
+            <div className="p-4 text-xs border border-ocean-border bg-ocean-surface/95 backdrop-blur-sm z-50 rounded-xl">
                 <p className="font-semibold text-ocean-primary mb-1">{label}: {value}/10</p>
                 <p className="text-ocean-secondary">{description}</p>
             </div>
@@ -69,7 +69,7 @@ export function TasteRadar({ profile }: Props) {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="absolute inset-0 z-20 ocean-panel-strong p-4 flex flex-col overflow-y-auto"
+                        className="absolute inset-0 z-20 bg-slate-900/95 dark:bg-slate-950/95 p-4 flex flex-col overflow-y-auto rounded-xl border border-ocean-border"
                     >
                         <div className="flex justify-between items-start mb-3">
                             <h4 className="font-semibold text-ocean-primary">Lesehilfe</h4>

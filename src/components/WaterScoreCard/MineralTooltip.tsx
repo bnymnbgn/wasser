@@ -64,8 +64,7 @@ export function MineralTooltip({ info, profile, children }: MineralTooltipProps)
               rounded-t-3xl md:rounded-2xl
               border border-ocean-border
               bg-ocean-surface/95 backdrop-blur-xl
-              shadow-2xl
-              p-4 md:p-3
+              px-4 py-4
             "
           >
             <div className="w-10 h-1 bg-ocean-border rounded-full mx-auto mb-3 md:hidden" />

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
-import { Paper, Grid, Stack, Button, Chip, Divider, Box, Snackbar, Alert } from "@mui/material";
+import { Paper, Grid, Stack, Button, Chip, Divider, Box, Snackbar, Alert, SwipeableDrawer } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import {
   Card,
@@ -49,6 +49,9 @@ const PROFILE_LABELS: Record<ProfileType, string> = {
   blood_pressure: "Blutdruck",
   coffee: "Kaffee",
   kidney: "Nieren",
+  pregnancy: "Schwangerschaft",
+  seniors: "Senioren",
+  diabetes: "Diabetes",
 };
 
 type SortOption = "newest" | "best" | "worst" | "brand";
@@ -94,10 +97,7 @@ function MiniScoreRing({
           className="text-slate-200 dark:text-slate-700 opacity-20"
         />
         {/* Progress Circle */}
-        <motion.circle
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1, ease: "easeOut" }}
+        <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -105,6 +105,7 @@ function MiniScoreRing({
           strokeWidth="3"
           fill="transparent"
           strokeDasharray={circumference}
+          strokeDashoffset={offset}
           strokeLinecap="round"
           className={colorClass}
         />
@@ -140,6 +141,7 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
   const pullStartY = useRef<number | null>(null);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSearchChange = useDebouncedCallback((value: string) => {
@@ -442,9 +444,14 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
         bgcolor: theme.palette.background.default,
       }}
     >
-      {/* Stats Header - Static */}
+      {/* Stats Header with Search Icon */}
       <div className="flex-none z-10">
-        <StatsHeader stats={stats} theme={theme} />
+        <StatsHeader
+          stats={stats}
+          theme={theme}
+          onOpenFilter={() => setFilterSheetOpen(true)}
+          hasActiveFilters={searchTerm !== "" || profileFilter !== "all" || dateFilter !== "all" || scoreFilter !== "all"}
+        />
       </div>
 
       {/* Main Content Area (Paginated) */}
@@ -480,28 +487,15 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
               >
-                {/* Sticky Filter Toolbar */}
-                <FilterToolbar
-                  profileFilter={profileFilter}
-                  setProfileFilter={setProfileFilter}
-                  dateFilter={dateFilter}
-                  setDateFilter={setDateFilter}
-                  scoreFilter={scoreFilter}
-                  setScoreFilter={setScoreFilter}
-                  sortBy={sortBy}
-                  setSortBy={setSortBy}
-                  searchTerm={searchTerm}
-                  onSearchChange={handleSearchChange}
-                  theme={theme}
-                />
                 <div
-                  className="flex items-center justify-center text-[11px] text-ocean-secondary transition-all duration-150"
+                  className="flex items-center justify-center transition-all duration-150"
                   style={{
                     height: pullDistance > 0 ? 36 : isRefreshing ? 36 : 0,
                     opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
                   }}
                 >
-                  {isRefreshing ? "Aktualisiere..." : "Zum Aktualisieren ziehen"}
+                  {/* Native-style spinner only, no text */}
+                  <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
                 </div>
                 <div
                   className="pb-4 px-4 transition-transform duration-150"
@@ -511,7 +505,7 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
                     {/* Favoriten Section */}
                     {pageFavorites.length > 0 && (
                       <>
-                        <div className="px-1 mt-1 text-[11px] font-bold text-sky-600 flex items-center gap-1">
+                        <div className="px-1 py-2 text-xs font-semibold text-sky-600 flex items-center gap-1">
                           <span role="img" aria-label="star">⭐</span> Favoriten
                         </div>
                         {pageFavorites.map((scan) => (
@@ -559,7 +553,7 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
 
                       return (
                         <div key={group.label}>
-                          <div className="px-1 mt-4 mb-2 text-[11px] font-bold text-ocean-secondary uppercase tracking-widest">
+                          <div className="px-1 py-2 text-xs font-semibold text-ocean-secondary uppercase tracking-wide">
                             {group.label}
                           </div>
                           {visibleItems.map((scan) => (
@@ -657,66 +651,157 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
           <DetailDialog scan={detailScan} onClose={() => setDetailScan(null)} />
         )}
       </div>
+
+      {/* Search & Filter Bottom Sheet */}
+      <SwipeableDrawer
+        anchor="bottom"
+        open={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        onOpen={() => setFilterSheetOpen(true)}
+        disableSwipeToOpen
+        PaperProps={{
+          sx: {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            maxHeight: "85vh",
+            bgcolor: theme.palette.background.default,
+          },
+        }}
+      >
+        <Box sx={{ p: 3 }}>
+          {/* Drag Handle */}
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+            <Box sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: "divider" }} />
+          </Box>
+
+          {/* Search Field */}
+          <TextField
+            variant="outlined"
+            fullWidth
+            defaultValue={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Wasser suchen..."
+            autoFocus
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search className="w-5 h-5 text-ocean-tertiary" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              mb: 3,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 3,
+              },
+            }}
+          />
+
+          {/* Filter Sections */}
+          <Stack spacing={3}>
+            {/* Profile Filter */}
+            <Box>
+              <Box component="span" sx={{ fontSize: 12, fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>Profil</Box>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <FilterChip label="Alle" active={profileFilter === "all"} onClick={() => setProfileFilter("all")} />
+                {Object.entries(PROFILE_LABELS).map(([key, label]) => (
+                  <FilterChip key={key} label={label} active={profileFilter === key} onClick={() => setProfileFilter(key as ProfileType)} />
+                ))}
+              </Stack>
+            </Box>
+
+            {/* Time Filter */}
+            <Box>
+              <Box component="span" sx={{ fontSize: 12, fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>Zeitraum</Box>
+              <Stack direction="row" spacing={1}>
+                <FilterChip label="Alle" active={dateFilter === "all"} onClick={() => setDateFilter("all")} />
+                <FilterChip label="Woche" active={dateFilter === "week"} onClick={() => setDateFilter("week")} />
+                <FilterChip label="Monat" active={dateFilter === "month"} onClick={() => setDateFilter("month")} />
+              </Stack>
+            </Box>
+
+            {/* Score Filter */}
+            <Box>
+              <Box component="span" sx={{ fontSize: 12, fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>Score</Box>
+              <Stack direction="row" spacing={1}>
+                <FilterChip label="Alle" active={scoreFilter === "all"} onClick={() => setScoreFilter("all")} />
+                <FilterChip label="80+" active={scoreFilter === "high"} onClick={() => setScoreFilter("high")} />
+                <FilterChip label="50-80" active={scoreFilter === "mid"} onClick={() => setScoreFilter("mid")} />
+                <FilterChip label="0-50" active={scoreFilter === "low"} onClick={() => setScoreFilter("low")} />
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* Sort & Apply */}
+            <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+              <CustomSortDropdown value={sortBy} onChange={setSortBy} />
+              <Button
+                variant="contained"
+                onClick={() => setFilterSheetOpen(false)}
+                sx={{ borderRadius: 2, px: 4 }}
+              >
+                Anwenden
+              </Button>
+            </Stack>
+          </Stack>
+        </Box>
+      </SwipeableDrawer>
     </Box>
   );
 }
 
-// --- REDESIGNED STATS HEADER (MUI Paper/Grid) ---
-function StatsHeader({ stats, theme }: { stats: ReturnType<typeof buildStats>; theme: any }) {
+// --- COMPACT STATS HEADER WITH SEARCH/FILTER ICONS ---
+function StatsHeader({
+  stats,
+  theme,
+  onOpenFilter,
+  hasActiveFilters
+}: {
+  stats: ReturnType<typeof buildStats>;
+  theme: any;
+  onOpenFilter: () => void;
+  hasActiveFilters: boolean;
+}) {
   return (
-    <Box sx={{ p: 2, pb: 0 }}>
-      <Grid container spacing={1.5}>
-        <Grid item xs={6} sm={3}>
-          <StatCard
-            icon={<LineChart className="w-5 h-5 text-sky-500" />}
-            label="Gesamt"
-            value={stats.total.toString()}
-            description={`${stats.thisWeek} neu diese Woche`}
-          />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <StatCard
-            icon={<Sparkles className="w-5 h-5 text-emerald-500" />}
-            label="Ø Score"
-            value={`${stats.avgScore ?? "–"}`}
-            description="Qualität der Scans"
-          />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <StatCard
-            icon={<Target className="w-5 h-5 text-indigo-500" />}
-            label="Favorit"
-            value={stats.topProfile ? PROFILE_LABELS[stats.topProfile] : "–"}
-            description={`${stats.topCount} mal gescannt`}
-          />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <StatCard
-            icon={<Flame className="w-5 h-5 text-amber-500" />}
-            label="Streak"
-            value={String(stats.streak)}
-            unit="Tage"
-            description={stats.streak > 0 ? "Läuft bei dir!" : "Fang heute an"}
-          />
-        </Grid>
-      </Grid>
+    <Box
+      sx={{
+        px: 2,
+        py: 1.5,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        borderBottom: 1,
+        borderColor: "divider",
+      }}
+    >
+      <Box component="span" sx={{ fontSize: 14, color: "text.secondary" }}>
+        <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>{stats.total}</Box> Scans
+        {stats.avgScore && (
+          <>
+            <Box component="span" sx={{ mx: 1, color: "divider" }}>·</Box>
+            <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>Ø {stats.avgScore}</Box>
+          </>
+        )}
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {stats.streak > 0 && (
+          <Box component="span" sx={{ fontSize: 12, color: "warning.main", fontWeight: 500, mr: 1 }}>
+            🔥 {stats.streak}
+          </Box>
+        )}
+        <IconButton
+          onClick={onOpenFilter}
+          size="small"
+          sx={{
+            color: hasActiveFilters ? "primary.main" : "text.secondary",
+            bgcolor: hasActiveFilters ? "rgba(14, 165, 233, 0.1)" : "transparent",
+          }}
+        >
+          <Search className="w-5 h-5" />
+        </IconButton>
+      </Box>
     </Box>
-  );
-}
-
-function StatCard({ icon, label, value, unit, description }: any) {
-  return (
-    <div className="bg-ocean-surface dark:bg-white/5 rounded-2xl p-3 shadow-sm">
-      <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-        <div className="p-1.5 rounded-lg bg-white/10 shadow-sm">{icon}</div>
-        <span className="text-[10px] uppercase font-bold tracking-widest text-ocean-secondary">{label}</span>
-      </Stack>
-      <div className="flex items-baseline gap-1">
-        <span className="text-2xl font-bold text-ocean-primary">{value}</span>
-        {unit && <span className="text-xs font-medium text-ocean-secondary">{unit}</span>}
-      </div>
-      <div className="mt-1 text-[11px] text-ocean-tertiary leading-tight">{description}</div>
-    </div>
   );
 }
 
@@ -941,7 +1026,7 @@ function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileCh
               >
                 <CardContent sx={{ borderTop: "1px solid", borderColor: theme?.palette?.surface?.border, bgcolor: theme?.palette?.surface?.card }}>
                   <Stack direction="row" spacing={1} flexWrap="wrap" mb={1}>
-                    {(["standard", "baby", "sport", "blood_pressure", "coffee", "kidney"] as ProfileType[]).map((p) => (
+                    {(["standard", "baby", "sport", "blood_pressure", "coffee", "kidney", "pregnancy", "seniors", "diabetes"] as ProfileType[]).map((p) => (
                       <ProfileChip key={p} label={PROFILE_LABELS[p]} active={scan.profile === p} onClick={() => onProfileChange?.(p)} />
                     ))}
                   </Stack>

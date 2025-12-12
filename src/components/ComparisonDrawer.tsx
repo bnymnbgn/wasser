@@ -1,15 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Columns, Trash2, X } from 'lucide-react';
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import CircularProgress from '@mui/material/CircularProgress';
+import { useTheme } from '@mui/material/styles';
+import { Columns, Trash2, X, Plus, Check } from 'lucide-react';
 import { useComparison } from '@/src/contexts/ComparisonContext';
 import { WATER_METRIC_FIELDS, DERIVED_WATER_METRICS } from '@/src/constants/waterMetrics';
+import { Capacitor } from '@capacitor/core';
+import { sqliteService } from '@/lib/sqlite';
+import type { ScanResult } from '@/src/domain/types';
 
 export function ComparisonDrawer() {
-  const { items, removeScan, clearAll } = useComparison();
+  const { items, addScan, removeScan, clearAll, isSelected } = useComparison();
   const [isOpen, setIsOpen] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [availableScans, setAvailableScans] = useState<ScanResult[]>([]);
+  const [loading, setLoading] = useState(false);
   const hasItems = items.length > 0;
+  const theme = useTheme();
 
   useEffect(() => {
     const handler = () => setIsOpen(true);
@@ -17,182 +36,332 @@ export function ComparisonDrawer() {
     return () => window.removeEventListener("open-comparison", handler as EventListener);
   }, []);
 
+  // Load available scans when picker opens
+  useEffect(() => {
+    if (!showPicker) return;
+
+    const loadScans = async () => {
+      setLoading(true);
+      try {
+        if (Capacitor.isNativePlatform()) {
+          const scans = await sqliteService.getScanHistory(20);
+          // getScanHistory already returns correctly shaped objects
+          const results: ScanResult[] = scans.map((scan: any) => ({
+            id: scan.id,
+            timestamp: scan.timestamp,
+            profile: scan.profile || 'standard',
+            score: scan.score,
+            barcode: scan.barcode,
+            ocrParsedValues: typeof scan.ocrParsedValues === 'string'
+              ? JSON.parse(scan.ocrParsedValues)
+              : scan.ocrParsedValues,
+            productInfo: scan.productInfo,
+            metricScores: typeof scan.metricScores === 'string'
+              ? JSON.parse(scan.metricScores)
+              : scan.metricScores,
+          }));
+          setAvailableScans(results);
+        } else {
+          // Web: fetch from API
+          const response = await fetch('/api/scans');
+          if (response.ok) {
+            const data = await response.json();
+            setAvailableScans(data.scans || []);
+          }
+        }
+      } catch (err) {
+        console.error('[ComparisonDrawer] Failed to load scans:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadScans();
+  }, [showPicker]);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setShowPicker(false);
+  };
+
+  const handleAddScan = (scan: ScanResult) => {
+    addScan(scan);
+  };
+
   return (
-    <>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm md:items-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsOpen(false)}
-          >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-              className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-t-[32px] bg-white p-6 text-slate-900 shadow-2xl dark:bg-slate-950 dark:text-slate-50 md:rounded-[32px]"
-              onClick={(e) => e.stopPropagation()}
+    <SwipeableDrawer
+      anchor="bottom"
+      open={isOpen}
+      onClose={handleClose}
+      onOpen={() => setIsOpen(true)}
+      disableSwipeToOpen
+      PaperProps={{
+        sx: {
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          bgcolor: 'background.default',
+          maxHeight: '85vh',
+        }
+      }}
+    >
+      {/* Drag Handle */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1.5, pb: 1 }}>
+        <Box sx={{ width: 36, height: 4, borderRadius: 2, bgcolor: 'divider' }} />
+      </Box>
+
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+            {showPicker ? 'Scan auswählen' : 'Wasser vergleichen'}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            {showPicker ? 'Tippe auf einen Scan zum Hinzufügen' : `${items.length}/4 ausgewählt`}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {!showPicker && items.length < 4 && (
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<Plus className="w-4 h-4" />}
+              onClick={() => setShowPicker(true)}
+              sx={{ borderRadius: 2, textTransform: 'none', fontSize: 12 }}
             >
-              <div className="mb-6 flex flex-wrap items-center gap-3">
-                <div>
-                  <h2 className="text-xl font-semibold">Wasser vergleichen</h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Maximal vier Analysen nebeneinander vergleichen.
-                  </p>
-                </div>
-                <div className="ml-auto flex items-center gap-2">
-                  {hasItems && (
-                    <button
-                      type="button"
-                      onClick={clearAll}
-                      className="flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Liste leeren
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setIsOpen(false)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+              Hinzufügen
+            </Button>
+          )}
+          {!showPicker && hasItems && (
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<Trash2 className="w-4 h-4" />}
+              onClick={clearAll}
+              sx={{ borderRadius: 2, textTransform: 'none', fontSize: 12 }}
+            >
+              Leeren
+            </Button>
+          )}
+          {showPicker && (
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => setShowPicker(false)}
+              sx={{ borderRadius: 2, textTransform: 'none', fontSize: 12 }}
+            >
+              Zurück
+            </Button>
+          )}
+          <IconButton onClick={handleClose} sx={{ color: 'text.secondary' }}>
+            <X className="w-5 h-5" />
+          </IconButton>
+        </Box>
+      </Box>
 
-              {!hasItems && (
-                <div className="rounded-3xl border border-dashed border-slate-300 p-6 text-center dark:border-slate-700">
-                  <p className="text-sm text-slate-600 dark:text-slate-300">
-                    Noch keine Analysen ausgewählt. Öffne ein Ergebnis und tippe auf „Zum Vergleich hinzufügen“.
-                  </p>
-                </div>
-              )}
-
-              {hasItems && (
-                <div className="space-y-6">
-                  <div className="flex flex-wrap gap-3">
-                    {items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex flex-1 min-w-[220px] items-center justify-between rounded-2xl border border-slate-200/80 bg-slate-50/60 px-4 py-3 dark:border-slate-800/80 dark:bg-slate-900/60"
-                      >
-                        <div>
-                          <p className="text-xs uppercase text-slate-500 dark:text-slate-400">
-                            {item.profile}
-                          </p>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                            {item.label}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Score: {item.score?.toFixed(0) ?? '–'}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeScan(item.id)}
-                          className="rounded-full p-2 text-slate-500 transition hover:bg-white/60 dark:text-slate-400 dark:hover:bg-slate-800"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
-                      <thead className="bg-slate-50/70 dark:bg-slate-900/70">
-                        <tr>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-500">
-                            Kennzahl
-                          </th>
-                          {items.map((item) => (
-                            <th key={item.id} className="px-4 py-3 text-left font-semibold text-slate-500">
-                              <div className="text-xs uppercase text-slate-400">{item.profile}</div>
-                              <div className="text-sm text-slate-900 dark:text-slate-100">
-                                {item.label}
-                              </div>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                        <tr>
-                          <td className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Gesamt-Score
-                          </td>
-                          {items.map((item) => (
-                            <td key={`${item.id}-score`} className="px-4 py-3 text-slate-900 dark:text-slate-100">
-                              <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
-                                {item.score?.toFixed(0) ?? '–'}
-                              </span>
-                            </td>
-                          ))}
-                        </tr>
-                        {WATER_METRIC_FIELDS.map((metric) => (
-                          <tr key={metric.key}>
-                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                              <div className="font-medium text-slate-800 dark:text-slate-100">
-                                {metric.label}
-                              </div>
-                              <div className="text-xs text-slate-400">{metric.unit ?? ''}</div>
-                            </td>
-                            {items.map((item) => {
-                              const rawValue = item.values?.[metric.key];
-                              const metricScore = item.metricScores?.[metric.key];
-                              return (
-                                <td key={`${item.id}-${metric.key}`} className="px-4 py-3 align-top">
-                                  <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                                    {typeof rawValue === 'number'
-                                      ? `${rawValue.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${metric.unit ?? ''}`
-                                      : '–'}
-                                  </div>
-                                  {metricScore !== undefined && (
-                                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                      Score: {metricScore.toFixed(0)}
-                                    </div>
-                                  )}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                        {DERIVED_WATER_METRICS.map((metric) => (
-                          <tr key={metric.key}>
-                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                              <div className="font-medium text-slate-800 dark:text-slate-100">
-                                {metric.label}
-                              </div>
-                              {metric.unit && (
-                                <div className="text-xs text-slate-400">{metric.unit}</div>
-                              )}
-                            </td>
-                            {items.map((item) => {
-                              const value = item.values?.[metric.key];
-                              return (
-                                <td key={`${item.id}-${metric.key}`} className="px-4 py-3 align-top">
-                                  <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                                    {typeof value === 'number'
-                                      ? `${value.toFixed(metric.key === 'hardness' ? 1 : 2)}${metric.unit ? ` ${metric.unit}` : ''}`
-                                      : '–'}
-                                  </div>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
+      {/* Content */}
+      <Box sx={{ px: 2, py: 2, overflowY: 'auto' }}>
+        {/* Scan Picker View */}
+        {showPicker && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+            {!loading && availableScans.length === 0 && (
+              <Box sx={{ py: 4, textAlign: 'center' }}>
+                <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>
+                  Keine Scans vorhanden
+                </Typography>
+              </Box>
+            )}
+            {!loading && availableScans.map((scan) => {
+              const selected = isSelected(scan.id);
+              const label = scan.productInfo?.brand ?? scan.productInfo?.productName ?? (scan.barcode ? `Scan ${scan.barcode}` : 'Etikett-Scan');
+              return (
+                <Box
+                  key={scan.id}
+                  component="button"
+                  onClick={() => !selected && handleAddScan(scan)}
+                  disabled={selected || items.length >= 4}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    px: 2,
+                    py: 1.5,
+                    borderRadius: 2,
+                    border: 1,
+                    borderColor: selected ? 'primary.main' : 'divider',
+                    bgcolor: selected ? 'primary.main' : 'background.paper',
+                    cursor: selected ? 'default' : 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
+                    opacity: items.length >= 4 && !selected ? 0.5 : 1,
+                    '&:active': { bgcolor: selected ? 'primary.main' : 'action.selected' }
+                  }}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: 14, fontWeight: 500, color: selected ? 'white' : 'text.primary' }}>
+                      {label}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: selected ? 'rgba(255,255,255,0.7)' : 'text.secondary' }}>
+                      Score: {scan.score?.toFixed(0) ?? '–'} • {scan.profile}
+                    </Typography>
+                  </Box>
+                  {selected && <Check className="w-5 h-5 text-white" />}
+                </Box>
+              );
+            })}
+          </Box>
         )}
-      </AnimatePresence>
-    </>
+
+        {/* Main Comparison View */}
+        {!showPicker && (
+          <>
+            {!hasItems && (
+              <Box sx={{ py: 4, textAlign: 'center', border: 1, borderStyle: 'dashed', borderColor: 'divider', borderRadius: 2 }}>
+                <Columns className="w-8 h-8 mx-auto mb-2" style={{ color: theme.palette.text.secondary }} />
+                <Typography sx={{ color: 'text.secondary', fontSize: 14, mb: 1 }}>
+                  Noch keine Analysen ausgewählt
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<Plus className="w-4 h-4" />}
+                  onClick={() => setShowPicker(true)}
+                  sx={{ borderRadius: 2, textTransform: 'none' }}
+                >
+                  Scans auswählen
+                </Button>
+              </Box>
+            )}
+
+            {hasItems && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Selected Items */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {items.map((item) => (
+                    <Box
+                      key={item.id}
+                      sx={{
+                        flex: '1 1 calc(50% - 4px)',
+                        minWidth: 140,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        px: 1.5,
+                        py: 1,
+                        borderRadius: 2,
+                        bgcolor: 'action.hover',
+                        border: 1,
+                        borderColor: 'divider'
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', fontSize: 10 }}>
+                          {item.profile}
+                        </Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}>
+                          {item.label}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                          Score: {item.score?.toFixed(0) ?? '–'}
+                        </Typography>
+                      </Box>
+                      <IconButton size="small" onClick={() => removeScan(item.id)} sx={{ color: 'text.secondary' }}>
+                        <X className="w-4 h-4" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+
+                {/* Comparison Table */}
+                <TableContainer sx={{ borderRadius: 2, border: 1, borderColor: 'divider' }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: 'action.hover' }}>
+                        <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: 12 }}>Kennzahl</TableCell>
+                        {items.map((item) => (
+                          <TableCell key={item.id} sx={{ fontWeight: 600, color: 'text.primary', fontSize: 12 }}>
+                            {item.label}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {/* Total Score Row */}
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13 }}>Gesamt-Score</TableCell>
+                        {items.map((item) => (
+                          <TableCell key={`${item.id}-score`}>
+                            <Box sx={{ display: 'inline-flex', px: 1.5, py: 0.5, borderRadius: 1, bgcolor: 'primary.main', color: 'white', fontSize: 12, fontWeight: 600 }}>
+                              {item.score?.toFixed(0) ?? '–'}
+                            </Box>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+
+                      {/* Metric Rows */}
+                      {WATER_METRIC_FIELDS.map((metric) => (
+                        <TableRow key={metric.key}>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 13, color: 'text.primary' }}>{metric.label}</Typography>
+                            {metric.unit && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{metric.unit}</Typography>}
+                          </TableCell>
+                          {items.map((item) => {
+                            const rawValue = item.values?.[metric.key];
+                            const metricScore = item.metricScores?.[metric.key];
+                            return (
+                              <TableCell key={`${item.id}-${metric.key}`}>
+                                <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}>
+                                  {typeof rawValue === 'number'
+                                    ? `${rawValue.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${metric.unit ?? ''}`
+                                    : '–'}
+                                </Typography>
+                                {metricScore !== undefined && (
+                                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    Score: {metricScore.toFixed(0)}
+                                  </Typography>
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+
+                      {/* Derived Metrics */}
+                      {DERIVED_WATER_METRICS.map((metric) => (
+                        <TableRow key={metric.key}>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 13, color: 'text.primary' }}>{metric.label}</Typography>
+                            {metric.unit && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{metric.unit}</Typography>}
+                          </TableCell>
+                          {items.map((item) => {
+                            const value = item.values?.[metric.key];
+                            return (
+                              <TableCell key={`${item.id}-${metric.key}`}>
+                                <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'text.primary' }}>
+                                  {typeof value === 'number'
+                                    ? `${value.toFixed(metric.key === 'hardness' ? 1 : 2)}${metric.unit ? ` ${metric.unit}` : ''}`
+                                    : '–'}
+                                </Typography>
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            )}
+          </>
+        )}
+      </Box>
+
+      {/* Safe area padding */}
+      <Box sx={{ height: 'env(safe-area-inset-bottom)', minHeight: 16 }} />
+    </SwipeableDrawer>
   );
 }

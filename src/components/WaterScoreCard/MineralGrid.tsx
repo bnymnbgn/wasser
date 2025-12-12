@@ -45,17 +45,14 @@ export function MineralGrid({
               return (
                 <div
                   key={field.key}
-                  className="p-3 rounded-2xl border bg-ocean-surface border-ocean-border backdrop-blur-sm"
+                  className="py-4 border-b border-slate-100 dark:border-slate-800"
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-medium text-ocean-secondary">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-ocean-secondary">
                       {labels[metric]}
-                    </p>
-                    <span className="text-[10px] px-2 py-1 rounded-full font-semibold bg-white/10 text-ocean-tertiary">
-                      –
                     </span>
+                    <span className="text-sm font-semibold text-ocean-tertiary">–</span>
                   </div>
-                  <p className="text-lg font-bold text-ocean-tertiary">–</p>
                 </div>
               );
             }
@@ -92,7 +89,7 @@ export function MineralGrid({
             <button
               key={field.key}
               onClick={() => onSelect({ key: metric as string, info, value, unit, score: metricScore })}
-              className={`p-4 rounded-2xl border ${statusStyle} backdrop-blur-sm active:scale-[0.98] transition-transform text-left`}
+              className={`p-4 border-b border-slate-100 dark:border-slate-800 text-left`}
             >
               <div className="flex items-center justify-between mb-2">
                 <MineralTooltip mineral={metric as string} info={info} profile={profile}>
@@ -123,18 +120,18 @@ export function MineralGrid({
         <div className="pt-2">
           <button
             onClick={onMissingDataClick}
-            className="w-full group relative overflow-hidden rounded-2xl border border-ocean-warning/40 bg-ocean-warning/10 p-4 text-left transition-all hover:bg-ocean-warning/15 hover:border-ocean-warning/60 active:scale-[0.99]"
+            className="w-full overflow-hidden border-b border-amber-200 dark:border-amber-800 py-4 text-left"
           >
             <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ocean-warning/20 text-ocean-warning group-hover:scale-110 transition-transform">
-                <AlertTriangle className="h-5 w-5" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-500">
+                <AlertTriangle className="h-4 w-4" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold text-ocean-primary">
                     Analyse ungenau
                   </h4>
-                  <ArrowRight className="h-4 w-4 text-ocean-warning opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                  <ArrowRight className="h-4 w-4 text-amber-500" />
                 </div>
                 <p className="mt-1 text-sm text-ocean-secondary leading-relaxed">
                   Es sind nur{" "}
@@ -151,7 +148,7 @@ export function MineralGrid({
               </div>
             </div>
 
-            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-ocean-warning/10 blur-3xl transition-opacity opacity-0 group-hover:opacity-100 pointer-events-none" />
+
           </button>
         </div>
       )}

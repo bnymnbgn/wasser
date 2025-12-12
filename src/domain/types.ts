@@ -11,7 +11,10 @@ export type ProfileType =
   | "sport"
   | "blood_pressure"
   | "coffee"
-  | "kidney";
+  | "kidney"
+  | "pregnancy"
+  | "seniors"
+  | "diabetes";
 
 /**
  * "Reine" Wasserwerte ohne DB-Felder – damit rechnet das Scoring.

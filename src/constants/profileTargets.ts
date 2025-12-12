@@ -74,4 +74,38 @@ export const PROFILE_TARGETS: Record<ProfileType, Partial<Record<MetricKey, Targ
     chloride: { min: 0, max: 150, optimalMin: 0, optimalMax: 80 },
     nitrate: { min: 0, max: 25, optimalMin: 0, optimalMax: 10 },
   },
+  pregnancy: {
+    // Ähnlich Baby aber mit höheren Ca/Mg Werten für erhöhten Bedarf
+    calcium: { min: 50, max: 200, optimalMin: 100, optimalMax: 200 },
+    magnesium: { min: 20, max: 100, optimalMin: 50, optimalMax: 80 },
+    sodium: { min: 0, max: 30, optimalMin: 0, optimalMax: 20 },
+    potassium: { min: 0, max: 15, optimalMin: 1, optimalMax: 8 },
+    bicarbonate: { min: 200, max: 1500, optimalMin: 400, optimalMax: 1000 },
+    sulfate: { min: 0, max: 200, optimalMin: 0, optimalMax: 100 },
+    chloride: { min: 0, max: 80, optimalMin: 0, optimalMax: 40 },
+    nitrate: { min: 0, max: 10, optimalMin: 0, optimalMax: 5 },
+    fluoride: { min: 0, max: 1.0, optimalMin: 0, optimalMax: 0.5 },
+  },
+  seniors: {
+    // Fokus auf Knochengesundheit: höheres Ca/Mg, moderates Na, gutes HCO3
+    calcium: { min: 60, max: 200, optimalMin: 100, optimalMax: 150 },
+    magnesium: { min: 30, max: 120, optimalMin: 50, optimalMax: 100 },
+    sodium: { min: 0, max: 80, optimalMin: 0, optimalMax: 50 },
+    potassium: { min: 0, max: 15, optimalMin: 1, optimalMax: 10 },
+    bicarbonate: { min: 200, max: 800, optimalMin: 300, optimalMax: 600 },
+    sulfate: { min: 0, max: 250, optimalMin: 0, optimalMax: 150 },
+    chloride: { min: 0, max: 100, optimalMin: 0, optimalMax: 50 },
+    nitrate: { min: 0, max: 25, optimalMin: 0, optimalMax: 10 },
+  },
+  diabetes: {
+    // Fokus auf Magnesium für Insulinsensitivität, moderates Na für Herz-Kreislauf
+    magnesium: { min: 30, max: 150, optimalMin: 50, optimalMax: 100 },
+    calcium: { min: 50, max: 180, optimalMin: 80, optimalMax: 150 },
+    sodium: { min: 0, max: 80, optimalMin: 0, optimalMax: 50 },
+    potassium: { min: 0, max: 15, optimalMin: 1, optimalMax: 10 },
+    bicarbonate: { min: 200, max: 1000, optimalMin: 300, optimalMax: 800 },
+    sulfate: { min: 0, max: 250, optimalMin: 0, optimalMax: 150 },
+    chloride: { min: 0, max: 100, optimalMin: 0, optimalMax: 50 },
+    nitrate: { min: 0, max: 25, optimalMin: 0, optimalMax: 10 },
+  },
 };

@@ -4,6 +4,7 @@ import { DatabaseProvider } from '@/src/contexts/DatabaseContext';
 import { ConsumptionProvider } from '@/src/contexts/ConsumptionContext';
 import { ComparisonProvider } from '@/src/contexts/ComparisonContext';
 import { ComparisonDrawer } from '@/src/components/ComparisonDrawer';
+import { ProfileBottomSheet } from '@/src/components/ProfileBottomSheet';
 import { AppBackgroundToggle } from '@/src/components/AppBackgroundToggle';
 
 // App-specific metadata (overrides root)
@@ -43,6 +44,7 @@ export default function AppLayout({
               </div>
             </div>
             <ComparisonDrawer />
+            <ProfileBottomSheet />
           </ConsumptionProvider>
         </DatabaseProvider>
       </ComparisonProvider>
