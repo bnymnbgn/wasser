@@ -9,7 +9,7 @@ import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import { useTheme } from "@mui/material/styles";
-import { ArrowLeft, ChevronRight, ChevronDown, Droplet, Users, HelpCircle } from "lucide-react";
+import { ArrowLeft, ChevronRight, ChevronDown, Droplet, Users, HelpCircle, Tag } from "lucide-react";
 import { hapticLight } from "@/lib/capacitor";
 
 const FAQS = [
@@ -156,6 +156,44 @@ export default function OnboardingPage() {
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               Baby, Sport, Blutdruck und mehr
+            </Typography>
+          </Box>
+          <ChevronRight className="w-5 h-5" style={{ color: theme.palette.text.secondary }} />
+        </Box>
+
+        {/* Label Guide */}
+        <Box
+          component={Link}
+          href="/learn/label-guide"
+          onClick={() => hapticLight()}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            px: 2,
+            py: 2.5,
+            bgcolor: 'background.default',
+            textDecoration: 'none',
+            '&:active': { bgcolor: 'action.selected' }
+          }}
+        >
+          <Box sx={{
+            width: 44,
+            height: 44,
+            borderRadius: 2,
+            bgcolor: 'info.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Tag className="w-6 h-6 text-white" />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 16 }}>
+              Etikett-Guide
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Verstehe jedes Detail auf der Flasche
             </Typography>
           </Box>
           <ChevronRight className="w-5 h-5" style={{ color: theme.palette.text.secondary }} />
