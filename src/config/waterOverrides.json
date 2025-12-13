@@ -1,5 +1,102 @@
 {
   "4104760401865": {
-    "sodium": 1.1
+    "sodium": 1.1,
+    "nitrate": 2.8
+  },
+
+  "8017870000100": {
+    "productName": "Aqua Minerale Naturale Natürliches Mineralwasser",
+    "brand": "Plose",
+    "calcium": 2.6,
+    "magnesium": 1.6,
+    "sodium": 1.3,
+    "potassium": 0.3,
+    "chloride": 0.4,
+    "sulfate": 3.2,
+    "bicarbonate": 23,
+    "nitrate": 1.2,
+    "fluoride": 0.09,
+    "ph": 6.6,
+    "totalDissolvedSolids": 22,
+    "silica": 6.1,
+    "carbonation": 10
+  },
+
+  "4001325002386": {
+    "productName": "Naturpark Quelle Medium",
+    "brand": "aquaRömer",
+    "calcium": 555,
+    "magnesium": 48.6,
+    "sodium": 20.1,
+    "chloride": 12.3,
+    "sulfate": 1377,
+    "bicarbonate": 201,
+    "carbonation": 5000
+  },
+
+  "4017943110013": {
+    "productName": "Bio-Quelle Medium",
+    "brand": "Landpark",
+    "calcium": 62,
+    "magnesium": 3.6,
+    "sodium": 3.5,
+    "potassium": 1.9,
+    "chloride": 23,
+    "sulfate": 11.6,
+    "bicarbonate": 176,
+    "nitrate": 0,
+    "fluoride": 0.13,
+    "carbonation": 4.6
+  },
+
+  "4260170290212": {
+    "productName": "STILL 750 ml",
+    "brand": "Rheinsberger Preussenquelle",
+    "calcium": 67,
+    "magnesium": 7.2,
+    "sodium": 7.2,
+    "potassium": 1.3,
+    "chloride": 4.3,
+    "sulfate": 7.4,
+    "bicarbonate": 240,
+    "nitrate": 0.4,
+    "fluoride": 0.17,
+    "ph": 7.32,
+    "totalDissolvedSolids": 367,
+    "silica": 32.2
+  },
+
+  "4260170290458": {
+    "productName": "STILL 500 ml",
+    "brand": "Rheinsberger Preussenquelle",
+    "calcium": 67,
+    "magnesium": 7.2,
+    "sodium": 7.2,
+    "potassium": 1.3,
+    "chloride": 4.3,
+    "sulfate": 7.4,
+    "bicarbonate": 240,
+    "nitrate": 0.4,
+    "fluoride": 0.17,
+    "ph": 7.32,
+    "totalDissolvedSolids": 367,
+    "silica": 32.2
+  },
+
+  "4260170290052": {
+    "productName": "STILL 275 ml",
+    "brand": "Rheinsberger Preussenquelle",
+    "calcium": 67,
+    "magnesium": 7.2,
+    "sodium": 7.2,
+    "potassium": 1.3,
+    "chloride": 4.3,
+    "sulfate": 7.4,
+    "bicarbonate": 240,
+    "nitrate": 0.4,
+    "fluoride": 0.17,
+    "ph": 7.32,
+    "totalDissolvedSolids": 367,
+    "silica": 32.2
   }
 }

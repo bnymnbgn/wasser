@@ -142,7 +142,17 @@ const runInsert = db.transaction(() => {
 });
 
 runInsert();
+
+console.log('🧹 Optimizing database for distribution...');
+
+// 1. Compact the database file
+db.exec('VACUUM');
+
+// 2. Switch from WAL/OFF to DELETE mode so everything is in ONE file
+db.pragma('journal_mode = DELETE');
+
 db.close();
 
-console.log(`Prebuilt DB created at ${path.relative(ROOT, OUTPUT_FILE)}`);
-console.log(`Sources: ${waterSources.length}, Analyses: ${waterAnalyses.length}`);
+console.log('✅ Database is ready for packaging (single file).');
+console.log(`📦 Prebuilt DB created at ${path.relative(ROOT, OUTPUT_FILE)}`);
+console.log(`   Sources: ${waterSources.length}, Analyses: ${waterAnalyses.length}`);

@@ -45,6 +45,8 @@ model WaterAnalysis {
   nitrate                Float?
   fluoride               Float?
   totalDissolvedSolids   Float?
+  carbonation            Float?  // Kohlensäure (mg/L)
+  silica                 Float?  // Kieselsäure (mg/L)
   createdAt              DateTime     @default(now())
 
   @@index([waterSourceId, createdAt])

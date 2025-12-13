@@ -332,6 +332,29 @@ const MINERAL_INFO: Record<
     },
     optimal: "<0.7 mg/L Baby",
   },
+  silica: {
+    name: "Kieselsäure",
+    profiles: {
+      seniors: "Unterstützt Haut, Haare, Nägel und Bindegewebe.",
+      sport: "Kann zur Regeneration von Bindegewebe beitragen.",
+      standard: "Spurenelement für Kollagenbildung.",
+      baby: "Kein wesentlicher Faktor für Säuglinge.",
+      coffee: "Geschmacklich kaum relevant.",
+    },
+    optimal: "20–60 mg/L",
+  },
+  carbonation: {
+    name: "Kohlensäure",
+    profiles: {
+      baby: "Still bevorzugt – Kohlensäure kann Blähungen verursachen.",
+      pregnancy: "Still bis leicht bevorzugt, bei Sodbrennen meiden.",
+      sport: "Medium kann angenehm sein, zu viel reizt Magen.",
+      coffee: "Meist irrelevant, da für Kaffee stilles Wasser verwendet wird.",
+      blood_pressure: "Kein direkter Einfluss auf Blutdruck.",
+      standard: "Geschmackssache – Medium oft am beliebtesten.",
+    },
+    optimal: "Still für Baby",
+  },
   ph: {
     name: "pH",
     profiles: {

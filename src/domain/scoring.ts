@@ -884,6 +884,110 @@ function scoreFluoride(
   return { metric: "fluoride", score, weight, explanation: explanation.trim() };
 }
 
+function scoreSilica(silica: number | undefined, profile: ProfileType): MetricScore {
+  // Kieselsäure (H2SiO3) - wichtig für Haut, Haare, Nägel, Bindegewebe
+  if (silica == null) {
+    return {
+      metric: "silica",
+      score: 0,
+      weight: 0,
+      explanation: "Kieselsäure nicht angegeben.",
+    };
+  }
+
+  // Ideal: 20-60 mg/L (guter Gehalt ohne Überschuss)
+  const score = bandScore(silica, 20, 60);
+  let explanation = `Kieselsäure: ${silica.toFixed(1)} mg/L. `;
+
+  if (score >= 80) {
+    explanation += "Guter Gehalt für Haut, Haare und Bindegewebe.";
+  } else if (score >= 50) {
+    explanation += "Moderater Gehalt – trägt zur Kollagenbildung bei.";
+  } else {
+    explanation += "Niedriger Gehalt – keine gesundheitlichen Bedenken.";
+  }
+
+  return {
+    metric: "silica",
+    score,
+    weight: profile === "seniors" ? 0.6 : 0.3, // Spurenelement, niedrige Gewichtung
+    explanation,
+  };
+}
+
+function scoreCarbonation(co2: number | undefined, profile: ProfileType): MetricScore {
+  // Kohlensäure (CO2) - relevant für Babys (still besser) und Geschmack
+  if (co2 == null) {
+    return {
+      metric: "carbonation",
+      score: 0,
+      weight: 0,
+      explanation: "Kohlensäuregehalt nicht angegeben.",
+    };
+  }
+
+  let score: number;
+  let explanation = `Kohlensäure: ${co2.toFixed(0)} mg/L. `;
+
+  if (profile === "baby") {
+    // Babys: Still (< 500 mg/L) ist optimal
+    score = stepBands(
+      co2,
+      [
+        { limit: 100, score: 100 },  // Still
+        { limit: 500, score: 80 },   // Leicht
+        { limit: 2000, score: 40 },  // Medium
+        { limit: 5000, score: 20 },  // Classic
+      ],
+      true
+    );
+    if (score >= 80) explanation += "Stilles Wasser – perfekt für Babys.";
+    else if (score >= 50) explanation += "Leicht sprudelnd – noch akzeptabel.";
+    else explanation += "Zu viel Kohlensäure für Babys – kann Blähungen verursachen.";
+
+    return { metric: "carbonation", score, weight: 1.5, explanation };
+  }
+
+  if (profile === "pregnancy") {
+    // Schwangerschaft: Leicht bis Medium bevorzugt
+    score = stepBands(
+      co2,
+      [
+        { limit: 500, score: 100 },  // Still/Leicht
+        { limit: 2500, score: 80 },  // Medium
+        { limit: 5000, score: 50 },  // Classic
+      ],
+      true
+    );
+    if (score >= 80) explanation += "Gut verträglich in der Schwangerschaft.";
+    else explanation += "Viel Kohlensäure kann bei Sodbrennen ungünstig sein.";
+
+    return { metric: "carbonation", score, weight: 0.8, explanation };
+  }
+
+  // Standard/Sport/Coffee: Neutral bewerten, leichte Präferenz für Medium
+  if (co2 < 500) {
+    score = 80;  // Still
+    explanation += "Stilles Wasser – neutral für die meisten Anwendungen.";
+  } else if (co2 < 2500) {
+    score = 90;  // Medium
+    explanation += "Medium – angenehmer Geschmack ohne zu viel Säure.";
+  } else if (co2 < 5500) {
+    score = 75;  // Classic
+    explanation += "Classic – erfrischend, aber kann Magen reizen.";
+  } else {
+    score = 60;  // Sehr stark
+    explanation += "Sehr stark kohlensäurehaltig.";
+  }
+
+  return {
+    metric: "carbonation",
+    score,
+    weight: profile === "coffee" ? 0.5 : 0.4, // Niedrige Gewichtung
+    explanation,
+  };
+}
+
 // ---------------------------
 // Hauptfunktion
 // ---------------------------
@@ -933,6 +1037,8 @@ export function calculateScores(
   );
   metrics.push(scoreDataTransparency(values));
   metrics.push(scoreFluoride(values.fluoride, profile));
+  metrics.push(scoreSilica(values.silica, profile));
+  metrics.push(scoreCarbonation(values.carbonation, profile));
 
   // 3. Nur vorhandene Daten nutzen (Weight > 0)
   const active = metrics.filter((m) => m.weight > 0);

@@ -10,6 +10,8 @@ export { chlorid } from './chlorid';
 export { kalium } from './kalium';
 export { fluorid } from './fluorid';
 export { tds } from './tds';
+export { silica } from './silica';
+export { carbonation } from './carbonation';
 
 import { natrium } from './natrium';
 import { calcium } from './calcium';
@@ -22,6 +24,8 @@ import { chlorid } from './chlorid';
 import { kalium } from './kalium';
 import { fluorid } from './fluorid';
 import { tds } from './tds';
+import { silica } from './silica';
+import { carbonation } from './carbonation';
 import { MineralArticle } from '../types';
 
 // All minerals as a record (for lookup by ID)
@@ -37,7 +41,10 @@ export const MINERAL_ARTICLES: Record<string, MineralArticle> = {
     kalium,
     fluorid,
     tds,
+    silica,
+    carbonation,
 };
 
 // All minerals as a list (for iteration)
 export const MINERALS_LIST: MineralArticle[] = Object.values(MINERAL_ARTICLES);
+

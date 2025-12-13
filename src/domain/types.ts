@@ -32,6 +32,9 @@ export interface WaterAnalysisValues {
   nitrate?: number;
   totalDissolvedSolids?: number;
   fluoride?: number;
+  // NEU: Kieselsäure und Kohlensäure
+  silica?: number;      // Kieselsäure (H2SiO3) / Silizium in mg/L
+  carbonation?: number; // Kohlensäure (CO2) in mg/L
   // Derived/auxiliary metrics (computed from the above)
   hardness?: number;
   calciumMagnesiumRatio?: number;

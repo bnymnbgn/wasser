@@ -16,6 +16,8 @@ const VALUE_RANGES: Partial<Record<keyof WaterAnalysisValues, { min: number; max
   nitrate: { min: 0, max: 100, typical: "0-50 mg/L" },
   bicarbonate: { min: 0, max: 2000, typical: "50-600 mg/L" },
   totalDissolvedSolids: { min: 0, max: 3000, typical: "50-1500 mg/L" },
+  silica: { min: 0, max: 200, typical: "10-100 mg/L" },
+  carbonation: { min: 0, max: 10000, typical: "0-7000 mg/L" }, // Still (0) bis Classic (~7000)
 };
 
 const MINERAL_LABELS: Partial<Record<keyof WaterAnalysisValues, string[]>> = {
@@ -28,7 +30,9 @@ const MINERAL_LABELS: Partial<Record<keyof WaterAnalysisValues, string[]>> = {
   sulfate: ["sulfat", "sulfate", "sulphate", "so4", "so₄"],
   nitrate: ["nitrat", "nitrate", "no3", "no₃"],
   bicarbonate: ["hydrogencarbonat", "bicarbonat", "bikarbonat", "hco3", "hco₃"],
-  totalDissolvedSolids: ["gesamthard", "gesamtmineralisation", "tds", "mineralstoffgehalt"],
+  totalDissolvedSolids: ["gesamthard", "gesamtmineralisation", "tds", "mineralstoffgehalt", "trockenrückstand"],
+  silica: ["kieselsäure", "meta-kieselsäure", "silizium", "silica", "sio2", "h2sio3"],
+  carbonation: ["kohlensäure", "kohlensaeure", "co2", "carbonation"],
 };
 
 const LEGACY_PATTERNS: Partial<Record<keyof WaterAnalysisValues, RegExp>> = {
@@ -41,7 +45,9 @@ const LEGACY_PATTERNS: Partial<Record<keyof WaterAnalysisValues, RegExp>> = {
   sulfate: /(?:Sulfat|Sulphate|Sulfate|SO4)[:\s-]*([0-9]+[.,]?[0-9]*)/i,
   nitrate: /(?:Nitrat|Nitrate|NO3)[:\s-]*([0-9]+[.,]?[0-9]*)/i,
   bicarbonate: /(?:Hydrogencarbonat|Bicarbonat|Bikarbonat|HCO3)[:\s-]*([0-9]+[.,]?[0-9]*)/i,
-  totalDissolvedSolids: /(?:Gesamtmineralisation|TDS|Mineralstoffgehalt)[:\s]*([0-9]+[.,]?[0-9]*)/i,
+  totalDissolvedSolids: /(?:Gesamtmineralisation|TDS|Mineralstoffgehalt|Trockenrückstand)[:\s]*([0-9]+[.,]?[0-9]*)/i,
+  silica: /(?:Kieselsäure|Meta-Kieselsäure|Silizium|SiO2)[:\s]*([0-9]+[.,]?[0-9]*)/i,
+  carbonation: /(?:Kohlensäure|CO2)[:\s]*([0-9]+[.,]?[0-9]*)/i,
 };
 
 export function validateValue(
