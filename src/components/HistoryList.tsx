@@ -28,6 +28,7 @@ import {
   Calendar,
   Search,
   ChevronDown,
+  ChevronRight,
   CheckCircle,
   ThumbsUp,
   Minus,
@@ -565,17 +566,7 @@ export default function HistoryList({ initialScans }: HistoryListProps) {
                             >
                               <HistoryCard
                                 scan={scan}
-                                isExpanded={expandedId === scan.id}
-                                onToggleExpand={() => {
-                                  setExpandedId((prev) => {
-                                    const next = prev === scan.id ? null : scan.id;
-                                    return next;
-                                  });
-                                }}
                                 isFavorite={Boolean(favorites[scan.id])}
-                                onProfileChange={(p: ProfileType) => handleProfileSwitch(scan, p)}
-                                onPrefillConsumption={handlePrefillConsumption}
-                                theme={theme}
                               />
                             </SwipeableRow>
                           ))}
@@ -964,8 +955,8 @@ function ProfileChip({ label, active, onClick }: any) {
   );
 }
 
-// --- REDESIGNED CARD (matching mockup) ---
-function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileChange, onPrefillConsumption, theme }: any) {
+// --- REDESIGNED CARD (navigation to detail page) ---
+function HistoryCard({ scan, isFavorite }: { scan: any; isFavorite: boolean }) {
   // Score-based status badge (German) - matching mockup colors
   const getScoreStatus = (score: number | undefined) => {
     if (score == null) return {
@@ -1008,94 +999,56 @@ function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileCh
   const status = getScoreStatus(scan.score);
 
   return (
-    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
-      {/* Card content - p-4 matches mockup */}
-      <div className="p-4">
-        <div className="flex gap-4 items-center cursor-pointer" onClick={onToggleExpand}>
-          {/* Score Ring (64px like mockup - using h-16 w-16) */}
-          <div className="relative shrink-0">
-            <div className="h-16 w-16 rounded-full overflow-hidden flex items-center justify-center border border-white/5">
-              <MiniScoreRing score={scan.score} size={64} />
-            </div>
-            {isFavorite && (
-              <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-0.5 border-2 border-[#111827]">
-                <Star className="w-2.5 h-2.5 text-white fill-white" />
+    <Link href={`/history/${scan.id}`} className="block">
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.2 }}
+        className="active:scale-[0.99] transition-transform"
+      >
+        {/* Card content - p-4 matches mockup */}
+        <div className="p-4">
+          <div className="flex gap-4 items-center">
+            {/* Score Ring (64px like mockup - using h-16 w-16) */}
+            <div className="relative shrink-0">
+              <div className="h-16 w-16 rounded-full overflow-hidden flex items-center justify-center border border-white/5">
+                <MiniScoreRing score={scan.score} size={64} />
               </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex flex-1 flex-col justify-center min-w-0">
-            <div className="flex justify-between items-start">
-              <p className="text-white text-lg font-bold leading-tight truncate pr-2">
-                {scan.productInfo?.brand ?? "Unbekanntes Wasser"}
-              </p>
-              <p className="text-gray-500 text-xs font-medium whitespace-nowrap mt-1">
-                {formatDate(new Date(scan.timestamp))}
-              </p>
+              {isFavorite && (
+                <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-0.5 border-2 border-[#111827]">
+                  <Star className="w-2.5 h-2.5 text-white fill-white" />
+                </div>
+              )}
             </div>
-            {/* Status Badge */}
-            <div className="flex items-center gap-2 mt-1">
-              <div className={`flex items-center px-2.5 py-1 rounded-lg ${status.bgColor} border ${status.borderColor}`}>
-                <status.Icon className={`w-3.5 h-3.5 mr-1 ${status.colorClass}`} />
-                <p className={`${status.colorClass} text-xs font-bold uppercase tracking-wide`}>{status.label}</p>
+
+            {/* Content */}
+            <div className="flex flex-1 flex-col justify-center min-w-0">
+              <div className="flex justify-between items-start">
+                <p className="text-white text-lg font-bold leading-tight truncate pr-2">
+                  {scan.productInfo?.brand ?? "Unbekanntes Wasser"}
+                </p>
+                <p className="text-gray-500 text-xs font-medium whitespace-nowrap mt-1">
+                  {formatDate(new Date(scan.timestamp))}
+                </p>
+              </div>
+              {/* Status Badge */}
+              <div className="flex items-center gap-2 mt-1">
+                <div className={`flex items-center px-2.5 py-1 rounded-lg ${status.bgColor} border ${status.borderColor}`}>
+                  <status.Icon className={`w-3.5 h-3.5 mr-1 ${status.colorClass}`} />
+                  <p className={`${status.colorClass} text-xs font-bold uppercase tracking-wide`}>{status.label}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Chevron */}
-          <div className="shrink-0 text-gray-600">
-            <motion.div animate={{ rotate: isExpanded ? 90 : 0 }}>
-              <ChevronDown className="h-5 w-5 -rotate-90" />
-            </motion.div>
+            {/* Chevron Right (static - indicates navigation) */}
+            <div className="shrink-0 text-gray-600">
+              <ChevronRight className="h-5 w-5" />
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* EXPANDED CONTENT */}
-      <AnimatePresence>
-        {
-          isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-            >
-              <CardContent sx={{ borderTop: "1px solid rgba(255,255,255,0.05)", px: 2, pb: 2 }}>
-                <Stack direction="row" spacing={1} flexWrap="wrap" mb={1}>
-                  {(["standard", "baby", "sport", "blood_pressure", "coffee", "kidney", "pregnancy", "seniors", "diabetes"] as ProfileType[]).map((p) => (
-                    <ProfileChip key={p} label={PROFILE_LABELS[p]} active={scan.profile === p} onClick={() => onProfileChange?.(p)} />
-                  ))}
-                </Stack>
-                <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPrefillConsumption(scan);
-                    }}
-                  >
-                    + Konsum (500 ml)
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPrefillConsumption(scan, 330);
-                    }}
-                  >
-                    + Konsum (330 ml)
-                  </Button>
-                </Stack>
-                <WaterScoreCard scanResult={scan} />
-              </CardContent>
-            </motion.div>
-          )
-        }
-      </AnimatePresence >
-    </motion.div >
+      </motion.div>
+    </Link>
   );
 }
 
