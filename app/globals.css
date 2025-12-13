@@ -9,6 +9,29 @@
   display: none;
 }
 
+/* Material Symbols configuration */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
 body {
   overscroll-behavior-y: none;
   background-color: var(--ocean-background);
@@ -27,15 +50,15 @@ textarea {
 /* Ocean Dark Glassmorphism Design System */
 :root {
   /* Ocean Dark Theme - Primary Colors */
-  --ocean-primary: #0EA5E9;
+  --ocean-primary: #137fec;
   --ocean-primary-light: #38BDF8;
   --ocean-primary-dark: #0284C7;
   --ocean-accent: #38BDF8;
   --ocean-accent-light: #7DD3FC;
 
   /* Ocean Surfaces */
-  --ocean-background: #0B1120;
-  --ocean-surface: #151F32;
+  --ocean-background: #080c15;
+  --ocean-surface: #111827;
   --ocean-surface-elevated: #1E2A3D;
   --ocean-surface-hover: #1A2840;
   --ocean-glass: rgba(21, 31, 50, 0.6);

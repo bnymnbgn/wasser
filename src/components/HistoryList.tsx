@@ -28,6 +28,10 @@ import {
   Calendar,
   Search,
   ChevronDown,
+  CheckCircle,
+  ThumbsUp,
+  Minus,
+  AlertTriangle,
   ChevronUp,
   Edit3,
   Target,
@@ -960,94 +964,137 @@ function ProfileChip({ label, active, onClick }: any) {
   );
 }
 
-// --- REDESIGNED CARD ---
+// --- REDESIGNED CARD (matching mockup) ---
 function HistoryCard({ scan, isExpanded, onToggleExpand, isFavorite, onProfileChange, onPrefillConsumption, theme }: any) {
+  // Score-based status badge (German) - matching mockup colors
+  const getScoreStatus = (score: number | undefined) => {
+    if (score == null) return {
+      label: "Unbekannt",
+      Icon: Minus,
+      colorClass: "text-gray-400",
+      bgColor: "bg-gray-600/10",
+      borderColor: "border-gray-600/10"
+    };
+    if (score >= 85) return {
+      label: "Hervorragend",
+      Icon: CheckCircle,
+      colorClass: "text-emerald-400",
+      bgColor: "bg-emerald-500/10",
+      borderColor: "border-emerald-500/10"
+    };
+    if (score >= 70) return {
+      label: "Gut geeignet",
+      Icon: ThumbsUp,
+      colorClass: "text-blue-400",
+      bgColor: "bg-blue-500/10",
+      borderColor: "border-blue-500/10"
+    };
+    if (score >= 50) return {
+      label: "Akzeptabel",
+      Icon: Minus,
+      colorClass: "text-gray-400",
+      bgColor: "bg-gray-600/10",
+      borderColor: "border-gray-600/10"
+    };
+    return {
+      label: "Kritisch",
+      Icon: AlertTriangle,
+      colorClass: "text-red-400",
+      bgColor: "bg-red-500/10",
+      borderColor: "border-red-500/10"
+    };
+  };
+
+  const status = getScoreStatus(scan.score);
+
   return (
     <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
-      <div className="bg-transparent">
-        <CardActionArea onClick={onToggleExpand}>
-          <CardContent sx={{ pb: 1.5 }}>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="relative shrink-0">
-                  <MiniScoreRing score={scan.score} size={44} />
-                  {isFavorite && (
-                    <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-0.5 border-2 border-white dark:border-slate-900">
-                      <Star className="w-2.5 h-2.5 text-white fill-white" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h4 className="font-bold text-ocean-primary truncate text-base leading-tight">
-                      {scan.productInfo?.brand ?? "Unbekanntes Wasser"}
-                    </h4>
-                    {scan.productInfo?.productName && (
-                      <span className="text-xs text-ocean-tertiary truncate hidden sm:inline">
-                        · {scan.productInfo.productName}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-ocean-secondary/80 flex items-center gap-1.5">
-                    <span>{formatDate(new Date(scan.timestamp))}</span>
-                    <span className="w-0.5 h-0.5 rounded-full bg-ocean-border" />
-                    <span className="capitalize text-sky-600 dark:text-sky-400 font-medium">
-                      {PROFILE_LABELS[scan.profile as ProfileType] || scan.profile}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} className="text-ocean-secondary shrink-0">
-                <ChevronDown className="h-5 w-5" />
-              </motion.div>
+      {/* Card content - p-4 matches mockup */}
+      <div className="p-4">
+        <div className="flex gap-4 items-center cursor-pointer" onClick={onToggleExpand}>
+          {/* Score Ring (64px like mockup - using h-16 w-16) */}
+          <div className="relative shrink-0">
+            <div className="h-16 w-16 rounded-full overflow-hidden flex items-center justify-center border border-white/5">
+              <MiniScoreRing score={scan.score} size={64} />
             </div>
-          </CardContent>
-        </CardActionArea>
+            {isFavorite && (
+              <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-0.5 border-2 border-[#111827]">
+                <Star className="w-2.5 h-2.5 text-white fill-white" />
+              </div>
+            )}
+          </div>
 
-        {/* EXPANDED CONTENT */}
-        <AnimatePresence>
-          {
-            isExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-              >
-                <CardContent sx={{ borderTop: "1px solid", borderColor: theme?.palette?.surface?.border, bgcolor: theme?.palette?.surface?.card }}>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" mb={1}>
-                    {(["standard", "baby", "sport", "blood_pressure", "coffee", "kidney", "pregnancy", "seniors", "diabetes"] as ProfileType[]).map((p) => (
-                      <ProfileChip key={p} label={PROFILE_LABELS[p]} active={scan.profile === p} onClick={() => onProfileChange?.(p)} />
-                    ))}
-                  </Stack>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPrefillConsumption(scan);
-                      }}
-                    >
-                      + Konsum (500 ml)
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPrefillConsumption(scan, 330);
-                      }}
-                    >
-                      + Konsum (330 ml)
-                    </Button>
-                  </Stack>
-                  <WaterScoreCard scanResult={scan} />
-                </CardContent>
-              </motion.div>
-            )
-          }
-        </AnimatePresence >
-      </div >
+          {/* Content */}
+          <div className="flex flex-1 flex-col justify-center min-w-0">
+            <div className="flex justify-between items-start">
+              <p className="text-white text-lg font-bold leading-tight truncate pr-2">
+                {scan.productInfo?.brand ?? "Unbekanntes Wasser"}
+              </p>
+              <p className="text-gray-500 text-xs font-medium whitespace-nowrap mt-1">
+                {formatDate(new Date(scan.timestamp))}
+              </p>
+            </div>
+            {/* Status Badge */}
+            <div className="flex items-center gap-2 mt-1">
+              <div className={`flex items-center px-2.5 py-1 rounded-lg ${status.bgColor} border ${status.borderColor}`}>
+                <status.Icon className={`w-3.5 h-3.5 mr-1 ${status.colorClass}`} />
+                <p className={`${status.colorClass} text-xs font-bold uppercase tracking-wide`}>{status.label}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chevron */}
+          <div className="shrink-0 text-gray-600">
+            <motion.div animate={{ rotate: isExpanded ? 90 : 0 }}>
+              <ChevronDown className="h-5 w-5 -rotate-90" />
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* EXPANDED CONTENT */}
+      <AnimatePresence>
+        {
+          isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <CardContent sx={{ borderTop: "1px solid rgba(255,255,255,0.05)", px: 2, pb: 2 }}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" mb={1}>
+                  {(["standard", "baby", "sport", "blood_pressure", "coffee", "kidney", "pregnancy", "seniors", "diabetes"] as ProfileType[]).map((p) => (
+                    <ProfileChip key={p} label={PROFILE_LABELS[p]} active={scan.profile === p} onClick={() => onProfileChange?.(p)} />
+                  ))}
+                </Stack>
+                <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPrefillConsumption(scan);
+                    }}
+                  >
+                    + Konsum (500 ml)
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPrefillConsumption(scan, 330);
+                    }}
+                  >
+                    + Konsum (330 ml)
+                  </Button>
+                </Stack>
+                <WaterScoreCard scanResult={scan} />
+              </CardContent>
+            </motion.div>
+          )
+        }
+      </AnimatePresence >
     </motion.div >
   );
 }
@@ -1136,55 +1183,62 @@ function SwipeableRow({
   };
 
   return (
-    <div className="relative touch-pan-y select-none group overflow-hidden" ref={rowRef}>
-      {/* Hintergrund-Aktionen im Apple-Mail-Stil */}
-      <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
-        <div className="flex items-center gap-2 pointer-events-auto h-full">
-          <button
-            onClick={handleFavoriteClick}
-            className="flex items-center gap-2 h-full bg-amber-500 text-white px-4 text-xs font-bold"
-          >
-            <Star className="w-4 h-4 fill-white" />
-            Favorit
-          </button>
-          <button
-            onClick={handleMoreClick}
-            className="flex items-center gap-1 h-full bg-slate-700 text-white px-4 text-xs font-bold"
-          >
-            <Edit3 className="w-4 h-4" />
-            …
-          </button>
+    <div
+      className="relative touch-pan-y select-none group rounded-3xl overflow-hidden mb-3"
+      style={{
+        backgroundColor: '#111827',
+        border: '1px solid rgba(255,255,255,0.05)',
+      }}
+      ref={rowRef}
+    >
+      {/* Hintergrund-Aktionen - NUR sichtbar beim Swipen */}
+      {showActions && (
+        <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+          <div className="flex items-center gap-2 pointer-events-auto h-full">
+            <button
+              onClick={handleFavoriteClick}
+              className="flex items-center gap-2 h-full bg-amber-500 text-white px-4 text-xs font-bold rounded-l-2xl"
+            >
+              <Star className="w-4 h-4 fill-white" />
+              Favorit
+            </button>
+            <button
+              onClick={handleMoreClick}
+              className="flex items-center gap-1 h-full bg-slate-700 text-white px-4 text-xs font-bold"
+            >
+              <Edit3 className="w-4 h-4" />
+              …
+            </button>
+          </div>
+          <div className="flex items-center gap-2 pointer-events-auto h-full">
+            <button
+              onClick={handleMoreClick}
+              className="flex items-center gap-1 h-full bg-slate-700 text-white px-4 text-xs font-bold"
+            >
+              <Share2 className="w-4 h-4" />
+              …
+            </button>
+            <button
+              onClick={handleDeleteClick}
+              className="flex items-center gap-2 h-full bg-rose-500 text-white px-4 text-xs font-bold rounded-r-2xl"
+            >
+              <Trash2 className="w-4 h-4" />
+              Löschen
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 pointer-events-auto h-full">
-          <button
-            onClick={handleMoreClick}
-            className="flex items-center gap-1 h-full bg-slate-700 text-white px-4 text-xs font-bold"
-          >
-            <Share2 className="w-4 h-4" />
-            …
-          </button>
-          <button
-            onClick={handleDeleteClick}
-            className="flex items-center gap-2 h-full bg-rose-500 text-white px-4 text-xs font-bold"
-          >
-            <Trash2 className="w-4 h-4" />
-            Löschen
-          </button>
-        </div>
-      </div>
+      )}
 
-      {/* Vordergrund-Karte: MUSS einen festen Hintergrund haben! */}
+      {/* Vordergrund-Karte: hat gleichen BG wie wrapper = unsichtbar */}
       <motion.div
-        style={{ x: offset }}
+        style={{ x: offset, backgroundColor: '#111827' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        // WICHTIG: Festen Hintergrund setzen!
-        className="relative bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800"
+        className="relative"
       >
         {children}
-
       </motion.div>
     </div>
   );
