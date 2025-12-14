@@ -2,67 +2,11 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Share2, Heart, MapPin, Droplet } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Share2, Heart, MapPin } from "lucide-react";
+import { motion } from "framer-motion";
 import { WaterScoreCard } from "@/src/components/WaterScoreCard";
+import { ProductScoreHero } from "@/src/components/ui/ProductScoreHero";
 import type { ScanResult } from "@/src/domain/types";
-import Image from "next/image";
-
-// Product Image Component with barcode-based lookup
-function ProductImage({
-    barcode,
-    brand,
-    productName,
-    origin
-}: {
-    barcode?: string;
-    brand?: string;
-    productName?: string;
-    origin?: string;
-}) {
-    const [imageError, setImageError] = useState(false);
-    const imagePath = barcode ? `/images/products/${barcode}.webp` : null;
-
-    return (
-        <div className="flex flex-col items-center justify-center pt-4 pb-6">
-            {/* Product Image with Glow Background */}
-            <div className="relative w-full h-80 flex items-center justify-center mb-4">
-                {/* Background Glow */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#080c15] to-primary/10 rounded-full blur-3xl opacity-50 transform scale-75 translate-y-4" />
-
-                {/* Main Product Image */}
-                {imagePath && !imageError ? (
-                    <div className="relative z-10 h-72 w-72 rounded-2xl overflow-hidden shadow-lg border border-white/10">
-                        <Image
-                            src={imagePath}
-                            alt={`${brand || "Wasser"} Flasche`}
-                            fill
-                            className="object-contain"
-                            style={{ backgroundColor: '#f8f8f8' }}
-                            onError={() => setImageError(true)}
-                            sizes="300px"
-                        />
-                    </div>
-                ) : (
-                    // Fallback: Icon placeholder
-                    <div className="relative z-10 h-48 w-36 rounded-2xl bg-[#111827] border border-white/10 flex items-center justify-center">
-                        <Droplet className="w-16 h-16 text-primary/50" />
-                    </div>
-                )}
-            </div>
-
-            {/* Product Info */}
-            <h1 className="text-3xl font-bold text-center mb-1">
-                {brand || "Unbekanntes Wasser"}
-            </h1>
-            {(productName || origin) && (
-                <p className="text-sm text-gray-400">
-                    {[productName, origin].filter(Boolean).join(" • ")}
-                </p>
-            )}
-        </div>
-    );
-}
 export default function HistoryDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -134,16 +78,36 @@ export default function HistoryDetailPage() {
 
             {/* Scrollable Content */}
             <div className="flex-1 flex flex-col px-4 pb-24">
-                {/* Product Image Section */}
-                <ProductImage
-                    barcode={scan.barcode}
-                    brand={scan.productInfo?.brand}
-                    productName={scan.productInfo?.productName}
-                    origin={scan.productInfo?.origin}
-                />
+                {/* Hero Section: Combined Product + Score */}
+                <div className="py-6">
+                    <ProductScoreHero
+                        score={scan.score ?? 0}
+                        productImage={scan.barcode ? `/images/products/${scan.barcode}.webp` : null}
+                        brand={scan.productInfo?.brand}
+                        size={280}
+                        delay={0.2}
+                    />
 
-                {/* WaterScoreCard - Full Analysis */}
-                <WaterScoreCard scanResult={scan} />
+                    {/* Product Name & Info */}
+                    <motion.div
+                        className="text-center mt-6"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                    >
+                        <h1 className="text-2xl font-bold">
+                            {scan.productInfo?.brand || "Unbekanntes Wasser"}
+                        </h1>
+                        {(scan.productInfo?.productName || scan.productInfo?.origin) && (
+                            <p className="text-sm text-gray-400 mt-1">
+                                {[scan.productInfo?.productName, scan.productInfo?.origin].filter(Boolean).join(" • ")}
+                            </p>
+                        )}
+                    </motion.div>
+                </div>
+
+                {/* WaterScoreCard - Analysis Details (without duplicate score) */}
+                <WaterScoreCard scanResult={scan} hideScoreSection />
             </div>
 
             {/* Floating Action Bar */}

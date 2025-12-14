@@ -62,6 +62,7 @@ function statusClasses(score: number | undefined) {
 
 interface Props {
   scanResult: ScanResult;
+  hideScoreSection?: boolean;
 }
 
 function CollapsibleSection({
@@ -432,7 +433,7 @@ const MINERAL_BENEFITS: Partial<
   },
 };
 
-export function WaterScoreCard({ scanResult }: Props) {
+export function WaterScoreCard({ scanResult, hideScoreSection = false }: Props) {
   const router = useRouter();
   const [showDetails, setShowDetails] = useState(false);
   const [activeMineral, setActiveMineral] = useState<{
@@ -546,14 +547,16 @@ export function WaterScoreCard({ scanResult }: Props) {
 
   return (
     <div className="space-y-6">
-      <ScoreSection
-        score={score}
-        profile={profile}
-        scoreLabel={scoreLabel}
-        scoreColor={scoreColor}
-        isInComparison={isInComparison}
-        onToggleComparison={handleComparisonToggle}
-      />
+      {!hideScoreSection && (
+        <ScoreSection
+          score={score}
+          profile={profile}
+          scoreLabel={scoreLabel}
+          scoreColor={scoreColor}
+          isInComparison={isInComparison}
+          onToggleComparison={handleComparisonToggle}
+        />
+      )}
 
       {/* Mineralwerte Section */}
       <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
